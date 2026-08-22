@@ -1,3 +1,3 @@
 # Crawl4AI configuration
 
-Configuration-only placeholder for the local Crawl4AI service.
+The local Compose service uses the upstream image defaults; no application source lives here.

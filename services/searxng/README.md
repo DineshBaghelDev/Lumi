@@ -1,3 +1,3 @@
 # SearXNG configuration
 
-Configuration-only placeholder for the local SearXNG service.
+`settings.yml` enables the JSON search format for the local-only Compose service.

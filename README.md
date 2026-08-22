@@ -40,4 +40,22 @@ A source-grounded technical learning product that turns a topic into a polished,
 - `specs/` — 87 small implementation-ready specs, one bounded change each
 
 Start with `context/project-overview.md`, then `context/build-plan.md`, then execute the active spec.
-# Lumi
+
+## Local services
+
+Start the config-only dependency stack without building the application apps:
+
+```sh
+docker compose config --quiet
+docker compose up -d
+docker compose ps
+```
+
+Local endpoints:
+
+- LiteLLM: `http://127.0.0.1:4000/health/liveliness`
+- SearXNG: `http://127.0.0.1:8080/search?q=lumi&format=json`
+- Crawl4AI: `http://127.0.0.1:11235/health`
+- TEI: `http://127.0.0.1:8081/health`
+
+Use `docker compose restart` to restart the same service containers and `docker compose stop` to stop them. TEI model data and the SearXNG cache live in named volumes, so normal stops and restarts do not download them again. Do not use `docker compose down -v` unless you intend to delete those caches.

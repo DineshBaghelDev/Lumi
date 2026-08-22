@@ -1,0 +1,70 @@
+name: lumi-services
+
+services:
+  searxng:
+    image: docker.io/searxng/searxng:2026.8.22-9fea41204@sha256:11a9b34cdc0b1ec2b991470a2762ecb5a1a531898289fb51dcd015260450729e
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cp /usr/local/searxng/lumi-settings.yml /etc/searxng/settings.yml
+        printf '  secret_key: "%s"\n' "$$(head -c 24 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9')" >> /etc/searxng/settings.yml
+        exec /usr/local/searxng/entrypoint.sh
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./services/searxng/settings.yml:/usr/local/searxng/lumi-settings.yml:ro
+      - searxng-cache:/var/cache/searxng
+    tmpfs:
+      - /etc/searxng
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  crawl4ai:
+    image: docker.io/unclecode/crawl4ai:0.7.4@sha256:20eb241a638ad99809a6fc10651c7cc26ce9470a86568bb11147e8aaa6bb5c6b
+    ports:
+      - "127.0.0.1:11235:11235"
+    shm_size: 1gb
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:11235/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable@sha256:468c25f35f3e5ec4e414974f00deab93337b1b4d9953cabcfd3722e59415f834
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY:-}"
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - ./services/litellm/config.yaml:/app/config.yaml:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  tei:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8.3@sha256:8de25e75ce39617f17f2f6c77d60a4f75b65e779ed5005420eb1400072a15c1c
+    command: ["--model-id", "${TEI_MODEL_ID:-BAAI/bge-small-en-v1.5}"]
+    ports:
+      - "127.0.0.1:8081:80"
+    volumes:
+      - tei-model-cache:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
+volumes:
+  searxng-cache:
+  tei-model-cache:
