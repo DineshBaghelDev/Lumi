@@ -5,7 +5,7 @@
 Planning: complete  
 Implementation: in progress
 Current milestone: 1 — Foundation  
-Current spec: `003-docker-services.md`
+Current spec: `004-insforge-client.md`
 
 ## Locked decisions
 
@@ -42,11 +42,15 @@ Current spec: `003-docker-services.md`
 - `002-env-config.md` — complete; implementation commits `deb61c4` and `1dcae69` (final relevant fix commit: `1dcae69`)
   - Verification: config tests passed 7/7; config typecheck and build passed; `pnpm workspace:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` passed; forced root build/test/typecheck/lint runs passed; compiled `dist/index.js` runtime import and actionable-error smoke passed; Turbo dry-run reported `@lumi/config#build` output `dist/**`; `git diff --check` passed.
   - Independent review found two medium issues: Turbo did not declare the config build output for cache restoration, and research pages per crawl could exceed the crawled-source budget. Both were fixed; independent re-review reported no findings.
-  - Handoff: `@lumi/config` exports `parseApiEnv`, `parseWorkerEnv`, `parseWebPublicEnv`, `parseSharedServicesEnv`, `V1_CONFIG_DEFAULTS`, and `V1_CONFIG_LIMITS`. The public parser allows only `NEXT_PUBLIC_INSFORGE_URL`, `NEXT_PUBLIC_INSFORGE_ANON_KEY`, and `NEXT_PUBLIC_API_BASE_URL`. TEI is fixed to `BAAI/bge-small-en-v1.5` with 384 dimensions, and lesson-job concurrency per course is capped at 3. Canonical service env names are `LITELLM_BASE_URL`, `LITELLM_API_KEY`, `LITELLM_MODEL`, `LITELLM_MASTER_KEY`, `CODEX_API_BASE_URL`, `CODEX_API_MODEL`, `OPENROUTER_API_KEY`, `SEARXNG_BASE_URL`, `CRAWL4AI_BASE_URL`, `TEI_BASE_URL`, `TEI_MODEL_ID`, and `TEI_EMBEDDING_DIMENSION`. Spec 003 owns Docker configuration and must consume these names.
+  - Handoff: `@lumi/config` exports `parseApiEnv`, `parseWorkerEnv`, `parseWebPublicEnv`, `parseSharedServicesEnv`, `V1_CONFIG_DEFAULTS`, and `V1_CONFIG_LIMITS`. The public parser allows only `NEXT_PUBLIC_INSFORGE_URL`, `NEXT_PUBLIC_INSFORGE_ANON_KEY`, and `NEXT_PUBLIC_API_BASE_URL`. TEI is fixed to `BAAI/bge-small-en-v1.5` with 384 dimensions, and lesson-job concurrency per course is capped at 3. Canonical service env names are `LITELLM_BASE_URL`, `LITELLM_API_KEY`, `LITELLM_MODEL`, `CODEX_API_BASE_URL`, `CODEX_API_MODEL`, `OPENROUTER_API_KEY`, `SEARXNG_BASE_URL`, `CRAWL4AI_BASE_URL`, `TEI_BASE_URL`, `TEI_MODEL_ID`, and `TEI_EMBEDDING_DIMENSION`. Spec 003 owns Docker configuration and must consume these names.
+- `003-docker-services.md` — complete; implementation commits `b944ef0` and `93f93b5` (final relevant fix commit: `93f93b5`)
+  - Verification: `docker compose config --quiet` passed; all four services reached healthy state and their host endpoints returned HTTP 200; SearXNG returned JSON; TEI returned 384-dimensional embeddings and ignored an incompatible model override; Compose restart reused the same containers; LiteLLM rejected an unauthenticated request with 401 and accepted the same request with the configured bearer credential with 200.
+  - Independent review found Crawl4AI host-binding/auth incompatibility, an unprotected LiteLLM credential path, and an overridable TEI model. All were fixed; independent re-review reported no findings.
+  - Handoff: local endpoints are LiteLLM `http://127.0.0.1:4000`, SearXNG `http://127.0.0.1:8080`, Crawl4AI `http://127.0.0.1:11235`, and TEI `http://127.0.0.1:8081`. Crawl4AI is pinned to official image `0.7.4` because `0.9.2` requires a new host-binding/auth contract not defined for this stack. LiteLLM provider routing remains deferred to spec 024.
 
 ## In progress
 
-- [ ] `003-docker-services.md`
+- [ ] `004-insforge-client.md`
 
 ## Notes / deviations
 
