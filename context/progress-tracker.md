@@ -4,8 +4,8 @@
 
 Planning: complete  
 Implementation: in progress
-Current milestone: 2 — Research
-Current spec: `024-litellm-client.md`
+Current milestone: 3 — Course Generation
+Current spec: `042-curriculum-schema.md`
 
 ## Locked decisions
 
@@ -69,10 +69,14 @@ Current spec: `024-litellm-client.md`
   - Verification: `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:generate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:migrate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker build`.
   - Gate: DB-backed `milestone 1 gate` passes: `POST /courses` creates durable course, usage snapshot, owner enrollment, and queued research job; worker claim SQL locks that exact research job.
   - Handoff: `apps/api` is a Fastify app with health, auth, course create/read/cancel/read-content stubs, safe error envelopes, and graceful close. `apps/worker` can claim queued/stale jobs, heartbeat, classify retryable errors, and enforce global/lesson-per-course claim limits. Research execution remains intentionally unimplemented for Milestone 2.
+- `024-litellm-client.md` through `041-research-job-integration.md` — complete
+  - Verification: `pnpm --config.verify-deps-before-run=false --filter @lumi/llm test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/llm typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/llm build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/llm lint`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker lint`; `pnpm --config.verify-deps-before-run=false workspace:check`; `git diff --check`; `pnpm --config.verify-deps-before-run=false test`; `pnpm --config.verify-deps-before-run=false typecheck`; `pnpm --config.verify-deps-before-run=false build`; `pnpm --config.verify-deps-before-run=false lint`.
+  - Gate: DB-backed `milestone 2 gate` passes with the Redis-topic fixture: claimed research job persists concepts, source, chunks, source pack mappings, research asset metadata, and exactly one curriculum job. Blocked-source and budget-stop fixtures pass.
+  - Handoff: `@lumi/llm` exports a typed LiteLLM chat client for normal, structured, and stream-shaped calls plus existing call tracking. `apps/worker` now owns SearXNG, Crawl4AI, and TEI clients, centralized research URL/SSRF guards, sanitization/chunking, deterministic source ranking/protection, Redis-topic concept planning, idempotent research persistence, and the registered `research` job handler. Storage writes are represented by deterministic storage paths/asset rows; real InsForge object upload remains the next hardening point when asset byte tests are expanded.
 
 ## In progress
 
-- [ ] `024-litellm-client.md`
+- [ ] `042-curriculum-schema.md`
 
 ## Notes / deviations
 

@@ -2,7 +2,7 @@
 
 Lumi is a source-grounded technical learning app. A learner gives it a topic and goal; Lumi researches trusted sources, builds a fixed curriculum, generates lessons, assessments, and guided projects in the background, then keeps progress, notes, bookmarks, and course-aware chat tied to that course.
 
-Current state: foundation work is in progress. The web app exists, Google OAuth is wired, shared config is typed, and the local research service stack is defined. The API and worker packages are still placeholders until their specs are implemented.
+Current state: Milestone 2 is complete. The web app has Google OAuth, the API can create/read/cancel courses, the worker can claim jobs, and the research job persists source-backed concepts/chunks/assets before queuing curriculum generation.
 
 ## Stack
 
@@ -53,7 +53,7 @@ Use `docker compose stop` to stop services. Avoid `docker compose down -v` unles
 pnpm dev
 ```
 
-The web app runs through Next.js at `http://localhost:3000`. The API and worker currently run placeholder scripts until their foundation specs land.
+The web app runs through Next.js at `http://localhost:3000`; the API and worker run through the app package dev scripts.
 
 ## Checks
 
@@ -70,10 +70,10 @@ Run the smallest relevant check while developing, then run the broader checks be
 ## Repo Map
 
 - `apps/web` - Next.js app and auth routes
-- `apps/api` - future Fastify API package
-- `apps/worker` - future background worker package
+- `apps/api` - Fastify API package
+- `apps/worker` - background worker and research pipeline
 - `packages/config` - typed environment parsing and V1 defaults
-- `packages/db` - InsForge server client helpers
+- `packages/db` - InsForge server client helpers, Drizzle schema, and job services
 - `packages/shared` - shared package placeholder
 - `services` - local LiteLLM, SearXNG, Crawl4AI, and TEI configuration
 - `context` - current project state and agent-facing handoff docs
