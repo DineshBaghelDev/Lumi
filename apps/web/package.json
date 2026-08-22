@@ -6,8 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "test": "node --test src/**/*.test.ts",
-    "lint": "tsc -p tsconfig.json --noEmit --allowImportingTsExtensions",
-    "typecheck": "tsc -p tsconfig.json --noEmit --allowImportingTsExtensions"
+    "lint": "next typegen && tsc -p tsconfig.json --noEmit --allowImportingTsExtensions",
+    "typecheck": "next typegen && tsc -p tsconfig.json --noEmit --allowImportingTsExtensions"
   },
   "dependencies": {
     "@insforge/sdk": "^1.5.2",
