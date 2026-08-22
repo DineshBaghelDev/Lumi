@@ -25,7 +25,7 @@ A source-grounded technical learning product that turns a topic into a polished,
 - Worker: Node.js/TypeScript background worker
 - Database/Auth/Storage/Realtime: InsForge Cloud
 - ORM/migrations: Drizzle
-- LLM routing: LiteLLM
+- LLM routing: LiteLLM, with codex-as-api as the primary development provider and OpenRouter fallback
 - Search: SearXNG
 - Crawl/extraction: Crawl4AI
 - Embeddings: BAAI/bge-small-en-v1.5 via Hugging Face TEI, 384 dimensions

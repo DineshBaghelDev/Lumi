@@ -23,7 +23,7 @@ Implement one bounded V1 slice: **expected concept map generation**.
 
 ## Required tests
 
-- Contract/normalization unit tests; golden Redis structured-output fixture using mocked LLM.
+- Contract/normalization unit tests; golden Redis-topic structured-output fixture using mocked LLM.
 
 ## Out of scope
 

@@ -28,7 +28,7 @@ Implement one bounded V1 slice: **curriculum generation**.
 
 ## Required tests
 
-- Mocked LLM golden Redis curriculum fixture; contract validation.
+- Mocked LLM golden Redis-topic curriculum fixture; contract validation.
 
 ## Out of scope
 

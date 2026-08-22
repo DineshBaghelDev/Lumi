@@ -14,6 +14,7 @@
 - `context/library-docs.md`
 - `context/progress-tracker.md`
 - `context/project-overview.md`
+- `context/setup-handoff.md`
 - `context/ui-registry.md`
 
 ## Deep docs

@@ -185,4 +185,8 @@ V1 uses Pino structured logs to stdout plus `llm_calls` records for model, promp
 
 ## Milestone integration gates
 
-Each implementation milestone must prove the newly connected chain immediately using the fixed Redis fixture. The authoritative gate list is in `AGENTS.md`; comprehensive late regression specs do not replace these earlier checks.
+Each implementation milestone must prove the newly connected chain immediately using the fixed Redis-topic fixture. The authoritative detailed gate list is in `docs/IMPLEMENTATION-PLAN.md`; `AGENTS.md` defines that milestone gates are mandatory. Comprehensive late regression specs do not replace these earlier checks.
+
+## Development LLM routing
+
+LiteLLM remains the application boundary for all generation calls. For the MVP development environment, route primarily to codex-as-api at `http://127.0.0.1:18080` with completion endpoint `/v1/chat/completions` and current model `gpt-5.5`; requests require a system message. OpenRouter is the fallback provider. The owning LiteLLM spec implements this routing.

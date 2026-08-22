@@ -13,7 +13,9 @@ Implement one bounded V1 slice: **litellm client and provider abstraction**.
 ## Requirements
 
 - Create typed LiteLLM HTTP client in `packages/llm`.
-- Support OpenAI as primary while keeping model/provider selection configuration-driven.
+- Support codex-as-api as the primary development provider while keeping model/provider selection configuration-driven.
+- Configure OpenRouter as the fallback provider.
+- codex-as-api runs at `http://127.0.0.1:18080`, uses `/v1/chat/completions`, currently serves model `gpt-5.5`, and requires every request to include a system message.
 - Support structured-output calls, streaming calls, and normal completion calls needed by later specs.
 - Integrate LLM call tracking helper.
 
@@ -31,6 +33,7 @@ Implement one bounded V1 slice: **litellm client and provider abstraction**.
 
 - Prompt content for product features.
 - Complex router/fallback policy beyond LiteLLM config.
+- Redesigning LiteLLM integration beyond this provider configuration.
 
 ## Completion
 

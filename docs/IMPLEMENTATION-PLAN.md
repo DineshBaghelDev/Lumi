@@ -32,9 +32,9 @@ Exit condition: creating a course through the API produces durable rows and a wo
 - research images/assets
 - research handler integration
 
-**Integration gate:** `course → research → persisted sources/concepts/assets → curriculum job` using the Redis fixture, including blocked-source and budget-stop cases.
+**Integration gate:** `course → research → persisted sources/concepts/assets → curriculum job` using the Redis-topic fixture, including blocked-source and budget-stop cases.
 
-Exit condition: fixed Redis fixture produces persisted sources/chunks/concepts/assets/source packs with coverage states and exactly one curriculum job.
+Exit condition: fixed Redis-topic fixture produces persisted sources/chunks/concepts/assets/source packs with coverage states and exactly one curriculum job.
 
 ## Milestone 3 — Course generation
 
@@ -62,7 +62,7 @@ Exit condition: completed research creates a valid visible curriculum and enqueu
 
 **Integration gate:** `lesson skeleton → ready lesson → exactly one question job for its assessment`.
 
-Exit condition: at least one Redis lesson renders end to end from generated structured JSON and its assessment generation has started independently of later lessons.
+Exit condition: at least one Redis-topic lesson renders end to end from generated structured JSON and its assessment generation has started independently of later lessons.
 
 ## Milestone 5 — Projects
 
@@ -73,7 +73,7 @@ Exit condition: at least one Redis lesson renders end to end from generated stru
 
 **Integration gate:** `project skeleton → ready project → populated milestone scenario/hints/outcomes`.
 
-Exit condition: learner can progress through a generated guided Redis project without an in-app IDE.
+Exit condition: learner can progress through a generated guided Redis-topic project without an in-app IDE.
 
 ## Milestone 6 — Assessments
 
@@ -111,4 +111,4 @@ Exit condition: user can resume a course and ask cited course-aware questions.
 
 ## Golden fixture rule
 
-Maintain one deterministic Redis happy-path fixture throughout development. Every milestone gate must run when that milestone is completed. The later comprehensive test specs strengthen regression coverage; they do not replace earlier cross-layer checks.
+Maintain one deterministic Redis-topic happy-path fixture throughout development. This is a course/test topic fixture, not a Redis infrastructure dependency. Every milestone gate must run when that milestone is completed. The later comprehensive test specs strengthen regression coverage; they do not replace earlier cross-layer checks.

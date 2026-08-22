@@ -40,6 +40,8 @@ services/embeddings
 
 `docker compose up` starts SearXNG, Crawl4AI, LiteLLM, and TEI.
 
+For development, LiteLLM should route generation primarily to codex-as-api at `http://127.0.0.1:18080` and fall back to OpenRouter. The owning LiteLLM spec implements this; do not bypass `packages/llm`.
+
 `pnpm dev` via Turborepo starts web, API, and worker outside Docker for fast HMR.
 
 ## Data

@@ -26,7 +26,7 @@ Implement one bounded V1 slice: **lesson source-pack retrieval**.
 
 ## Required tests
 
-- Retrieval integration tests with seeded Redis chunks and cross-course isolation.
+- Retrieval integration tests with seeded Redis-topic chunks and cross-course isolation.
 
 ## Out of scope
 

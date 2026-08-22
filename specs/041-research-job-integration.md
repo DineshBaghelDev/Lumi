@@ -47,7 +47,7 @@ Implement one bounded V1 slice: **research job end-to-end handler**.
 
 ## Required tests
 
-- Worker milestone integration gate using Redis fixtures/mocks: `POST /courses → research job → persisted research outputs → curriculum job`.
+- Worker milestone integration gate using Redis-topic fixtures/mocks: `POST /courses → research job → persisted research outputs → curriculum job`.
 - Forced retry/idempotency test.
 - Budget-stop and malicious-source fixtures.
 

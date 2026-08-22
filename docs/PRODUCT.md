@@ -84,7 +84,7 @@ Excluded:
 
 ## Success criteria for V1
 
-- A user can create a Redis course and begin the first ready lesson before all remaining lessons finish.
+- A user can create a course about Redis and begin the first ready lesson before all remaining lessons finish.
 - Course research identifies prerequisites and important concepts beyond what initial docs happen to contain.
 - Every generated lesson passes schema validation and source-grounding checks.
 - Each ready lesson can receive its assessment without waiting for the rest of the course; assessments cover only taught material.

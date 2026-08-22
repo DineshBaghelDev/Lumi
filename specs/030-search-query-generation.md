@@ -24,7 +24,7 @@ Implement one bounded V1 slice: **research search query generation**.
 
 ## Required tests
 
-- Unit tests for dedupe/bounds and mocked Redis query fixture.
+- Unit tests for dedupe/bounds and mocked Redis-topic query fixture.
 
 ## Out of scope
 

@@ -18,7 +18,8 @@ Current spec: `001-monorepo-skeleton.md`
 - Drizzle
 - LiteLLM
 - SearXNG + Crawl4AI + TEI as local Docker services
-- BGE-small-en-v1.5, 384-dim embeddings using LM studio
+- Hugging Face TEI serving BAAI/bge-small-en-v1.5, 384-dim embeddings; LM Studio embedding references are stale
+- codex-as-api is the primary development LLM provider through LiteLLM; OpenRouter is fallback
 - pgvector HNSW cosine
 - Postgres-backed job queue; no Redis
 - Five job types: research, curriculum, lesson, project, question
@@ -31,6 +32,7 @@ Current spec: `001-monorepo-skeleton.md`
 - Guided projects use the learner's local development environment
 - No pre-course diagnostic in V1
 - Milestone integration gates are mandatory throughout implementation
+- Detailed milestone gate definitions live in `docs/IMPLEMENTATION-PLAN.md`; `AGENTS.md` defines that gates are required
 
 ## Completed specs
 
@@ -43,3 +45,5 @@ None.
 ## Notes / deviations
 
 The original 84-spec plan was patched before implementation with three bounded specs: job state/idempotency, generation budgets/cancellation, and research security. Total: 87 specs.
+
+Phase 2 setup is complete. See `context/setup-handoff.md` before starting Phase 3.

@@ -18,7 +18,7 @@ Implement one bounded V1 slice: **final v1 polish and release checklist**.
 - Review all V1 screens against design system for hierarchy, spacing, light theme, responsive behavior, accessibility, and loading/empty/error states.
 - Run typecheck, lint, unit, API integration, worker pipeline, asset/RAG, and Playwright suites.
 - Remove dead code/placeholders and verify docs/context/progress reflect implementation.
-- Exercise Redis golden fixture from course creation through usable learning experience.
+- Exercise the Redis-topic golden fixture from course creation through usable learning experience.
 
 ## Acceptance criteria
 

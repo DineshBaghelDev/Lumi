@@ -20,6 +20,7 @@
 - Use 2–5 best sources per concept rather than a tiny source set for the whole course.
 - Files/Storage/relational rows remain source of truth; embeddings are a retrieval index.
 - BAAI/bge-small-en-v1.5 via TEI, 384 dimensions, pgvector HNSW cosine.
+- Hugging Face TEI is authoritative for embeddings. Any LM Studio embedding reference is stale.
 - Internet research content is untrusted. SSRF/redirect/resource limits, prompt-injection isolation, sanitization, and safe asset storage are mandatory before arbitrary web content reaches downstream systems.
 
 ## Cost/control
@@ -39,7 +40,7 @@
 - InsForge Cloud for database/auth/storage/realtime.
 - Keep a real backend/worker repo; do not place core orchestration in hosted edge functions.
 - Google OAuth only in V1; email auth deferred to V1.1.
-- LiteLLM owns model routing.
+- LiteLLM owns model routing. In the MVP development environment, codex-as-api is the primary generation provider and OpenRouter is fallback.
 - Postgres polling queue instead of Redis.
 - API writes jobs; worker polls. No direct API→worker call.
 - Realtime generation updates plus 5-second polling fallback.
@@ -66,7 +67,9 @@
 ## Development workflow
 
 - 87 bounded implementation specs are executed in dependency order.
-- Cross-layer Redis integration gates run at every milestone boundary rather than being postponed to final hardening.
+- Cross-layer milestone integration gates run at every milestone boundary rather than being postponed to final hardening. Detailed gate definitions live in `docs/IMPLEMENTATION-PLAN.md`; `AGENTS.md` defines that gates are mandatory.
+- V1 has no Redis queue. Redis wording in fixtures refers to the learning topic unless an approved spec explicitly says otherwise.
+- CodeRabbit is intentionally skipped for this MVP environment; independent reviewer subagents remain mandatory.
 - If implementation reveals an invalid assumption, update decisions/docs/specs before allowing code to diverge.
 
 ## Chat

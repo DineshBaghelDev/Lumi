@@ -19,7 +19,7 @@
 
 Implement all **87 specs** in numeric order unless an explicit dependency permits parallel work. Each spec is one-shot sized and independently verifiable.
 
-At each milestone boundary, run the golden Redis integration gate defined in `AGENTS.md`. Do not wait for the final test specs to discover cross-layer breakage.
+At each milestone boundary, run the detailed integration gate defined in `docs/IMPLEMENTATION-PLAN.md`. `AGENTS.md` defines the requirement to perform gates. Do not wait for the final test specs to discover cross-layer breakage.
 
 ## Current checkpoint
 

@@ -13,6 +13,8 @@ This file is a concise implementation registry. Pin exact versions when dependen
 | Zod | Runtime contracts | https://zod.dev/ |
 | Pino | Structured logging | https://getpino.io/ |
 | LiteLLM | Multi-provider LLM gateway | https://docs.litellm.ai/ |
+| codex-as-api | Primary development LLM provider behind LiteLLM; local health/completion service | local: http://127.0.0.1:18080 |
+| OpenRouter | Fallback LLM provider behind LiteLLM | https://openrouter.ai/docs |
 | SearXNG | Metasearch | https://docs.searxng.org/ |
 | Crawl4AI | Crawling/Markdown extraction | https://docs.crawl4ai.com/ |
 | Hugging Face TEI | Embedding HTTP service | https://huggingface.co/docs/text-embeddings-inference/ |
