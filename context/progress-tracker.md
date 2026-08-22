@@ -5,7 +5,7 @@
 Planning: complete  
 Implementation: in progress
 Current milestone: 1 — Foundation  
-Current spec: `004-insforge-client.md`
+Current spec: `005-google-auth.md`
 
 ## Locked decisions
 
@@ -47,10 +47,15 @@ Current spec: `004-insforge-client.md`
   - Verification: `docker compose config --quiet` passed; all four services reached healthy state and their host endpoints returned HTTP 200; SearXNG returned JSON; TEI returned 384-dimensional embeddings and ignored an incompatible model override; Compose restart reused the same containers; LiteLLM rejected an unauthenticated request with 401 and accepted the same request with the configured bearer credential with 200.
   - Independent review found Crawl4AI host-binding/auth incompatibility, an unprotected LiteLLM credential path, and an overridable TEI model. All were fixed; independent re-review reported no findings.
   - Handoff: local endpoints are LiteLLM `http://127.0.0.1:4000`, SearXNG `http://127.0.0.1:8080`, Crawl4AI `http://127.0.0.1:11235`, and TEI `http://127.0.0.1:8081`. Crawl4AI is pinned to official image `0.7.4` because `0.9.2` requires a new host-binding/auth contract not defined for this stack. LiteLLM provider routing remains deferred to spec 024.
+- `004-insforge-client.md` — complete; commit `3efb219`
+  - Verification: db 2 tests and web 1 test passed; targeted db/web typechecks and builds passed; the exported SDK connectivity probe succeeded with parsed local API config; `pnpm workspace:check` and `git diff --check` passed.
+  - Independent review was clean except for this tracker omission, now resolved.
+  - Handoff: centralized trusted-server factories and connectivity check live in `@lumi/db`; the SSR browser factory lives in `apps/web`. Local anon/public InsForge env values were added only to ignored `.env`. Spec 005 owns auth routes, refresh middleware, and OAuth.
 
 ## In progress
 
-- [ ] `004-insforge-client.md`
+- [x] `004-insforge-client.md`
+- [ ] `005-google-auth.md`
 
 ## Notes / deviations
 
