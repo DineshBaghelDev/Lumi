@@ -4,6 +4,10 @@
     "build": {
       "dependsOn": ["^build"]
     },
+    "@lumi/config#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true

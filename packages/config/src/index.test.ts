@@ -110,6 +110,15 @@ test("cross-field and research list guardrails fail clearly", () => {
     () => parseApiEnv({ ...validServerEnv, RESEARCH_ALLOWED_MIME_TYPES: "text\/html,invalid" }),
     /RESEARCH_ALLOWED_MIME_TYPES/,
   );
+  assert.throws(
+    () =>
+      parseApiEnv({
+        ...validServerEnv,
+        GENERATION_MAX_CRAWLED_SOURCES: "1",
+        RESEARCH_MAX_PAGES_PER_CRAWL: "2",
+      }),
+    /RESEARCH_MAX_PAGES_PER_CRAWL: must not exceed GENERATION_MAX_CRAWLED_SOURCES/,
+  );
 });
 
 test("locked architecture values reject incompatible overrides", () => {

@@ -245,6 +245,13 @@ const commonServerEnvSchema = insforgeServerEnvSchema
         message: "must not exceed GENERATION_MAX_CRAWLED_BYTES",
       });
     }
+    if (env.RESEARCH_MAX_PAGES_PER_CRAWL > env.GENERATION_MAX_CRAWLED_SOURCES) {
+      context.addIssue({
+        code: "custom",
+        path: ["RESEARCH_MAX_PAGES_PER_CRAWL"],
+        message: "must not exceed GENERATION_MAX_CRAWLED_SOURCES",
+      });
+    }
   });
 
 const workerEnvSchema = commonServerEnvSchema
