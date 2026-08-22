@@ -37,4 +37,4 @@ Implement one bounded V1 slice: **litellm client and provider abstraction**.
 
 ## Completion
 
-Update `context/progress-tracker.md` after this spec is complete. Do not start unrelated specs in the same change.
+Update `context/progress-tracker.md` after this spec or milestone slice is complete. Related specs in the same milestone may land in one coherent change per `specs/README.md`.

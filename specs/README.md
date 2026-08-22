@@ -1,6 +1,22 @@
 # Specs Index
 
-Execute in numeric order unless an approved dependency change says otherwise. Each spec is intentionally bounded for one-shot agent implementation.
+Use these specs as implementation detail, not as 87 serial stops.
+
+## Execution model
+
+Implement by milestone from `docs/IMPLEMENTATION-PLAN.md`. Each milestone may
+pull in several numbered specs in one coherent change, as long as the milestone
+gate passes and `context/progress-tracker.md` records what landed.
+
+The numbered specs remain the source for detailed requirements, edge cases, and
+tests. Their per-file "do not start unrelated specs" completion note is
+superseded by this milestone execution model.
+
+## Milestone map
+
+### 1. Foundation
+
+Detailed specs:
 
 - `001-monorepo-skeleton.md` — Monorepo skeleton
 - `002-env-config.md` — Environment and config contract
@@ -25,6 +41,13 @@ Execute in numeric order unless an approved dependency change says otherwise. Ea
 - `021-worker-leases-heartbeats.md` — Worker leases, heartbeat, stale reclamation
 - `022-worker-retries.md` — Worker retry policy
 - `023-worker-concurrency.md` — Worker concurrency controls
+
+Gate: `POST /courses -> enrollment + research job -> worker claim`.
+
+### 2. Research
+
+Detailed specs:
+
 - `024-litellm-client.md` — LiteLLM client and provider abstraction
 - `025-searxng-client.md` — SearXNG client
 - `026-crawl4ai-client.md` — Crawl4AI client
@@ -43,6 +66,13 @@ Execute in numeric order unless an approved dependency change says otherwise. Ea
 - `039-targeted-gap-search.md` — Targeted research gap loop
 - `040-research-assets.md` — Research image asset ingestion
 - `041-research-job-integration.md` — Research job end-to-end handler
+
+Gate: `course -> research -> persisted sources/concepts/assets -> curriculum job`.
+
+### 3. Course Generation
+
+Detailed specs:
+
 - `042-curriculum-schema.md` — Curriculum structured-output contract
 - `043-curriculum-generator.md` — Curriculum generation
 - `044-curriculum-validator.md` — Curriculum completeness/order validator
@@ -50,6 +80,17 @@ Execute in numeric order unless an approved dependency change says otherwise. Ea
 - `046-assessment-skeletons.md` — Create assessment skeletons
 - `047-project-skeletons.md` — Create project and milestone skeletons
 - `048-curriculum-job-integration.md` — Curriculum job integration
+- `067-course-creation-ui.md` — Course creation screen
+- `068-realtime-polling-progress.md` — Realtime generation updates with polling fallback
+- `069-generation-progress-ui.md` — Generation progress and partial availability UI
+- `070-roadmap-ui.md` — Course roadmap UI
+
+Gate: `research outputs -> curriculum skeleton -> lesson/project jobs`.
+
+### 4. Lessons
+
+Detailed specs:
+
 - `049-lesson-content-zod-schema.md` — Versioned lesson content contract
 - `050-lesson-source-retrieval.md` — Lesson source-pack retrieval
 - `051-lesson-generator.md` — Structured lesson generator
@@ -58,23 +99,40 @@ Execute in numeric order unless an approved dependency change says otherwise. Ea
 - `054-lesson-quality-checks.md` — Lesson quality-control gates
 - `055-lesson-regeneration.md` — Full lesson regeneration on QC failure
 - `056-lesson-job-integration.md` — Lesson job end-to-end handler
+- `071-lesson-renderer.md` — Structured lesson renderer
+
+Gate: `lesson skeleton -> ready lesson -> exactly one question job`.
+
+### 5. Projects
+
+Detailed specs:
+
 - `057-project-generation.md` — Guided project content generation
 - `058-project-milestones.md` — Generate full milestone scenarios and outcomes
 - `059-project-hints-guidance.md` — Progressive project hints and help content
 - `060-project-job-integration.md` — Project job integration
+- `073-project-ui.md` — Guided project UI
+
+Gate: `project skeleton -> ready project -> populated milestones`.
+
+### 6. Assessments
+
+Detailed specs:
+
 - `061-question-schema.md` — Question and scoring contracts
 - `062-question-generator.md` — Generate post-lesson question candidates
 - `063-question-validation.md` — Question correctness, ambiguity, duplicate validation
 - `064-objective-question-scoring.md` — Deterministic objective scoring
 - `065-free-response-scoring.md` — Rubric-based free-response scoring
 - `066-question-job-integration.md` — Per-lesson question job and assessment population
-- `067-course-creation-ui.md` — Course creation screen
-- `068-realtime-polling-progress.md` — Realtime generation updates with polling fallback
-- `069-generation-progress-ui.md` — Generation progress and partial availability UI
-- `070-roadmap-ui.md` — Course roadmap UI
-- `071-lesson-renderer.md` — Structured lesson renderer
 - `072-assessment-ui.md` — Assessment serving and UI
-- `073-project-ui.md` — Guided project UI
+
+Gate: `ready lesson -> question job -> populated assessment -> scoring`.
+
+### 7. Learning Experience
+
+Detailed specs:
+
 - `074-progress-state.md` — Progress mutation and resume behavior
 - `075-notes-bookmarks.md` — Lesson notes and bookmarks
 - `076-rag-retrieval.md` — Course-scoped RAG retrieval
@@ -82,6 +140,13 @@ Execute in numeric order unless an approved dependency change says otherwise. Ea
 - `078-rag-chat-streaming.md` — Fastify chat streaming
 - `079-rag-chat-ui.md` — Course and lesson chat UI
 - `080-chat-citations.md` — Citation display and source resolution
+
+Gate: `course data -> resume state + cited course-aware answer`.
+
+### 8. Hardening
+
+Detailed specs:
+
 - `081-api-integration-tests.md` — API integration test suite
 - `082-worker-pipeline-tests.md` — Worker pipeline and job orchestration tests
 - `083-asset-tests.md` — Research and lesson asset tests
@@ -89,3 +154,5 @@ Execute in numeric order unless an approved dependency change says otherwise. Ea
 - `085-playwright-happy-path.md` — Playwright V1 happy path
 - `086-failure-retry-ux.md` — Failure, retry, and cancellation UX
 - `087-final-v1-polish.md` — Final V1 polish and release checklist
+
+Gate: full Playwright happy path plus deliberate failure/retry/cancellation fixture.

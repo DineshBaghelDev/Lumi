@@ -1,8 +1,29 @@
 # Build Plan
 
-## Active spec
+## Active milestone
 
-`specs/001-monorepo-skeleton.md`
+Milestone 1 — Foundation
+
+Current detailed focus: `010-generation-job-state-machine.md`
+
+## Execution rule
+
+Implement by milestone, not by one-file spec stops.
+
+The numbered files in `specs/` are detailed requirement packets. Use them for
+acceptance criteria and tests, but group related packets whenever that produces
+one coherent implementation slice. Do not wait on artificial numeric boundaries
+when a shared schema, API, worker, or UI change is naturally smaller as one
+change.
+
+Every slice must still:
+
+- follow the source-of-truth order in `AGENTS.md`;
+- stay inside the active milestone unless a dependency requires a narrow cross-milestone edit;
+- preserve security, budget, job-state, validation, and idempotency contracts;
+- update `context/progress-tracker.md` with the specs or milestone pieces completed;
+- pass the relevant targeted checks;
+- pass the milestone integration gate before the milestone is considered complete.
 
 ## Milestones
 
@@ -15,12 +36,14 @@
 7. **Learning experience** — progress, skip/resume, notes/bookmarks, RAG chat/citations.
 8. **Hardening** — full integration/pipeline/E2E regression, retry UX, loading/error states, final polish.
 
-## Execution rule
+## Gate rule
 
-Implement all **87 specs** in numeric order unless an explicit dependency permits parallel work. Each spec is one-shot sized and independently verifiable.
-
-At each milestone boundary, run the detailed integration gate defined in `docs/IMPLEMENTATION-PLAN.md`. `AGENTS.md` defines the requirement to perform gates. Do not wait for the final test specs to discover cross-layer breakage.
+At each milestone boundary, run the detailed integration gate defined in
+`docs/IMPLEMENTATION-PLAN.md`. The golden Redis-topic fixture remains the shared
+end-to-end proving path.
 
 ## Current checkpoint
 
-Planning complete. Security, budget, job-state, and per-lesson assessment patches are incorporated. No product code has been implemented yet.
+Planning is complete. Implementation is in progress in Milestone 1. The current
+Foundation focus is job lifecycle/idempotency, then the smallest coherent path
+to the Foundation gate.
