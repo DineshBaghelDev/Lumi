@@ -39,7 +39,7 @@ services:
     image: ghcr.io/berriai/litellm:main-stable@sha256:468c25f35f3e5ec4e414974f00deab93337b1b4d9953cabcfd3722e59415f834
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     environment:
-      LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY:-}"
+      LITELLM_MASTER_KEY: "${LITELLM_API_KEY:?Set LITELLM_API_KEY in .env to a strong local value}"
     ports:
       - "127.0.0.1:4000:4000"
     volumes:
@@ -53,7 +53,7 @@ services:
 
   tei:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8.3@sha256:8de25e75ce39617f17f2f6c77d60a4f75b65e779ed5005420eb1400072a15c1c
-    command: ["--model-id", "${TEI_MODEL_ID:-BAAI/bge-small-en-v1.5}"]
+    command: ["--model-id", "BAAI/bge-small-en-v1.5"]
     ports:
       - "127.0.0.1:8081:80"
     volumes:

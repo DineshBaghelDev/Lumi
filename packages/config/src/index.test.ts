@@ -140,7 +140,6 @@ test("public parsing returns only the explicit public allowlist", () => {
   const publicConfig = parseWebPublicEnv({
     ...validServerEnv,
     OPENROUTER_API_KEY: "openrouter-server-secret",
-    LITELLM_MASTER_KEY: "litellm-server-secret",
     NEXT_PUBLIC_INSFORGE_URL: "https://public.example.insforge.app",
     NEXT_PUBLIC_INSFORGE_ANON_KEY: "browser-anon-key",
     NEXT_PUBLIC_API_BASE_URL: "http://localhost:3001",
@@ -151,7 +150,7 @@ test("public parsing returns only the explicit public allowlist", () => {
   assert.equal(publicConfig.realtime.pollingFallbackMs, 5_000);
   assert.equal(serialized.includes("server-api-key"), false);
   assert.equal(serialized.includes("openrouter-server-secret"), false);
-  assert.equal(serialized.includes("litellm-server-secret"), false);
+  assert.equal(serialized.includes("litellm-api-key"), false);
   assert.equal("apiKey" in publicConfig.insforge, false);
   assert.equal("databaseUrl" in publicConfig.insforge, false);
 });
