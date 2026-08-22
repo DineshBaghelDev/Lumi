@@ -3,9 +3,9 @@
 ## Status
 
 Planning: complete  
-Implementation: not started  
+Implementation: in progress
 Current milestone: 1 — Foundation  
-Current spec: `001-monorepo-skeleton.md`
+Current spec: `002-env-config.md`
 
 ## Locked decisions
 
@@ -36,14 +36,18 @@ Current spec: `001-monorepo-skeleton.md`
 
 ## Completed specs
 
-None.
+- `001-monorepo-skeleton.md` — complete; commit `f3c3aa9`
+  - Verification: `pnpm install --frozen-lockfile`; bounded `pnpm dev` discovery; workspace graph smoke test; `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm build`.
+  - Independent review passed after finding only the tracker omission; this completion record now resolves it.
 
 ## In progress
 
-- [ ] `001-monorepo-skeleton.md`
+- [ ] `002-env-config.md`
 
 ## Notes / deviations
 
 The original 84-spec plan was patched before implementation with three bounded specs: job state/idempotency, generation budgets/cancellation, and research security. Total: 87 specs.
 
 Phase 2 setup is complete. See `context/setup-handoff.md` before starting Phase 3.
+
+001 handoff: The root pnpm/Turborepo skeleton and seven placeholder workspaces exist. App dev discovery is filtered to the three apps. The graph check rejects dependencies on any app package. Service directories are README-only configuration placeholders. No framework or product integrations were pulled forward.
