@@ -3,18 +3,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node ../../scripts/placeholder.mjs",
-    "build": "tsc -p tsconfig.build.json",
+    "dev": "next dev",
+    "build": "next build",
     "test": "node --test src/**/*.test.ts",
     "lint": "tsc -p tsconfig.json --noEmit --allowImportingTsExtensions",
     "typecheck": "tsc -p tsconfig.json --noEmit --allowImportingTsExtensions"
   },
   "dependencies": {
     "@insforge/sdk": "^1.5.2",
-    "@lumi/config": "workspace:*"
+    "@lumi/config": "workspace:*",
+    "next": "16.2.9",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
     "typescript": "^5.9.3"
   }
 }

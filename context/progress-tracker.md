@@ -51,11 +51,15 @@ Current spec: `005-google-auth.md`
   - Verification: db 2 tests and web 1 test passed; targeted db/web typechecks and builds passed; the exported SDK connectivity probe succeeded with parsed local API config; `pnpm workspace:check` and `git diff --check` passed.
   - Independent review was clean except for this tracker omission, now resolved.
   - Handoff: centralized trusted-server factories and connectivity check live in `@lumi/db`; the SSR browser factory lives in `apps/web`. Local anon/public InsForge env values were added only to ignored `.env`. Spec 005 owns auth routes, refresh middleware, and OAuth.
+- `005-google-auth.md` — complete; commit `e4f5aa7`
+  - Verification: InsForge metadata confirms Google OAuth is enabled and `http://localhost:3000/auth/callback` is allowed; `pnpm --filter @lumi/web test`; `pnpm --filter @lumi/web typecheck`; `pnpm --filter @lumi/web build`; `pnpm workspace:check`; `pnpm lint`; `pnpm test`; `pnpm typecheck`; `pnpm build`; scoped `git diff --check -- . ':(exclude)AGENTS.md'`.
+  - Independent review found a wrong callback route and insufficient smoke coverage; callback handling was moved to `/auth/callback` and a session-route smoke was added. The unrelated pre-existing `AGENTS.md` working-tree drift still makes unscoped `git diff --check` fail and was intentionally left untouched.
+  - Handoff: web is now a minimal Next app. Google OAuth starts at `/api/auth/start`, returns to `/auth/callback`, refreshes through `/api/auth/refresh`, restores sessions via `proxy.ts`, gates `/courses` at the UI level, and signs out through an InsForge SSR server action. No email/password UI was added. API authorization and application-profile syncing remain for later API/schema specs.
 
 ## In progress
 
 - [x] `004-insforge-client.md`
-- [ ] `005-google-auth.md`
+- [x] `005-google-auth.md`
 
 ## Notes / deviations
 
