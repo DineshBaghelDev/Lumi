@@ -12,6 +12,7 @@
   "dependencies": {
     "@insforge/sdk": "^1.5.2",
     "@lumi/config": "workspace:*",
+    "@next/env": "16.2.9",
     "next": "16.2.9",
     "react": "19.2.3",
     "react-dom": "19.2.3"

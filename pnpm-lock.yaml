@@ -22,6 +22,9 @@ importers:
       '@lumi/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@next/env':
+        specifier: 16.2.9
+        version: 16.2.9
       next:
         specifier: 16.2.9
         version: 16.2.9(react-dom@19.2.3(react@19.2.3))(react@19.2.3)

@@ -1,8 +1,22 @@
 import { createAuthActions, createServerClient } from "@insforge/sdk/ssr";
+import { loadEnvConfig } from "@next/env";
 import { parseWebPublicEnv } from "@lumi/config";
 import { cookies } from "next/headers";
+import { resolve } from "node:path";
 
-export const getWebConfig = () => parseWebPublicEnv(process.env);
+let loadedWorkspaceEnv = false;
+
+const loadWorkspaceEnv = () => {
+  if (!loadedWorkspaceEnv) {
+    loadEnvConfig(resolve(process.cwd(), "../.."));
+    loadedWorkspaceEnv = true;
+  }
+};
+
+export const getWebConfig = () => {
+  loadWorkspaceEnv();
+  return parseWebPublicEnv(process.env);
+};
 
 export const createLumiServerClient = async () => {
   const config = getWebConfig();
