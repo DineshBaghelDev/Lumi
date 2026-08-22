@@ -5,7 +5,7 @@
 Planning: complete  
 Implementation: in progress
 Current milestone: 1 — Foundation  
-Current spec: `005-google-auth.md`
+Current spec: `013-fastify-foundation.md`
 
 ## Locked decisions
 
@@ -55,11 +55,19 @@ Current spec: `005-google-auth.md`
   - Verification: InsForge metadata confirms Google OAuth is enabled and `http://localhost:3000/auth/callback` is allowed; `pnpm --filter @lumi/web test`; `pnpm --filter @lumi/web typecheck`; `pnpm --filter @lumi/web build`; `pnpm workspace:check`; `pnpm lint`; `pnpm test`; `pnpm typecheck`; `pnpm build`; scoped `git diff --check -- . ':(exclude)AGENTS.md'`.
   - Independent review found a wrong callback route and insufficient smoke coverage; callback handling was moved to `/auth/callback` and a session-route smoke was added. The unrelated pre-existing `AGENTS.md` working-tree drift still makes unscoped `git diff --check` fail and was intentionally left untouched.
   - Handoff: web is now a minimal Next app. Google OAuth starts at `/api/auth/start`, returns to `/auth/callback`, refreshes through `/api/auth/refresh`, restores sessions via `proxy.ts`, gates `/courses` at the UI level, and signs out through an InsForge SSR server action. No email/password UI was added. API authorization and application-profile syncing remain for later API/schema specs.
+- `006-drizzle-foundation.md` through `009-generation-jobs-schema.md` — complete
+  - Verification: `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:generate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:migrate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db build`.
+  - Handoff: `@lumi/db` owns Drizzle config, public schema/client exports, the initial migration, pgvector enablement, HNSW cosine index on 384-dim source chunk embeddings, core course/concept/source schema, curriculum/lesson/assessment/project schema, and explicit generation job target columns/indexes. Job lifecycle/idempotency behavior remains for spec 010.
+- `010-generation-job-state-machine.md` — complete
+  - Verification: `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:generate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:migrate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db build`.
+  - Handoff: `@lumi/db` now exports conflict-safe generation-job enqueue helpers and the shared lifecycle service for claim, success, retryable/permanent failure, cancellation, and manual retry. Migration `0001_naive_madrox.sql` adds DB-backed logical uniqueness and target/type checks for all five V1 job types.
+- `011-chat-progress-schema.md` and `012-llm-calls-tracking.md` — complete
+  - Verification: `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:generate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:migrate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/llm typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/llm test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/llm build`; `pnpm --config.verify-deps-before-run=false workspace:check`.
+  - Handoff: progress, notes/bookmarks, chat, and `llm_calls` schema live in `@lumi/db`. `@lumi/llm` now exports `recordLlmCall`, a small SQL-hiding logging helper that fails loudly if observability persistence fails.
 
 ## In progress
 
-- [x] `004-insforge-client.md`
-- [x] `005-google-auth.md`
+- [ ] `013-fastify-foundation.md`
 
 ## Notes / deviations
 
