@@ -18,3 +18,7 @@
 .roo
 .trae
 .windsurf
+
+# Generated workspace artifacts
+node_modules/
+.turbo/

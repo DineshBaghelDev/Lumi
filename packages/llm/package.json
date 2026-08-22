@@ -1,0 +1,10 @@
+{
+  "name": "@lumi/llm",
+  "private": true,
+  "scripts": {
+    "build": "node ../../scripts/placeholder.mjs",
+    "test": "node ../../scripts/placeholder.mjs",
+    "lint": "node ../../scripts/placeholder.mjs",
+    "typecheck": "node ../../scripts/placeholder.mjs"
+  }
+}
