@@ -5,7 +5,7 @@
 Planning: complete  
 Implementation: in progress
 Current milestone: 1 — Foundation  
-Current spec: `002-env-config.md`
+Current spec: `003-docker-services.md`
 
 ## Locked decisions
 
@@ -39,10 +39,14 @@ Current spec: `002-env-config.md`
 - `001-monorepo-skeleton.md` — complete; commit `f3c3aa9`
   - Verification: `pnpm install --frozen-lockfile`; bounded `pnpm dev` discovery; workspace graph smoke test; `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm build`.
   - Independent review passed after finding only the tracker omission; this completion record now resolves it.
+- `002-env-config.md` — complete; implementation commits `deb61c4` and `1dcae69` (final relevant fix commit: `1dcae69`)
+  - Verification: config tests passed 7/7; config typecheck and build passed; `pnpm workspace:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` passed; forced root build/test/typecheck/lint runs passed; compiled `dist/index.js` runtime import and actionable-error smoke passed; Turbo dry-run reported `@lumi/config#build` output `dist/**`; `git diff --check` passed.
+  - Independent review found two medium issues: Turbo did not declare the config build output for cache restoration, and research pages per crawl could exceed the crawled-source budget. Both were fixed; independent re-review reported no findings.
+  - Handoff: `@lumi/config` exports `parseApiEnv`, `parseWorkerEnv`, `parseWebPublicEnv`, `parseSharedServicesEnv`, `V1_CONFIG_DEFAULTS`, and `V1_CONFIG_LIMITS`. The public parser allows only `NEXT_PUBLIC_INSFORGE_URL`, `NEXT_PUBLIC_INSFORGE_ANON_KEY`, and `NEXT_PUBLIC_API_BASE_URL`. TEI is fixed to `BAAI/bge-small-en-v1.5` with 384 dimensions, and lesson-job concurrency per course is capped at 3. Canonical service env names are `LITELLM_BASE_URL`, `LITELLM_API_KEY`, `LITELLM_MODEL`, `LITELLM_MASTER_KEY`, `CODEX_API_BASE_URL`, `CODEX_API_MODEL`, `OPENROUTER_API_KEY`, `SEARXNG_BASE_URL`, `CRAWL4AI_BASE_URL`, `TEI_BASE_URL`, `TEI_MODEL_ID`, and `TEI_EMBEDDING_DIMENSION`. Spec 003 owns Docker configuration and must consume these names.
 
 ## In progress
 
-- [ ] `002-env-config.md`
+- [ ] `003-docker-services.md`
 
 ## Notes / deviations
 
