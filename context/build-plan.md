@@ -2,9 +2,9 @@
 
 ## Active milestone
 
-Milestone 1 — Foundation
+Milestone 2 — Research
 
-Current detailed focus: `010-generation-job-state-machine.md`
+Current detailed focus: `024-litellm-client.md`
 
 ## Execution rule
 
@@ -44,6 +44,5 @@ end-to-end proving path.
 
 ## Current checkpoint
 
-Planning is complete. Implementation is in progress in Milestone 1. The current
-Foundation focus is job lifecycle/idempotency, then the smallest coherent path
-to the Foundation gate.
+Planning and Milestone 1 are complete. Implementation is in progress in
+Milestone 2. The current Research focus starts with the LiteLLM client.

@@ -157,6 +157,93 @@ export const claimQueuedGenerationJob = async (db: Db, id: string, lockedBy: str
     `),
   );
 
+export const claimNextGenerationJob = async (
+  db: Db,
+  {
+    lockedBy,
+    staleLockSeconds,
+    maxLessonJobsPerCourse,
+  }: { lockedBy: string; staleLockSeconds: number; maxLessonJobsPerCourse: number },
+) => {
+  const result = await db.execute<GenerationJobRow>(sql`
+    with candidate as (
+      select job.id
+      from generation_jobs job
+      left join course_generation_usage usage on usage.course_id = job.course_id
+      where job.status = 'queued'
+        and job.available_at <= now()
+        and usage.cancel_requested_at is null
+        and usage.budget_exhausted_at is null
+        and (
+          job.type <> 'lesson'
+          or (
+            select count(*)
+            from generation_jobs running_lesson
+            where running_lesson.course_id = job.course_id
+              and running_lesson.type = 'lesson'
+              and running_lesson.status = 'running'
+          ) < ${maxLessonJobsPerCourse}
+        )
+      order by
+        case job.type
+          when 'research' then 1
+          when 'curriculum' then 2
+          when 'project' then 3
+          when 'question' then 4
+          else 5
+        end,
+        job.created_at
+      for update of job skip locked
+      limit 1
+    )
+    update generation_jobs
+    set status = 'running',
+        attempts = attempts + 1,
+        locked_at = now(),
+        locked_by = ${lockedBy},
+        updated_at = now()
+    from candidate
+    where generation_jobs.id = candidate.id
+    returning generation_jobs.*
+  `);
+  return result.rows[0] ?? null;
+};
+
+export const reclaimStaleGenerationJob = async (
+  db: Db,
+  { lockedBy, staleLockSeconds }: { lockedBy: string; staleLockSeconds: number },
+) => {
+  const result = await db.execute<GenerationJobRow>(sql`
+    with candidate as (
+      select id
+      from generation_jobs
+      where status = 'running'
+        and locked_at < now() - (${staleLockSeconds} * interval '1 second')
+      order by locked_at
+      for update skip locked
+      limit 1
+    )
+    update generation_jobs
+    set locked_at = now(),
+        locked_by = ${lockedBy},
+        updated_at = now()
+    from candidate
+    where generation_jobs.id = candidate.id
+    returning generation_jobs.*
+  `);
+  return result.rows[0] ?? null;
+};
+
+export const heartbeatGenerationJob = async (db: Db, id: string, lockedBy: string) => {
+  const result = await db.execute<GenerationJobRow>(sql`
+    update generation_jobs
+    set locked_at = now(), updated_at = now()
+    where id = ${id} and locked_by = ${lockedBy} and status = 'running'
+    returning *
+  `);
+  return result.rows[0] ?? null;
+};
+
 export const succeedGenerationJob = async (db: Db, id: string) =>
   one(
     await db.execute<GenerationJobRow>(sql`

@@ -4,8 +4,8 @@
 
 Planning: complete  
 Implementation: in progress
-Current milestone: 1 — Foundation  
-Current spec: `013-fastify-foundation.md`
+Current milestone: 2 — Research
+Current spec: `024-litellm-client.md`
 
 ## Locked decisions
 
@@ -65,9 +65,14 @@ Current spec: `013-fastify-foundation.md`
   - Verification: `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:generate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:migrate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/llm typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/llm test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/llm build`; `pnpm --config.verify-deps-before-run=false workspace:check`.
   - Handoff: progress, notes/bookmarks, chat, and `llm_calls` schema live in `@lumi/db`. `@lumi/llm` now exports `recordLlmCall`, a small SQL-hiding logging helper that fails loudly if observability persistence fails.
 
+- `013-fastify-foundation.md` through `023-worker-concurrency.md` — complete
+  - Verification: `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:generate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db db:migrate`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker build`.
+  - Gate: DB-backed `milestone 1 gate` passes: `POST /courses` creates durable course, usage snapshot, owner enrollment, and queued research job; worker claim SQL locks that exact research job.
+  - Handoff: `apps/api` is a Fastify app with health, auth, course create/read/cancel/read-content stubs, safe error envelopes, and graceful close. `apps/worker` can claim queued/stale jobs, heartbeat, classify retryable errors, and enforce global/lesson-per-course claim limits. Research execution remains intentionally unimplemented for Milestone 2.
+
 ## In progress
 
-- [ ] `013-fastify-foundation.md`
+- [ ] `024-litellm-client.md`
 
 ## Notes / deviations
 

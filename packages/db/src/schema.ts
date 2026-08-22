@@ -135,6 +135,36 @@ export const enrollments = pgTable(
   ],
 );
 
+export const courseGenerationUsage = pgTable("course_generation_usage", {
+  courseId: uuid("course_id").primaryKey().references(() => courses.id, { onDelete: "cascade" }),
+  limits: jsonb("limits").notNull(),
+  llmCallsCount: integer("llm_calls_count").notNull().default(0),
+  llmCostUsd: numeric("llm_cost_usd", { precision: 12, scale: 6 }).notNull().default("0"),
+  researchIterationsCount: integer("research_iterations_count").notNull().default(0),
+  searchQueriesCount: integer("search_queries_count").notNull().default(0),
+  sourcesCrawledCount: integer("sources_crawled_count").notNull().default(0),
+  crawlBytes: integer("crawl_bytes").notNull().default(0),
+  conceptsCount: integer("concepts_count").notNull().default(0),
+  lessonsCount: integer("lessons_count").notNull().default(0),
+  cancelRequestedAt: timestamp("cancel_requested_at", { withTimezone: true }),
+  budgetExhaustedAt: timestamp("budget_exhausted_at", { withTimezone: true }),
+  budgetExhaustedReason: text("budget_exhausted_reason"),
+  updatedAt: updatedAt(),
+});
+
+export const courseCreationRequests = pgTable(
+  "course_creation_requests",
+  {
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    idempotencyKey: text("idempotency_key").notNull(),
+    courseId: uuid("course_id").notNull().references(() => courses.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.idempotencyKey] }),
+  ],
+);
+
 export const concepts = pgTable("concepts", {
   id: id(),
   name: text("name").notNull(),
