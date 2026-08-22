@@ -1,49 +1,36 @@
-# Learning Engine
+# Lumi
 
-A source-grounded technical learning product that turns a topic into a polished, full-depth course with lessons, assessments, guided projects, progress tracking, and course-aware RAG chat.
+Lumi is a source-grounded technical learning app. A learner gives it a topic and goal; Lumi researches trusted sources, builds a fixed curriculum, generates lessons, assessments, and guided projects in the background, then keeps progress, notes, bookmarks, and course-aware chat tied to that course.
 
-## Core experience
+Current state: foundation work is in progress. The web app exists, Google OAuth is wired, shared config is typed, and the local research service stack is defined. The API and worker packages are still placeholders until their specs are implemented.
 
-1. User enters a topic and learning goal.
-2. Bounded background research builds an expected concept map, finds trusted sources, securely crawls/indexes them, detects coverage gaps, and creates concept-specific source packs.
-3. A fixed curriculum is generated from the research corpus.
-4. Lesson and project jobs generate content in the background; ready lessons become usable immediately.
-5. Each successful lesson immediately starts generation of its own post-lesson assessment.
-6. Guided projects teach implementation through progressive scenarios and hints, while users write code in their own local environment.
-7. Progress, notes, bookmarks, weak-topic flags, and RAG chat persist across sessions.
+## Stack
 
-## V1 safety/control
+- Next.js, React, TypeScript, Tailwind CSS, shadcn/ui
+- Fastify API and Node/TypeScript worker
+- InsForge Cloud for auth, Postgres, storage, and realtime
+- Drizzle for schema and migrations
+- LiteLLM for model routing
+- SearXNG, Crawl4AI, and Hugging Face TEI for research and embeddings
+- pnpm workspaces and Turborepo
 
-- Crawled internet content is untrusted: SSRF/redirect/resource guards, prompt-injection isolation, sanitization, and safe asset storage are required.
-- Every course has hard configurable generation budgets and explicit cancellation.
-- Job lifecycle/idempotency is enforced by canonical states and database uniqueness constraints.
+## Prerequisites
 
-## V1 stack
+- Node.js
+- pnpm 11.22.0
+- Docker Desktop
+- InsForge project credentials
 
-- Web: Next.js, TypeScript, Tailwind CSS, shadcn/ui
-- API: Fastify
-- Worker: Node.js/TypeScript background worker
-- Database/Auth/Storage/Realtime: InsForge Cloud
-- ORM/migrations: Drizzle
-- LLM routing: LiteLLM, with codex-as-api as the primary development provider and OpenRouter fallback
-- Search: SearXNG
-- Crawl/extraction: Crawl4AI
-- Embeddings: BAAI/bge-small-en-v1.5 via Hugging Face TEI, 384 dimensions
-- Vector search: pgvector HNSW cosine index
-- Monorepo: pnpm + Turborepo
+## Setup
 
-## Repo documentation
+```sh
+pnpm install
+cp .env.example .env
+```
 
-- `AGENTS.md` — execution contract for coding agents
-- `context/` — short, current, agent-facing operational context
-- `docs/` — detailed durable product and system specifications
-- `specs/` — 87 small implementation-ready specs, one bounded change each
+Fill in `.env` with the InsForge and LiteLLM values. Keep real credentials out of `.env.example`.
 
-Start with `context/project-overview.md`, then `context/build-plan.md`, then execute the active spec.
-
-## Local services
-
-Start the config-only dependency stack without building the application apps:
+## Start Local Services
 
 ```sh
 docker compose config --quiet
@@ -51,11 +38,48 @@ docker compose up -d
 docker compose ps
 ```
 
-Local endpoints:
+Service endpoints:
 
 - LiteLLM: `http://127.0.0.1:4000/health/liveliness`
 - SearXNG: `http://127.0.0.1:8080/search?q=lumi&format=json`
 - Crawl4AI: `http://127.0.0.1:11235/health`
 - TEI: `http://127.0.0.1:8081/health`
 
-Use `docker compose restart` to restart the same service containers and `docker compose stop` to stop them. TEI model data and the SearXNG cache live in named volumes, so normal stops and restarts do not download them again. Do not use `docker compose down -v` unless you intend to delete those caches.
+Use `docker compose stop` to stop services. Avoid `docker compose down -v` unless you want to delete the SearXNG and TEI caches.
+
+## Start The App
+
+```sh
+pnpm dev
+```
+
+The web app runs through Next.js at `http://localhost:3000`. The API and worker currently run placeholder scripts until their foundation specs land.
+
+## Checks
+
+```sh
+pnpm workspace:check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+Run the smallest relevant check while developing, then run the broader checks before handing off a completed spec.
+
+## Repo Map
+
+- `apps/web` - Next.js app and auth routes
+- `apps/api` - future Fastify API package
+- `apps/worker` - future background worker package
+- `packages/config` - typed environment parsing and V1 defaults
+- `packages/db` - InsForge server client helpers
+- `packages/shared` - shared package placeholder
+- `services` - local LiteLLM, SearXNG, Crawl4AI, and TEI configuration
+- `context` - current project state and agent-facing handoff docs
+- `docs` - durable product and architecture docs
+- `specs` - numbered implementation specs
+
+## Development Rules
+
+Use `context/progress-tracker.md` to see the current spec and completed work. Implement specs in numeric order unless an approved dependency change says otherwise. Product source of truth is `specs/`, then `docs/`, then `context/`, then existing code.
