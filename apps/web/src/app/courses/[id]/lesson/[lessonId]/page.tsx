@@ -7,12 +7,14 @@ export default function LessonPage() {
         <a className="back-link" href="/courses/1/lessons">Back to lessons</a>
       </div>
       <section className="lesson-page">
-        <aside className="lesson-nav">
-          <h3>On this lesson</h3>
-          {["Introduction", "Why Evaluation Matters", "Common Metrics", "Confusion Matrix", "Other Metrics", "Important Notes", "Summary"].map((item, index) => (
-            <a className={index === 2 ? "active" : ""} href="#metrics" key={item}>{item}</a>
-          ))}
-        </aside>
+        <details className="lesson-nav lesson-outline">
+          <summary>On this lesson</summary>
+          <div className="outline-links">
+            {["Introduction", "Why Evaluation Matters", "Common Metrics", "Confusion Matrix", "Other Metrics", "Important Notes", "Summary"].map((item, index) => (
+              <a className={index === 2 ? "active" : ""} href="#metrics" key={item}>{item}</a>
+            ))}
+          </div>
+        </details>
         <article className="lesson-content">
           <h1>Common Evaluation Metrics</h1>
           <p>Different metrics help us evaluate different aspects of a model.</p>
@@ -49,20 +51,20 @@ export default function LessonPage() {
             </div>
           </section>
           <div className="topline section-gap">
-            <button className="button ghost-button" type="button">Previous</button>
+            <button className="button ghost-button" type="button" disabled>Previous</button>
             <a className="button" href="/courses/1/assessment/1">Next: Confusion Matrix</a>
           </div>
         </article>
-        <aside>
-          <section className="side-card">
-            <h3>Notes</h3>
+        <aside className="lesson-tools">
+          <details className="side-card lesson-tool">
+            <summary>Notes</summary>
             <p>Notes will be available after the reading tools are connected.</p>
-          </section>
-          <section className="side-card section-gap">
-            <h3>Key Takeaway</h3>
+          </details>
+          <details className="side-card lesson-tool section-gap">
+            <summary>Key Takeaway</summary>
             <p>Choose the right metric based on the problem you're trying to solve.</p>
             <img className="support-mascot" src="/mascot-waving.png" alt="" />
-          </section>
+          </details>
         </aside>
       </section>
     </AppShell>

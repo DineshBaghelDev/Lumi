@@ -12,20 +12,20 @@
   --space-20: 80px;
   --display-size: 40px;
   --display-line: 48px;
-  --title-size: 32px;
-  --title-line: 40px;
-  --h1-size: 28px;
-  --h1-line: 36px;
-  --h2-size: 24px;
-  --h2-line: 32px;
-  --h3-size: 20px;
-  --h3-line: 28px;
-  --h4-size: 18px;
-  --h4-line: 26px;
+  --title-size: 26px;
+  --title-line: 34px;
+  --h1-size: 24px;
+  --h1-line: 32px;
+  --h2-size: 20px;
+  --h2-line: 28px;
+  --h3-size: 17px;
+  --h3-line: 24px;
+  --h4-size: 16px;
+  --h4-line: 24px;
   --body-large-size: 16px;
   --body-large-line: 26px;
   --body-size: 14px;
-  --body-line: 22px;
+  --body-line: 21px;
   --small-size: 13px;
   --small-line: 20px;
   --caption-size: 12px;
@@ -129,6 +129,30 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+details > summary::after {
+  content: "+";
+  float: right;
+  color: var(--muted);
+}
+
+details[open] > summary::after {
+  content: "-";
+}
+
 h1,
 h2,
 h3,
@@ -194,9 +218,9 @@ p {
 
 .back-link {
   display: inline-flex;
-  min-height: 32px;
+  min-height: 28px;
   align-items: center;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
   color: var(--slate-700);
   font-size: var(--small-size);
   font-weight: 500;
@@ -204,7 +228,7 @@ p {
 }
 
 .page-title {
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-5);
 }
 
 .page-title h1,
@@ -222,11 +246,11 @@ p {
 }
 
 .section-gap {
-  margin-top: var(--space-6);
+  margin-top: var(--space-5);
 }
 
 .section-gap-lg {
-  margin-top: var(--space-8);
+  margin-top: var(--space-6);
 }
 
 .center-note {
@@ -241,9 +265,9 @@ p {
 .progress-value {
   display: block;
   color: var(--indigo);
-  font-size: var(--title-size);
+  font-size: var(--h1-size);
   font-weight: 700;
-  line-height: var(--title-line);
+  line-height: var(--h1-line);
 }
 
 .brand {
@@ -277,24 +301,27 @@ p {
 }
 
 .app {
+  width: 100%;
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 232px 1fr;
+  grid-template-columns: 212px 1fr;
   min-width: 0;
+  overflow-x: hidden;
   background: var(--surface);
 }
 
 .sidebar {
+  min-width: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: var(--space-8) 20px var(--space-6);
+  padding: var(--space-6) var(--space-4);
   border-right: 1px solid var(--line);
   background: var(--surface-raised);
 }
 
 .sidebar .brand {
-  margin-bottom: var(--space-10);
+  margin-bottom: var(--space-6);
   font-size: var(--h1-size);
   line-height: var(--h1-line);
 }
@@ -308,13 +335,14 @@ p {
 }
 
 .nav {
+  min-width: 0;
   flex-direction: column;
   gap: var(--space-2);
 }
 
 .nav a {
   display: flex;
-  min-height: 44px;
+  min-height: 40px;
   align-items: center;
   gap: var(--space-3);
   border-radius: var(--radius-sm);
@@ -344,13 +372,13 @@ p {
 
 .side-mascot {
   display: block;
-  width: 150px;
-  margin: 0 auto var(--space-8);
+  width: 112px;
+  margin: 0 auto var(--space-4);
 }
 
 .main {
   min-width: 0;
-  padding: var(--space-8);
+  padding: var(--space-6);
   overflow-x: hidden;
 }
 
@@ -358,19 +386,19 @@ p {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-6);
-  margin-bottom: var(--space-10);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .button,
 .auth-button {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
   border: 0;
   border-radius: var(--radius-md);
-  padding: 0 20px;
+  padding: 0 var(--space-4);
   color: var(--surface-raised);
   font-size: var(--body-size);
   font-weight: 600;
@@ -431,7 +459,7 @@ p {
 .chip,
 .status {
   display: inline-flex;
-  min-height: 34px;
+  min-height: 30px;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--line);
@@ -509,8 +537,8 @@ p {
 
 .notice {
   max-width: 790px;
-  margin-bottom: var(--space-6);
-  padding: var(--space-5) var(--space-6);
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
@@ -528,7 +556,7 @@ p {
 
 .disabled-pill {
   display: inline-flex;
-  min-height: 34px;
+  min-height: 30px;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--line);
@@ -568,7 +596,7 @@ p {
 .side-card,
 .form-box {
   max-width: 1120px;
-  padding: var(--space-6);
+  padding: var(--space-4);
 }
 
 .course-list,
@@ -576,7 +604,7 @@ p {
 .lesson-list {
   display: grid;
   max-width: 1180px;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .focus-panel,
@@ -584,8 +612,8 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-6);
-  margin-bottom: var(--space-6);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .focus-panel .button,
@@ -598,25 +626,26 @@ p {
 .lesson-row {
   display: grid;
   align-items: center;
-  gap: var(--space-6);
-  padding: var(--space-6);
+  gap: var(--space-4);
+  padding: var(--space-4);
   transition:
     background-color 150ms ease-out,
     border-color 150ms ease-out;
 }
 
 .course-row {
-  grid-template-columns: 72px minmax(0, 1fr) 230px 132px;
-  min-height: 126px;
+  grid-template-columns: 56px minmax(0, 1fr) 200px 120px;
+  min-height: 88px;
 }
 
 .project-row {
-  grid-template-columns: 56px minmax(0, 1fr) 150px 140px;
-  min-height: 132px;
+  grid-template-columns: 44px minmax(0, 1fr) 140px 150px;
+  min-height: 88px;
 }
 
 .lesson-row {
-  grid-template-columns: 54px minmax(0, 1fr) 110px 120px;
+  grid-template-columns: 40px minmax(0, 1fr) 88px 108px;
+  min-height: 66px;
 }
 
 .course-row:hover,
@@ -642,7 +671,7 @@ p {
 .course-row p,
 .project-row p,
 .lesson-row p {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-1);
 }
 
 .meta-row {
@@ -655,8 +684,8 @@ p {
 
 .iconbox {
   display: inline-grid;
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   flex: 0 0 auto;
   place-items: center;
   border-radius: var(--radius-sm);
@@ -665,8 +694,8 @@ p {
 }
 
 .iconbox .icon {
-  width: 28px;
-  height: 28px;
+  width: 23px;
+  height: 23px;
   stroke-width: 1.75;
 }
 
@@ -681,8 +710,8 @@ p {
 }
 
 .tabs {
-  gap: var(--space-8);
-  margin: var(--space-8) 0 var(--space-6);
+  gap: var(--space-6);
+  margin: var(--space-5) 0 var(--space-4);
   border-bottom: 1px solid var(--line);
 }
 
@@ -702,27 +731,34 @@ p {
 .hero-card {
   display: grid;
   max-width: 1180px;
-  grid-template-columns: 1fr 420px;
-  gap: var(--space-12);
-  padding: var(--space-8);
+  grid-template-columns: 1fr 320px;
+  gap: var(--space-6);
+  padding: var(--space-5);
   box-shadow: var(--shadow);
 }
 
 .hero-card .left {
   display: grid;
-  grid-template-columns: 112px 1fr;
-  gap: var(--space-8);
+  grid-template-columns: 56px 1fr;
+  gap: var(--space-4);
   align-items: center;
 }
 
+.hero-card .left p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .hero-card .right {
-  padding-left: var(--space-10);
+  padding-left: var(--space-6);
   border-left: 1px solid var(--line);
 }
 
 .resume-card {
-  grid-template-columns: 112px 1fr;
-  margin-top: var(--space-6);
+  grid-template-columns: 56px 1fr;
+  margin-top: var(--space-4);
 }
 
 .resume-card .button {
@@ -730,20 +766,20 @@ p {
 }
 
 .roadmap-row {
-  grid-template-columns: 80px minmax(0, 1fr) 220px 140px;
+  grid-template-columns: 56px minmax(0, 1fr) 180px 120px;
 }
 
 .path-row {
   display: grid;
-  grid-template-columns: 54px 1fr;
-  gap: var(--space-6);
+  grid-template-columns: 36px 1fr;
+  gap: var(--space-3);
   align-items: center;
 }
 
 .path-number {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 32px;
+  height: 32px;
   place-items: center;
   border-radius: 50%;
   color: var(--indigo);
@@ -756,12 +792,12 @@ p {
 .choice-grid,
 .metric-row {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .stat-grid {
   grid-template-columns: repeat(4, 1fr);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
 }
 
 .card-grid,
@@ -775,16 +811,16 @@ p {
 
 .tile,
 .course-card {
-  padding: var(--space-6);
+  padding: var(--space-4);
 }
 
 .tile strong {
   display: block;
-  margin: var(--space-2) 0;
+  margin: var(--space-1) 0;
   color: var(--ink);
-  font-size: var(--h1-size);
+  font-size: var(--h2-size);
   font-weight: 700;
-  line-height: var(--h1-line);
+  line-height: var(--h2-line);
 }
 
 .dashboard-grid,
@@ -792,11 +828,15 @@ p {
 .lesson-page,
 .assessment-grid {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-4);
 }
 
 .dashboard-grid {
   grid-template-columns: 1fr 0.92fr;
+}
+
+.compact-grid {
+  grid-template-columns: 1fr;
 }
 
 .progress-grid {
@@ -804,7 +844,7 @@ p {
 }
 
 .metric-panel {
-  min-height: 132px;
+  min-height: 96px;
 }
 
 .topline.compact {
@@ -819,7 +859,7 @@ p {
 }
 
 .lesson-page {
-  grid-template-columns: 220px minmax(420px, 1fr) 300px;
+  grid-template-columns: 190px minmax(420px, 1fr) 260px;
 }
 
 .assessment-grid {
@@ -828,7 +868,7 @@ p {
 
 .activity {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-4);
 }
 
 .activity-item {
@@ -870,7 +910,7 @@ p {
 
 .form-box label {
   display: block;
-  margin: var(--space-6) 0 var(--space-3);
+  margin: var(--space-4) 0 var(--space-2);
   color: var(--ink);
   font-size: var(--body-size);
   font-weight: 600;
@@ -878,12 +918,12 @@ p {
 }
 
 .textarea {
-  min-height: 112px;
+  min-height: 88px;
   padding: var(--space-4);
 }
 
 .select {
-  min-height: 48px;
+  min-height: 42px;
   padding: 0 var(--space-4);
   color: var(--slate-600);
 }
@@ -891,7 +931,7 @@ p {
 .choice {
   position: relative;
   display: flex;
-  min-height: 96px;
+  min-height: 76px;
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-4);
@@ -910,8 +950,8 @@ p {
 
 .wide-button {
   width: 100%;
-  min-height: 48px;
-  margin-top: var(--space-8);
+  min-height: 42px;
+  margin-top: var(--space-5);
 }
 
 .module-box {
@@ -919,12 +959,17 @@ p {
 }
 
 .lesson-nav h3 {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.outline-links {
+  display: grid;
+  gap: var(--space-1);
 }
 
 .lesson-nav a {
   display: block;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   color: var(--slate-700);
   font-size: var(--body-size);
@@ -936,6 +981,14 @@ p {
   background: var(--mist);
 }
 
+.lesson-outline:not([open]) .outline-links {
+  display: grid;
+}
+
+.lesson-tool:not([open]) > :not(summary) {
+  display: block;
+}
+
 .lesson-content {
   width: 100%;
   max-width: 760px;
@@ -943,26 +996,26 @@ p {
 }
 
 .lesson-content h1 {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-2);
   font-size: var(--h1-size);
   font-weight: 700;
   line-height: var(--h1-line);
 }
 
 .lesson-content > p {
-  margin-bottom: var(--space-6);
-  font-size: 17px;
-  line-height: 29px;
+  margin-bottom: var(--space-4);
+  font-size: var(--body-large-size);
+  line-height: var(--body-large-line);
 }
 
 .formula-card {
-  min-height: 190px;
-  padding: var(--space-6);
+  min-height: 132px;
+  padding: var(--space-4);
 }
 
 .formula {
-  margin-top: var(--space-6);
-  padding: var(--space-4);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   font-family: Georgia, serif;
@@ -972,7 +1025,7 @@ p {
 }
 
 .note-box {
-  min-height: 250px;
+  min-height: 160px;
   padding: var(--space-4);
   color: var(--slate-600);
 }
@@ -1092,6 +1145,24 @@ p {
   line-height: var(--h4-line);
 }
 
+.activity-panel summary,
+.mobile-details summary,
+.lesson-outline summary,
+.lesson-tool summary {
+  margin-bottom: var(--space-3);
+  font-size: var(--h4-size);
+  line-height: var(--h4-line);
+}
+
+.stats-details {
+  margin-bottom: var(--space-4);
+}
+
+.stats-details:not([open]) .stat-grid,
+.activity-panel:not([open]) .activity {
+  display: none;
+}
+
 .hero-badge span:last-child {
   display: grid;
   gap: var(--space-1);
@@ -1202,6 +1273,7 @@ p {
   }
 
   .sidebar {
+    width: 100%;
     min-height: auto;
     padding: var(--space-6);
     border-right: 0;
@@ -1239,7 +1311,7 @@ p {
 
   .main {
     width: 100%;
-    padding: var(--space-8) 20px;
+    padding: var(--space-4);
   }
 
   .home-hero,
@@ -1256,6 +1328,27 @@ p {
   .progress-summary {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .stats-details:not([open]) .stat-grid,
+  .activity-panel:not([open]) .activity,
+  .lesson-outline:not([open]) .outline-links,
+  .lesson-tool:not([open]) > :not(summary) {
+    display: none;
+  }
+
+  .activity-panel summary,
+  .mobile-details summary,
+  .lesson-outline summary,
+  .lesson-tool summary {
+    margin-bottom: 0;
+  }
+
+  .activity-panel[open] summary,
+  .mobile-details[open] summary,
+  .lesson-outline[open] summary,
+  .lesson-tool[open] summary {
+    margin-bottom: var(--space-3);
   }
 
   .course-row,
@@ -1285,7 +1378,8 @@ p {
   .course-row,
   .project-row,
   .lesson-row {
-    gap: var(--space-4);
+    gap: var(--space-3);
+    min-height: 0;
   }
 }
 
@@ -1333,6 +1427,18 @@ p {
   .hero-badge,
   .hero-actions .button {
     width: 100%;
+  }
+
+  .course-row > .status,
+  .project-row > .status,
+  .project-row > .disabled-pill,
+  .lesson-row > .status {
+    justify-self: start;
+  }
+
+  .course-row .meta-row,
+  .project-row > .status.gray {
+    display: none;
   }
 
   .auth-card {

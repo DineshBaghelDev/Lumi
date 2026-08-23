@@ -13,18 +13,21 @@ export default function ProgressPage() {
         <h1>Your Learning Progress</h1>
         <p>Use this as a quiet check-in, not a scoreboard.</p>
       </div>
-      <section className="stat-grid">
-        {["Total time|5h 24m|You studied across three sessions.", "Current streak|7 days|Small daily returns are compounding.", "Next lesson|Model Evaluation|One focused lesson is ready now.", "Best score|90%|Your strongest work is in assignments."].map((item) => {
-          const [label, value, note] = item.split("|");
-          return (
-            <div className="tile" key={label}>
-              <p>{label}</p>
-              <strong>{value}</strong>
-              <p>{note}</p>
-            </div>
-          );
-        })}
-      </section>
+      <details className="mobile-details stats-details">
+        <summary>Progress details</summary>
+        <section className="stat-grid">
+          {["Total time|5h 24m|You studied across three sessions.", "Current streak|7 days|Small daily returns are compounding.", "Next lesson|Model Evaluation|One focused lesson is ready now.", "Best score|90%|Your strongest work is in assignments."].map((item) => {
+            const [label, value, note] = item.split("|");
+            return (
+              <div className="tile" key={label}>
+                <p>{label}</p>
+                <strong>{value}</strong>
+                <p>{note}</p>
+              </div>
+            );
+          })}
+        </section>
+      </details>
       <section className="panel progress-summary">
         <div>
           <p className="eyebrow">This week</p>

@@ -1,4 +1,4 @@
-import { AppShell, CourseIcon, ProgressBar } from "../ui";
+import { AppShell, ProgressBar } from "../ui";
 
 export default function DashboardPage() {
   return (
@@ -19,36 +19,27 @@ export default function DashboardPage() {
           Continue
         </a>
       </section>
-      <section className="stat-grid">
-        {([
-          ["3", "In Progress"],
-          ["12", "Lessons Done"],
-          ["84%", "Overall Progress"],
-          ["5h 24m", "Time Learned"],
-        ] as const).map(([value, label]) => {
-          return (
-            <div className="tile" key={label}>
-              <strong>{value}</strong>
-              <p>{label}</p>
-            </div>
-          );
-        })}
-      </section>
-      <section className="dashboard-grid">
-        <div className="panel">
-          <h2>Course snapshot</h2>
-          <div className="hero-card resume-card">
-            <CourseIcon>AI</CourseIcon>
-            <div>
-              <h2>Machine Learning</h2>
-              <p>Understanding the core ideas and building real world models.</p>
-              <ProgressBar value="78%" />
-              <p className="section-gap">Lesson 5 - Model Evaluation</p>
-            </div>
-          </div>
-        </div>
-        <div className="panel">
-          <h2>Recent Activity</h2>
+      <details className="mobile-details stats-details">
+        <summary>Progress snapshot</summary>
+        <section className="stat-grid">
+          {([
+            ["3", "In Progress"],
+            ["12", "Lessons Done"],
+            ["84%", "Overall Progress"],
+            ["5h 24m", "Time Learned"],
+          ] as const).map(([value, label]) => {
+            return (
+              <div className="tile" key={label}>
+                <strong>{value}</strong>
+                <p>{label}</p>
+              </div>
+            );
+          })}
+        </section>
+      </details>
+      <section className="dashboard-grid compact-grid">
+        <details className="panel activity-panel">
+          <summary>Recent Activity</summary>
           <div className="activity">
             {([
               ["Finished lesson", "Bias & Variance Tradeoff", "2h ago"],
@@ -67,7 +58,7 @@ export default function DashboardPage() {
               );
             })}
           </div>
-        </div>
+        </details>
       </section>
       <div className="topline section-gap-lg">
         <h2>My Courses</h2>

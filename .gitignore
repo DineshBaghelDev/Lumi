@@ -25,3 +25,9 @@ node_modules/
 dist/
 .next/
 *.tsbuildinfo
+
+# Local design audit artifacts
+design-audit-*/
+design-fix-screens-*/
+design-density-screens-*/
+.typefix-*.png
