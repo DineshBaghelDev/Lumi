@@ -5,7 +5,7 @@
 Planning: complete  
 Implementation: in progress
 Current milestone: 3 — Course Generation
-Current spec: `042-curriculum-schema.md`
+Current spec: `043-curriculum-generator.md`
 
 ## Locked decisions
 
@@ -71,10 +71,13 @@ Current spec: `042-curriculum-schema.md`
 - `024-litellm-client.md` through `041-research-job-integration.md` — complete
   - Gate: DB-backed `milestone 2 gate` passes with the Redis-topic fixture: claimed research job persists concepts, source, chunks, source pack mappings, research asset metadata, and exactly one curriculum job. Blocked-source and budget-stop fixtures pass.
   - Handoff: `@lumi/llm` exports a typed LiteLLM chat client for normal, structured, and stream-shaped calls plus existing call tracking. `apps/worker` now owns SearXNG, Crawl4AI, and TEI clients, centralized research URL/SSRF guards, sanitization/chunking, deterministic source ranking/protection, Redis-topic concept planning, idempotent research persistence, and the registered `research` job handler. Storage writes are represented by deterministic storage paths/asset rows; real InsForge object upload remains the next hardening point when asset byte tests are expanded.
+- `042-curriculum-schema.md` — complete
+  - Verification: `pnpm --config.verify-deps-before-run=false --filter @lumi/shared test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/shared typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/shared build`; `pnpm --config.verify-deps-before-run=false workspace:check`.
+  - Handoff: `@lumi/shared` now exports the versioned Zod curriculum structured-output contract. It validates source-pack, concept, prerequisite, lesson, project, and project-milestone references; requires explicit ordering/objectives/required flags; and retains deterministic local skeleton IDs. Curriculum prompt/generation and DB persistence remain for specs 043-048.
 
 ## In progress
 
-- [ ] `042-curriculum-schema.md`
+- [ ] `043-curriculum-generator.md`
 
 ## Notes / deviations
 

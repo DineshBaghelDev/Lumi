@@ -1,10 +1,29 @@
 {
   "name": "@lumi/shared",
   "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "node ../../scripts/placeholder.mjs",
-    "test": "node ../../scripts/placeholder.mjs",
-    "lint": "node ../../scripts/placeholder.mjs",
-    "typecheck": "node ../../scripts/placeholder.mjs"
+    "build": "tsc -p tsconfig.build.json",
+    "test": "node --test src/**/*.test.ts",
+    "lint": "tsc -p tsconfig.json --noEmit --allowImportingTsExtensions",
+    "typecheck": "tsc -p tsconfig.json --noEmit --allowImportingTsExtensions"
+  },
+  "dependencies": {
+    "zod": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^5.9.3"
   }
 }
