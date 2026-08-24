@@ -1,0 +1,2612 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lumi Alternate Design Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@85,500;100,700;112,800&family=Archivo:wght@500;600;700;800&family=Besley:wght@500;600;700&family=Bricolage+Grotesque:opsz,wght@10..48,500;10..48,600;10..48,700;10..48,800&family=Chivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --page: #f6f3ec;
+        --ink: #111827;
+        --muted: #667085;
+        --line: rgb(17 24 39 / 0.12);
+        --panel: #ffffff;
+        --shadow: 0 24px 80px rgb(17 24 39 / 0.14);
+        --radius: 24px;
+        --accent: #5b4bff;
+        --accent-2: #f8b90c;
+        --control-h: 42px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-height: 100%;
+        background: var(--page);
+        color: var(--ink);
+        font-family: "Chivo", ui-sans-serif, system-ui, sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at 20% 0%, rgb(91 75 255 / 0.14), transparent 30%),
+          radial-gradient(circle at 90% 10%, rgb(248 185 12 / 0.12), transparent 25%),
+          var(--page);
+      }
+
+      button,
+      select {
+        font: inherit;
+      }
+
+      .lab-shell {
+        width: min(1760px, calc(100vw - 40px));
+        margin: 0 auto;
+        padding: 24px 0 40px;
+      }
+
+      .lab-top {
+        position: sticky;
+        top: 12px;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 18px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 12px;
+        background: rgb(255 255 255 / 0.78);
+        box-shadow: 0 16px 40px rgb(17 24 39 / 0.08);
+        backdrop-filter: blur(18px);
+      }
+
+      .lab-title {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .lab-mark {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 14px;
+        color: #fff;
+        background: #111827;
+      }
+
+      .lab-title h1 {
+        margin: 0;
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-size: clamp(20px, 2vw, 28px);
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+      }
+
+      .lab-title p {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 18px;
+      }
+
+      .lab-controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .view-toggle {
+        display: flex;
+        gap: 4px;
+        height: var(--control-h);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 4px;
+        background: #fff;
+      }
+
+      .view-toggle button {
+        border: 0;
+        border-radius: 10px;
+        padding: 0 12px;
+        color: var(--muted);
+        background: transparent;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .view-toggle button.active {
+        color: #fff;
+        background: #111827;
+      }
+
+      .select-wrap {
+        position: relative;
+      }
+
+      #designSelect {
+        min-width: min(380px, 54vw);
+        height: var(--control-h);
+        appearance: none;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 0 42px 0 14px;
+        color: var(--ink);
+        background: #fff;
+        font-weight: 700;
+      }
+
+      .select-wrap::after {
+        content: "";
+        position: absolute;
+        top: 17px;
+        right: 16px;
+        width: 9px;
+        height: 9px;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg);
+        pointer-events: none;
+      }
+
+      .nav-btn {
+        display: grid;
+        width: var(--control-h);
+        height: var(--control-h);
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        color: var(--ink);
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .nav-btn:hover,
+      #designSelect:hover {
+        border-color: rgb(17 24 39 / 0.28);
+      }
+
+      .meta-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 19px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chip {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 10px;
+        background: rgb(255 255 255 / 0.56);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .preview-frame {
+        overflow: hidden;
+        min-height: min(850px, calc(100vh - 150px));
+        border: 1px solid rgb(17 24 39 / 0.16);
+        border-radius: 32px;
+        background: #fff;
+        box-shadow: var(--shadow);
+      }
+
+      .screen {
+        min-height: min(850px, calc(100vh - 150px));
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        min-height: inherit;
+      }
+
+      .mini-icon {
+        display: inline-grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 12px;
+      }
+
+      .stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .fine {
+        color: inherit;
+        opacity: 0.7;
+        font-size: 13px;
+        line-height: 19px;
+      }
+
+      .bar {
+        overflow: hidden;
+        height: 8px;
+        border-radius: 999px;
+        background: rgb(255 255 255 / 0.2);
+      }
+
+      .bar span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: currentColor;
+      }
+
+      .design-aurora {
+        color: #f9fafb;
+        background:
+          radial-gradient(circle at 78% 14%, rgb(0 255 194 / 0.42), transparent 22%),
+          radial-gradient(circle at 18% 22%, rgb(147 51 234 / 0.62), transparent 30%),
+          linear-gradient(135deg, #050816, #11154a 46%, #072d31);
+        font-family: "Bricolage Grotesque", sans-serif;
+      }
+
+      .aurora-map {
+        position: relative;
+        display: grid;
+        grid-template-columns: 260px 1fr 330px;
+        gap: 24px;
+        min-height: inherit;
+        padding: 28px;
+      }
+
+      .aurora-map::before {
+        content: "";
+        position: absolute;
+        inset: 80px 380px 80px 330px;
+        border: 1px solid rgb(255 255 255 / 0.12);
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.01));
+        filter: drop-shadow(0 0 50px rgb(94 234 212 / 0.18));
+      }
+
+      .aurora-side,
+      .aurora-card,
+      .aurora-panel {
+        position: relative;
+        border: 1px solid rgb(255 255 255 / 0.14);
+        border-radius: 26px;
+        background: rgb(255 255 255 / 0.08);
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18);
+        backdrop-filter: blur(24px);
+      }
+
+      .aurora-side {
+        padding: 22px;
+      }
+
+      .aurora-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 34px;
+        font-size: 26px;
+        font-weight: 800;
+      }
+
+      .star-mark {
+        width: 42px;
+        height: 42px;
+        fill: #facc15;
+      }
+
+      .aurora-nav {
+        display: grid;
+        gap: 10px;
+      }
+
+      .aurora-nav span {
+        border-radius: 16px;
+        padding: 14px;
+        color: rgb(255 255 255 / 0.74);
+      }
+
+      .aurora-nav span:first-child {
+        color: #fff;
+        background: rgb(255 255 255 / 0.15);
+      }
+
+      .aurora-main {
+        position: relative;
+        display: grid;
+        align-content: space-between;
+        padding: 18px 0;
+      }
+
+      .aurora-main h2 {
+        max-width: 680px;
+        margin: 22px 0 12px;
+        font-size: clamp(44px, 7vw, 92px);
+        line-height: 0.88;
+        letter-spacing: -0.06em;
+      }
+
+      .aurora-main p {
+        max-width: 580px;
+        margin: 0;
+        color: rgb(255 255 255 / 0.72);
+        font-size: 18px;
+        line-height: 28px;
+      }
+
+      .orbit {
+        position: relative;
+        width: min(620px, 60vw);
+        aspect-ratio: 1;
+        margin: 10px auto 0;
+      }
+
+      .orbit::before,
+      .orbit::after {
+        content: "";
+        position: absolute;
+        inset: 12%;
+        border: 1px solid rgb(255 255 255 / 0.18);
+        border-radius: 50%;
+      }
+
+      .orbit::after {
+        inset: 26%;
+      }
+
+      .planet {
+        position: absolute;
+        display: grid;
+        width: 116px;
+        height: 116px;
+        place-items: center;
+        border: 1px solid rgb(255 255 255 / 0.2);
+        border-radius: 999px;
+        background: rgb(255 255 255 / 0.14);
+        box-shadow: 0 18px 50px rgb(0 0 0 / 0.24);
+        font-weight: 800;
+      }
+
+      .planet.one {
+        top: 16%;
+        left: 10%;
+      }
+
+      .planet.two {
+        top: 46%;
+        right: 9%;
+      }
+
+      .planet.three {
+        bottom: 8%;
+        left: 35%;
+      }
+
+      .aurora-panel {
+        display: grid;
+        gap: 16px;
+        align-content: start;
+        padding: 22px;
+      }
+
+      .aurora-card {
+        padding: 18px;
+      }
+
+      .aurora-card strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 18px;
+      }
+
+      .design-paper {
+        display: grid;
+        grid-template-columns: 310px 1fr;
+        color: #251c14;
+        background:
+          linear-gradient(115deg, rgb(37 28 20 / 0.05), transparent 38%),
+          linear-gradient(#f7f0df, #efe1c5);
+        font-family: "Newsreader", Georgia, serif;
+      }
+
+      .paper-rail {
+        border-right: 1px solid rgb(37 28 20 / 0.18);
+        padding: 34px;
+      }
+
+      .paper-rail h2 {
+        margin: 0 0 42px;
+        font-size: 56px;
+        line-height: 0.9;
+        letter-spacing: -0.04em;
+      }
+
+      .paper-index {
+        display: grid;
+        gap: 14px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .paper-index span {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px dotted rgb(37 28 20 / 0.32);
+        padding-bottom: 10px;
+      }
+
+      .paper-main {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        padding: 42px;
+      }
+
+      .paper-top {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid #251c14;
+        padding-bottom: 14px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .paper-body {
+        display: grid;
+        grid-template-columns: minmax(320px, 0.95fr) minmax(420px, 1.4fr);
+        gap: 38px;
+        align-items: end;
+      }
+
+      .paper-headline h2 {
+        margin: 0 0 18px;
+        font-size: clamp(56px, 8vw, 122px);
+        line-height: 0.84;
+        letter-spacing: -0.065em;
+      }
+
+      .paper-headline p {
+        max-width: 48ch;
+        margin: 0;
+        font-size: 20px;
+        line-height: 31px;
+      }
+
+      .paper-lesson {
+        border: 2px solid #251c14;
+        padding: 24px;
+        background: rgb(255 255 255 / 0.35);
+      }
+
+      .paper-lesson h3 {
+        margin: 0 0 22px;
+        font-size: 34px;
+        line-height: 1;
+      }
+
+      .paper-columns {
+        columns: 2;
+        column-gap: 28px;
+        font-size: 17px;
+        line-height: 28px;
+      }
+
+      .design-command {
+        color: #e7fff7;
+        background: #07110f;
+        font-family: "IBM Plex Mono", monospace;
+      }
+
+      .command-grid {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        min-height: inherit;
+      }
+
+      .command-rail {
+        border-right: 1px solid #16443a;
+        padding: 20px;
+        background: #081916;
+      }
+
+      .command-brand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 26px;
+        color: #8fffd2;
+      }
+
+      .cmd-item {
+        border: 1px solid transparent;
+        border-radius: 4px;
+        padding: 11px 10px;
+        color: #9bbdb3;
+      }
+
+      .cmd-item.active {
+        border-color: #27f3ad;
+        color: #07110f;
+        background: #27f3ad;
+      }
+
+      .command-main {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        padding: 22px;
+      }
+
+      .terminal-bar {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid #16443a;
+        padding-bottom: 14px;
+        color: #9bbdb3;
+      }
+
+      .terminal-body {
+        display: grid;
+        grid-template-columns: minmax(460px, 1fr) 340px;
+        gap: 28px;
+        align-items: center;
+      }
+
+      .terminal-body h2 {
+        max-width: 820px;
+        margin: 0 0 20px;
+        color: #dfffee;
+        font-size: clamp(40px, 7vw, 86px);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+      }
+
+      .prompt-line {
+        margin: 0 0 10px;
+        color: #27f3ad;
+      }
+
+      .terminal-card {
+        border: 1px solid #16443a;
+        border-radius: 6px;
+        padding: 18px;
+        background: #0b211d;
+      }
+
+      .terminal-row {
+        display: grid;
+        grid-template-columns: 86px 1fr;
+        gap: 12px;
+        border-bottom: 1px solid #16443a;
+        padding: 12px 0;
+      }
+
+      .design-atlas {
+        color: #111827;
+        background: #e9eef5;
+        font-family: "Manrope", sans-serif;
+      }
+
+      .atlas {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        min-height: inherit;
+        overflow: hidden;
+      }
+
+      .atlas-map {
+        position: relative;
+        padding: 34px;
+        background:
+          linear-gradient(145deg, rgb(31 111 235 / 0.10), transparent 42%),
+          #e9eef5;
+      }
+
+      .atlas-path {
+        position: absolute;
+        inset: 12% 7% 12% 8%;
+        border: 3px solid #1f6feb;
+        border-right-color: transparent;
+        border-bottom-color: transparent;
+        border-radius: 45% 55% 48% 52%;
+        transform: rotate(-12deg);
+      }
+
+      .atlas-node {
+        position: absolute;
+        display: grid;
+        width: 126px;
+        height: 126px;
+        place-items: center;
+        border: 2px solid #111827;
+        border-radius: 50%;
+        background: #fff9e6;
+        box-shadow: 10px 12px 0 rgb(17 24 39 / 0.16);
+        text-align: center;
+        font-weight: 800;
+      }
+
+      .atlas-node.a {
+        top: 18%;
+        left: 15%;
+      }
+
+      .atlas-node.b {
+        top: 42%;
+        left: 48%;
+      }
+
+      .atlas-node.c {
+        right: 12%;
+        bottom: 16%;
+      }
+
+      .atlas-copy {
+        position: relative;
+        max-width: 520px;
+      }
+
+      .atlas-copy h2 {
+        margin: 0 0 16px;
+        font-size: clamp(48px, 7vw, 94px);
+        line-height: 0.88;
+        letter-spacing: -0.055em;
+      }
+
+      .atlas-copy p {
+        max-width: 44ch;
+        margin: 0;
+        color: #475569;
+        font-size: 18px;
+        line-height: 29px;
+      }
+
+      .atlas-panel {
+        display: grid;
+        gap: 18px;
+        align-content: start;
+        padding: 34px;
+        background: #111827;
+        color: #fff;
+      }
+
+      .atlas-panel h3 {
+        margin: 0;
+        font-size: 34px;
+        line-height: 1;
+      }
+
+      .atlas-panel article {
+        border-top: 1px solid rgb(255 255 255 / 0.18);
+        padding-top: 18px;
+      }
+
+      .design-brutal {
+        color: #0a0a0a;
+        background: #fffb00;
+        font-family: "Archivo", sans-serif;
+      }
+
+      .brutal {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        min-height: inherit;
+        border: 4px solid #0a0a0a;
+      }
+
+      .brutal-nav {
+        display: grid;
+        align-content: space-between;
+        border-right: 4px solid #0a0a0a;
+        padding: 24px;
+        background: #fff;
+      }
+
+      .brutal-nav h2 {
+        margin: 0;
+        font-size: 42px;
+        line-height: 0.9;
+        letter-spacing: -0.05em;
+      }
+
+      .brutal-nav span {
+        display: block;
+        border: 3px solid #0a0a0a;
+        padding: 12px;
+        box-shadow: 6px 6px 0 #0a0a0a;
+        font-weight: 800;
+      }
+
+      .brutal-main {
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      .brutal-ticker {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 4px solid #0a0a0a;
+        padding: 14px 24px;
+        background: #ff7a00;
+        font-weight: 800;
+      }
+
+      .brutal-stage {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 28px;
+        align-items: stretch;
+        padding: 28px;
+      }
+
+      .brutal-stage h2 {
+        margin: 0;
+        font-size: clamp(64px, 10vw, 150px);
+        line-height: 0.78;
+        letter-spacing: -0.075em;
+      }
+
+      .brutal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .brutal-actions button,
+      .brutal-panel button {
+        border: 3px solid #0a0a0a;
+        padding: 14px 18px;
+        background: #0a0a0a;
+        color: #fff;
+        box-shadow: 6px 6px 0 #fff;
+        font-weight: 800;
+      }
+
+      .brutal-panel {
+        display: grid;
+        gap: 16px;
+        align-content: start;
+        border: 4px solid #0a0a0a;
+        padding: 22px;
+        background: #fff;
+        box-shadow: 12px 12px 0 #0a0a0a;
+      }
+
+      .brutal-panel div {
+        border: 3px solid #0a0a0a;
+        padding: 14px;
+        background: #b7ff2a;
+      }
+
+      .design-terminal-brutal {
+        --tb-canvas: #050806;
+        --tb-surface: #07110f;
+        --tb-surface-2: #081916;
+        --tb-surface-3: #0b211d;
+        --tb-line: #16443a;
+        --tb-line-hot: #27f3ad;
+        --tb-text: #e7fff7;
+        --tb-text-strong: #dfffee;
+        --tb-muted: #9bbdb3;
+        --tb-action: #27f3ad;
+        --tb-action-text: #07110f;
+        --tb-info: #79d8ff;
+        --tb-warn: #ffd166;
+        --tb-black: #020403;
+        color: var(--tb-text);
+        background: var(--tb-canvas);
+        font-family: "IBM Plex Mono", monospace;
+        border-radius: 0;
+      }
+
+      .preview-frame:has(.design-terminal-brutal) {
+        border-radius: 0 !important;
+      }
+
+      .terminal-brutal {
+        display: grid;
+        grid-template-columns: 270px 1fr;
+        min-height: inherit;
+        border: 2px solid var(--tb-line-hot);
+        background: var(--tb-surface);
+      }
+
+      .tb-nav {
+        display: grid;
+        align-content: space-between;
+        border-right: 2px solid var(--tb-line);
+        padding: 22px;
+        background: var(--tb-surface-2);
+        color: var(--tb-text);
+      }
+
+      .tb-nav h2 {
+        margin: 0 0 26px;
+        font-family: "Archivo", sans-serif;
+        font-size: 40px;
+        line-height: 0.9;
+        letter-spacing: -0.05em;
+      }
+
+      .tb-nav span {
+        display: block;
+        border: 1px solid var(--tb-line);
+        padding: 12px;
+        background: var(--tb-surface-3);
+        color: var(--tb-muted);
+        font-weight: 800;
+      }
+
+      .tb-nav span:first-of-type {
+        border-color: var(--tb-line-hot);
+        color: var(--tb-action);
+      }
+
+      .tb-nav span + span {
+        margin-top: 14px;
+      }
+
+      .tb-main {
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      .tb-bar {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--tb-line);
+        padding: 14px 18px;
+        background: var(--tb-surface-2);
+        color: var(--tb-muted);
+        font-weight: 900;
+      }
+
+      .tb-stage {
+        display: grid;
+        grid-template-columns: minmax(520px, 1fr) 360px;
+        gap: 24px;
+        padding: 24px;
+      }
+
+      .tb-copy,
+      .tb-panel {
+        border: 1px solid var(--tb-line);
+        padding: 20px;
+        background: var(--tb-surface-3);
+      }
+
+      .tb-copy h2 {
+        margin: 0 0 18px;
+        color: var(--tb-text-strong);
+        font-family: "Archivo", sans-serif;
+        font-size: clamp(48px, 8vw, 110px);
+        line-height: 0.82;
+        letter-spacing: -0.075em;
+        text-transform: uppercase;
+      }
+
+      .tb-lesson h2 {
+        max-width: 780px;
+        font-size: clamp(32px, 4vw, 58px);
+        line-height: 0.95;
+        letter-spacing: -0.045em;
+        text-transform: none;
+      }
+
+      .tb-prompt {
+        color: var(--tb-action);
+        font-weight: 800;
+      }
+
+      .tb-panel {
+        display: grid;
+        gap: 14px;
+        align-content: start;
+      }
+
+      .tb-panel article,
+      .tb-stat {
+        border: 1px solid var(--tb-line);
+        padding: 14px;
+        background: var(--tb-surface-2);
+      }
+
+      .tb-stat {
+        border-color: var(--tb-line-hot);
+        color: var(--tb-action);
+        background: var(--tb-surface);
+        font-weight: 900;
+      }
+
+      .tb-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .tb-actions button {
+        border: 1px solid var(--tb-line-hot);
+        padding: 13px 16px;
+        color: var(--tb-action-text);
+        background: var(--tb-action);
+        font-weight: 900;
+      }
+
+      .tb-actions button + button {
+        color: var(--tb-info);
+        background: transparent;
+        border-color: var(--tb-info);
+      }
+
+      .design-terminal-brutal *,
+      .design-terminal-brutal .content-article,
+      .design-terminal-brutal .formula-box,
+      .design-terminal-brutal .example-grid,
+      .design-terminal-brutal .example-grid div,
+      .design-terminal-brutal .source-box,
+      .design-terminal-brutal .check-box,
+      .design-terminal-brutal .lesson-actions button {
+        border-radius: 0;
+      }
+
+      .design-terminal-brutal .content-article,
+      .design-terminal-brutal .formula-box,
+      .design-terminal-brutal .example-grid div,
+      .design-terminal-brutal .source-box,
+      .design-terminal-brutal .check-box {
+        border-color: var(--tb-line);
+        color: var(--tb-text);
+        background: var(--tb-surface-2);
+      }
+
+      .design-terminal-brutal .content-article h2,
+      .design-terminal-brutal .content-article h3,
+      .design-terminal-brutal .content-article strong {
+        color: var(--tb-text-strong);
+      }
+
+      .design-terminal-brutal .content-article p,
+      .design-terminal-brutal .content-article li {
+        color: var(--tb-text);
+      }
+
+      .design-terminal-brutal .content-article .lesson-kicker,
+      .design-terminal-brutal .content-article .fine {
+        color: var(--tb-muted);
+      }
+
+      .design-terminal-brutal .formula-box,
+      .design-terminal-brutal .lesson-actions button:first-child {
+        border-color: var(--tb-line-hot);
+      }
+
+      .design-terminal-brutal .lesson-actions button {
+        border-color: var(--tb-line);
+        color: var(--tb-text);
+        background: var(--tb-surface-2);
+      }
+
+      .design-studio {
+        color: #141414;
+        background: #f4f1ea;
+        font-family: "Chivo", sans-serif;
+      }
+
+      .studio {
+        display: grid;
+        grid-template-columns: minmax(300px, 0.8fr) minmax(520px, 1.2fr);
+        gap: 0;
+        min-height: inherit;
+      }
+
+      .studio-left {
+        display: grid;
+        align-content: space-between;
+        padding: 38px;
+        background: #e6dfd2;
+      }
+
+      .studio-left h2 {
+        max-width: 540px;
+        margin: 0;
+        font-family: "Besley", serif;
+        font-size: clamp(50px, 7vw, 106px);
+        line-height: 0.88;
+        letter-spacing: -0.055em;
+      }
+
+      .studio-left p {
+        max-width: 38ch;
+        margin: 20px 0 0;
+        color: #51483e;
+        font-size: 18px;
+        line-height: 30px;
+      }
+
+      .studio-right {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        padding: 34px;
+      }
+
+      .studio-board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        align-content: end;
+      }
+
+      .studio-tile {
+        display: grid;
+        min-height: 180px;
+        align-content: end;
+        border-radius: 30px;
+        padding: 20px;
+        color: #fff;
+        background: #141414;
+      }
+
+      .studio-tile:nth-child(2) {
+        min-height: 280px;
+        background: #6b5cff;
+      }
+
+      .studio-tile:nth-child(3) {
+        background: #f5aa1c;
+        color: #141414;
+      }
+
+      .studio-tile:nth-child(4) {
+        grid-column: span 2;
+        background: #c7e9db;
+        color: #141414;
+      }
+
+      .design-bloom {
+        color: #302019;
+        background:
+          linear-gradient(135deg, rgb(255 207 112 / 0.38), transparent 32%),
+          linear-gradient(315deg, rgb(245 159 209 / 0.32), transparent 36%),
+          #fff8ee;
+        font-family: "Manrope", sans-serif;
+      }
+
+      .bloom {
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        gap: 28px;
+        min-height: inherit;
+        padding: 30px;
+      }
+
+      .bloom-main {
+        position: relative;
+        overflow: hidden;
+        border-radius: 36px;
+        padding: 36px;
+        background: #fff;
+        box-shadow: 0 30px 90px rgb(17 24 39 / 0.12);
+      }
+
+      .bloom-main::after {
+        content: "";
+        position: absolute;
+        right: -80px;
+        bottom: -90px;
+        width: 410px;
+        height: 410px;
+        border-radius: 48% 52% 44% 56%;
+        background: #ffda63;
+      }
+
+      .bloom-main h2 {
+        position: relative;
+        z-index: 1;
+        max-width: 740px;
+        margin: 44px 0 18px;
+        font-size: clamp(52px, 7vw, 108px);
+        line-height: 0.9;
+        letter-spacing: -0.055em;
+      }
+
+      .bloom-main p {
+        position: relative;
+        z-index: 1;
+        max-width: 48ch;
+        color: #6b5044;
+        font-size: 18px;
+        line-height: 30px;
+      }
+
+      .bloom-path {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-top: 46px;
+      }
+
+      .bloom-path div {
+        min-height: 120px;
+        border-radius: 26px;
+        padding: 18px;
+        background: #fff6d8;
+      }
+
+      .bloom-side {
+        display: grid;
+        gap: 16px;
+        align-content: stretch;
+      }
+
+      .bloom-card {
+        border-radius: 28px;
+        padding: 24px;
+        background: #302019;
+        color: #fff8ee;
+      }
+
+      .design-glacier {
+        color: #f7fbff;
+        background: #071927;
+        font-family: "Manrope", sans-serif;
+      }
+
+      .glacier {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        min-height: inherit;
+        overflow: hidden;
+      }
+
+      .glacier::before {
+        content: "";
+        position: absolute;
+        inset: 9% 24% -20% 7%;
+        clip-path: polygon(8% 60%, 24% 20%, 40% 52%, 54% 8%, 78% 56%, 100% 28%, 100% 100%, 0 100%);
+        background: linear-gradient(135deg, #dff7ff, #4bb0ff 42%, #1e3a8a);
+        opacity: 0.86;
+      }
+
+      .glacier-main {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        align-content: space-between;
+        padding: 42px;
+      }
+
+      .glacier-main h2 {
+        max-width: 760px;
+        margin: 0;
+        font-size: clamp(58px, 8vw, 124px);
+        line-height: 0.86;
+        letter-spacing: -0.07em;
+      }
+
+      .glacier-dock {
+        display: grid;
+        max-width: 760px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+
+      .glacier-dock div,
+      .glacier-side article {
+        border: 1px solid rgb(255 255 255 / 0.22);
+        border-radius: 20px;
+        padding: 18px;
+        background: rgb(7 25 39 / 0.62);
+        backdrop-filter: blur(16px);
+      }
+
+      .glacier-side {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 14px;
+        align-content: center;
+        padding: 28px;
+      }
+
+      .design-museum {
+        color: #1f2937;
+        background: #faf7f0;
+        font-family: "Newsreader", serif;
+      }
+
+      .museum {
+        display: grid;
+        grid-template-columns: 220px 1fr 320px;
+        min-height: inherit;
+      }
+
+      .museum-nav {
+        display: grid;
+        align-content: start;
+        gap: 24px;
+        border-right: 1px solid #d9cfbd;
+        padding: 30px;
+      }
+
+      .museum-nav h2 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      .museum-gallery {
+        display: grid;
+        align-content: center;
+        padding: 42px;
+      }
+
+      .museum-gallery h2 {
+        max-width: 760px;
+        margin: 0 0 36px;
+        font-size: clamp(54px, 7vw, 112px);
+        line-height: 0.88;
+        letter-spacing: -0.055em;
+      }
+
+      .museum-art {
+        display: grid;
+        grid-template-columns: 1.3fr 0.8fr;
+        gap: 18px;
+      }
+
+      .museum-art div {
+        min-height: 280px;
+        border: 1px solid #d9cfbd;
+        background:
+          linear-gradient(135deg, transparent 40%, rgb(87 63 255 / 0.18) 41% 58%, transparent 59%),
+          radial-gradient(circle at 40% 38%, #111827 0 12%, transparent 13%),
+          #fff;
+      }
+
+      .museum-art div:last-child {
+        background:
+          linear-gradient(90deg, #f5b21b 0 34%, transparent 35%),
+          linear-gradient(135deg, transparent 0 50%, #7457ff 51% 72%, transparent 73%),
+          #fff;
+      }
+
+      .museum-panel {
+        display: grid;
+        gap: 18px;
+        align-content: center;
+        border-left: 1px solid #d9cfbd;
+        padding: 30px;
+        background: #fffdf8;
+      }
+
+      .design-liquid {
+        color: #031826;
+        background: #c9fff4;
+        font-family: "Anybody", sans-serif;
+      }
+
+      .liquid {
+        position: relative;
+        min-height: inherit;
+        overflow: hidden;
+        padding: 30px;
+      }
+
+      .liquid::before {
+        content: "";
+        position: absolute;
+        inset: -20% -10% 30% 25%;
+        border-radius: 40% 60% 55% 45%;
+        background: linear-gradient(135deg, #5b4bff, #27f3ad 45%, #f8b90c);
+        filter: blur(1px);
+      }
+
+      .liquid-grid {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 24px;
+        min-height: calc(min(850px, calc(100vh - 150px)) - 60px);
+      }
+
+      .liquid-copy {
+        display: grid;
+        align-content: space-between;
+        border-radius: 42px;
+        padding: 34px;
+        background: rgb(255 255 255 / 0.72);
+        backdrop-filter: blur(22px);
+      }
+
+      .liquid-copy h2 {
+        max-width: 780px;
+        margin: 0;
+        font-size: clamp(56px, 8vw, 124px);
+        line-height: 0.82;
+        letter-spacing: -0.075em;
+      }
+
+      .liquid-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .liquid-pills span {
+        border-radius: 999px;
+        padding: 10px 14px;
+        background: #031826;
+        color: #c9fff4;
+        font-weight: 800;
+      }
+
+      .liquid-panel {
+        display: grid;
+        gap: 16px;
+        align-content: end;
+      }
+
+      .liquid-panel article {
+        border-radius: 30px;
+        padding: 22px;
+        background: rgb(255 255 255 / 0.78);
+        backdrop-filter: blur(20px);
+      }
+
+      .design-cinema {
+        color: #f8efe1;
+        background: #130d0a;
+        font-family: "Archivo", sans-serif;
+      }
+
+      .cinema {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: inherit;
+      }
+
+      .cinema-top {
+        display: flex;
+        justify-content: space-between;
+        padding: 22px 28px;
+        color: #f8b90c;
+        background: #130d0a;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .cinema-stage {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 24px;
+        padding: 28px;
+        background:
+          linear-gradient(90deg, rgb(248 185 12 / 0.08) 1px, transparent 1px) 0 0 / 70px 100%,
+          #130d0a;
+      }
+
+      .cinema-hero {
+        display: grid;
+        align-content: end;
+        border-radius: 18px;
+        padding: 34px;
+        background:
+          linear-gradient(180deg, transparent, rgb(19 13 10 / 0.9)),
+          linear-gradient(130deg, transparent 0 45%, rgb(101 75 255 / 0.42) 46% 58%, transparent 59%),
+          linear-gradient(40deg, transparent 0 28%, rgb(248 185 12 / 0.48) 29% 41%, transparent 42%),
+          #231814;
+      }
+
+      .cinema-hero h2 {
+        max-width: 760px;
+        margin: 0;
+        font-size: clamp(58px, 8vw, 128px);
+        line-height: 0.82;
+        letter-spacing: -0.07em;
+      }
+
+      .cinema-side {
+        display: grid;
+        gap: 12px;
+      }
+
+      .cinema-side article {
+        border: 1px solid rgb(248 239 225 / 0.18);
+        border-radius: 18px;
+        padding: 18px;
+        background: #1e1511;
+      }
+
+      .design-blueprint {
+        color: #eef7ff;
+        background: #083b73;
+        font-family: "IBM Plex Mono", monospace;
+      }
+
+      .blueprint {
+        min-height: inherit;
+        padding: 30px;
+        background:
+          linear-gradient(135deg, rgb(238 247 255 / 0.10), transparent 40%),
+          #083b73;
+      }
+
+      .blueprint-grid {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 26px;
+        min-height: calc(min(850px, calc(100vh - 150px)) - 60px);
+      }
+
+      .blueprint-main {
+        position: relative;
+        border: 1px solid rgb(238 247 255 / 0.35);
+        padding: 30px;
+      }
+
+      .blueprint-main h2 {
+        max-width: 780px;
+        margin: 0;
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-size: clamp(54px, 8vw, 118px);
+        line-height: 0.86;
+        letter-spacing: -0.065em;
+      }
+
+      .blueprint-diagram {
+        position: absolute;
+        right: 34px;
+        bottom: 34px;
+        width: min(520px, 45%);
+        aspect-ratio: 1.45;
+        border: 1px solid rgb(238 247 255 / 0.45);
+      }
+
+      .blueprint-diagram::before,
+      .blueprint-diagram::after {
+        content: "";
+        position: absolute;
+        border: 1px solid rgb(238 247 255 / 0.45);
+      }
+
+      .blueprint-diagram::before {
+        inset: 18% 58% 18% 10%;
+      }
+
+      .blueprint-diagram::after {
+        inset: 20% 10% 20% 48%;
+        border-radius: 50%;
+      }
+
+      .blueprint-side {
+        display: grid;
+        gap: 14px;
+      }
+
+      .blueprint-side article {
+        border: 1px solid rgb(238 247 255 / 0.35);
+        padding: 18px;
+        background: rgb(238 247 255 / 0.06);
+      }
+
+      .design-reader {
+        color: #101828;
+        background: #fcfcfd;
+        font-family: "Chivo", sans-serif;
+      }
+
+      .reader {
+        display: grid;
+        grid-template-columns: 280px minmax(420px, 760px) 1fr;
+        gap: 34px;
+        min-height: inherit;
+        padding: 34px;
+      }
+
+      .reader-left,
+      .reader-right {
+        display: grid;
+        gap: 14px;
+        align-content: start;
+      }
+
+      .reader-left article,
+      .reader-right article {
+        border: 1px solid #e4e7ec;
+        border-radius: 18px;
+        padding: 16px;
+        background: #fff;
+      }
+
+      .reader-main {
+        padding-top: 48px;
+      }
+
+      .reader-main h2 {
+        margin: 0 0 16px;
+        font-family: "Besley", serif;
+        font-size: clamp(42px, 5vw, 82px);
+        line-height: 0.95;
+        letter-spacing: -0.045em;
+      }
+
+      .reader-main p {
+        margin: 0 0 18px;
+        color: #475467;
+        font-size: 18px;
+        line-height: 31px;
+      }
+
+      .reader-callout {
+        margin-top: 28px;
+        border: 1px solid #d9d6ff;
+        border-radius: 18px;
+        padding: 16px 18px;
+        background: #f3f1ff;
+        color: #101828;
+        font-weight: 700;
+      }
+
+      .design-data {
+        color: #e5edff;
+        background: #0b1020;
+        font-family: "Manrope", sans-serif;
+      }
+
+      .data {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 0;
+        min-height: inherit;
+      }
+
+      .data-rail {
+        display: grid;
+        align-content: space-between;
+        border-right: 1px solid rgb(229 237 255 / 0.12);
+        padding: 26px;
+        background: #11172a;
+      }
+
+      .data-main {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 24px;
+        padding: 28px;
+      }
+
+      .data-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+      }
+
+      .data-head h2 {
+        max-width: 760px;
+        margin: 0;
+        font-size: clamp(42px, 6vw, 86px);
+        line-height: 0.92;
+        letter-spacing: -0.055em;
+      }
+
+      .data-board {
+        display: grid;
+        grid-template-columns: 1.3fr 0.7fr;
+        gap: 18px;
+      }
+
+      .chart-card,
+      .data-card {
+        border: 1px solid rgb(229 237 255 / 0.12);
+        border-radius: 22px;
+        padding: 20px;
+        background: #141b31;
+      }
+
+      .chart {
+        display: flex;
+        height: 360px;
+        align-items: end;
+        gap: 14px;
+        margin-top: 20px;
+      }
+
+      .chart span {
+        flex: 1;
+        border-radius: 12px 12px 0 0;
+        background: linear-gradient(#77f3c9, #5b4bff);
+      }
+
+      .data-side {
+        display: grid;
+        gap: 18px;
+      }
+
+      .designs-footer {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 18px;
+      }
+
+      .lesson-rhythm {
+        display: grid;
+        gap: 18px;
+      }
+
+      .lesson-title {
+        margin: 0;
+        font-size: clamp(42px, 6.8vw, 104px);
+        line-height: 0.86;
+        letter-spacing: -0.065em;
+      }
+
+      .lesson-copy {
+        max-width: 62ch;
+        margin: 0;
+        font-size: 17px;
+        line-height: 28px;
+      }
+
+      .lesson-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .lesson-list span {
+        display: block;
+      }
+
+      .content-lesson {
+        display: grid;
+        grid-template-columns: minmax(220px, 0.34fr) minmax(520px, 1fr) minmax(240px, 0.38fr);
+        gap: 22px;
+        min-height: inherit;
+        padding: 28px;
+      }
+
+      .content-lesson nav,
+      .content-lesson aside,
+      .content-article {
+        border: 1px solid rgb(255 255 255 / 0.18);
+        border-radius: 24px;
+        padding: 22px;
+        background: rgb(255 255 255 / 0.08);
+      }
+
+      .content-lesson nav {
+        display: grid;
+        align-content: start;
+        gap: 10px;
+      }
+
+      .content-lesson nav strong {
+        margin-bottom: 10px;
+        font-size: 22px;
+      }
+
+      .content-lesson nav span {
+        border-radius: 14px;
+        padding: 10px 12px;
+        color: inherit;
+        background: rgb(255 255 255 / 0.08);
+      }
+
+      .content-lesson nav span:first-of-type {
+        font-weight: 800;
+        background: rgb(255 255 255 / 0.18);
+      }
+
+      .content-article {
+        display: grid;
+        gap: 18px;
+        align-content: start;
+        max-width: 820px;
+      }
+
+      .content-article h2 {
+        margin: 0;
+        font-size: clamp(26px, 3vw, 42px);
+        line-height: 1.05;
+        letter-spacing: -0.035em;
+      }
+
+      .content-article h3,
+      .content-lesson aside h3 {
+        margin: 0;
+        font-size: 21px;
+        line-height: 1.2;
+      }
+
+      .content-article p,
+      .content-article li,
+      .content-lesson aside p {
+        margin: 0;
+        font-size: 16px;
+        line-height: 27px;
+      }
+
+      .content-article ul {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .formula-box,
+      .example-grid,
+      .source-box,
+      .check-box {
+        border: 1px solid rgb(255 255 255 / 0.16);
+        border-radius: 18px;
+        padding: 16px;
+        background: rgb(255 255 255 / 0.1);
+      }
+
+      .formula-box {
+        font-family: "IBM Plex Mono", monospace;
+        font-weight: 700;
+      }
+
+      .example-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .example-grid div {
+        border-radius: 14px;
+        padding: 12px;
+        background: rgb(255 255 255 / 0.12);
+      }
+
+      .lesson-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .lesson-actions button {
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 16px;
+        color: #111827;
+        background: #fff;
+        font-weight: 800;
+      }
+
+      .content-lesson.design-paper,
+      .content-lesson.design-atlas,
+      .content-lesson.design-brutal,
+      .content-lesson.design-studio,
+      .content-lesson.design-bloom,
+      .content-lesson.design-museum,
+      .content-lesson.design-liquid,
+      .content-lesson.design-reader {
+        color: #171717;
+      }
+
+      .content-lesson.design-paper nav,
+      .content-lesson.design-paper aside,
+      .content-lesson.design-paper .content-article,
+      .content-lesson.design-atlas nav,
+      .content-lesson.design-atlas aside,
+      .content-lesson.design-atlas .content-article,
+      .content-lesson.design-brutal nav,
+      .content-lesson.design-brutal aside,
+      .content-lesson.design-brutal .content-article,
+      .content-lesson.design-studio nav,
+      .content-lesson.design-studio aside,
+      .content-lesson.design-studio .content-article,
+      .content-lesson.design-bloom nav,
+      .content-lesson.design-bloom aside,
+      .content-lesson.design-bloom .content-article,
+      .content-lesson.design-museum nav,
+      .content-lesson.design-museum aside,
+      .content-lesson.design-museum .content-article,
+      .content-lesson.design-liquid nav,
+      .content-lesson.design-liquid aside,
+      .content-lesson.design-liquid .content-article,
+      .content-lesson.design-reader nav,
+      .content-lesson.design-reader aside,
+      .content-lesson.design-reader .content-article {
+        border-color: rgb(17 24 39 / 0.14);
+        background: rgb(255 255 255 / 0.62);
+      }
+
+      .content-lesson.design-brutal nav,
+      .content-lesson.design-brutal aside,
+      .content-lesson.design-brutal .content-article {
+        border: 4px solid #0a0a0a;
+        border-radius: 0;
+        background: #fff;
+        box-shadow: 8px 8px 0 #0a0a0a;
+      }
+
+      @media (max-width: 980px) {
+        .lab-shell {
+          width: min(100vw - 24px, 760px);
+          padding-top: 12px;
+        }
+
+        .lab-top,
+        .meta-row {
+          grid-template-columns: 1fr;
+        }
+
+        .lab-controls {
+          width: 100%;
+        }
+
+        .select-wrap,
+        #designSelect {
+          width: 100%;
+          min-width: 0;
+        }
+
+        .preview-frame,
+        .screen {
+          min-height: 900px;
+          border-radius: 24px;
+        }
+
+        .aurora-map,
+        .design-paper,
+        .command-grid,
+        .atlas,
+        .brutal,
+        .terminal-brutal,
+        .tb-stage,
+        .studio,
+        .bloom,
+        .glacier,
+        .museum,
+        .liquid-grid,
+        .cinema-stage,
+        .blueprint-grid,
+        .reader,
+        .data {
+          grid-template-columns: 1fr;
+        }
+
+        .aurora-map,
+        .bloom,
+        .liquid,
+        .blueprint,
+        .reader {
+          padding: 18px;
+        }
+
+        .aurora-side,
+        .paper-rail,
+        .command-rail,
+        .brutal-nav,
+        .tb-nav,
+        .museum-nav,
+        .data-rail {
+          min-height: auto;
+          border-right: 0;
+          border-bottom: 1px solid rgb(17 24 39 / 0.14);
+        }
+
+        .orbit,
+        .atlas-path,
+        .blueprint-diagram {
+          display: none;
+        }
+
+        .paper-body,
+        .brutal-stage,
+        .studio-board,
+        .bloom-path,
+        .glacier-dock,
+        .museum-art,
+        .data-board {
+          grid-template-columns: 1fr;
+        }
+
+        .content-lesson {
+          grid-template-columns: 1fr;
+          padding: 18px;
+        }
+
+        .example-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .paper-columns {
+          columns: 1;
+        }
+
+        .reader-main {
+          padding-top: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      THESIS: Lumi can be a deep-learning workspace with many possible identities, not only a soft SaaS dashboard.
+      OWN-WORLD: This file is an intentional chooser of alternate visual worlds, each with its own typography, material, layout, and interaction grammar.
+      STORY: The viewer switches designs, feels the product personality immediately, and can choose a direction for the real app.
+      FIRST VIEWPORT: Sticky selector above one large live preview, with the chosen concept filling the whole frame at desktop and mobile sizes.
+      FORM: Code-led exploration artifact, built as a self-contained HTML design lab.
+      FINISH: unreviewed and undocumented is unfinished; this exploration ends with runnable previews and a screenshot check.
+    -->
+    <main class="lab-shell">
+      <header class="lab-top">
+        <div class="lab-title">
+          <div class="lab-mark" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 32 32">
+              <path fill="currentColor" d="M16 2.5c1.8 7 5.5 10.7 12.5 12.5C21.5 16.8 17.8 20.5 16 27.5 14.2 20.5 10.5 16.8 3.5 15 10.5 13.2 14.2 9.5 16 2.5Z" />
+            </svg>
+          </div>
+          <div>
+            <h1>Lumi alternate design lab</h1>
+            <p>Radically different UI directions in one standalone file.</p>
+          </div>
+        </div>
+        <div class="lab-controls" aria-label="Design controls">
+          <button class="nav-btn" id="prevBtn" type="button" aria-label="Previous design">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div class="select-wrap">
+            <select id="designSelect" aria-label="Choose a design direction"></select>
+          </div>
+          <div class="view-toggle" aria-label="Choose preview screen">
+            <button class="active" id="homeViewBtn" type="button">Home</button>
+            <button id="lessonViewBtn" type="button">Lesson</button>
+          </div>
+          <button class="nav-btn" id="nextBtn" type="button" aria-label="Next design">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <section class="meta-row" aria-live="polite">
+        <div id="designNote">Choose a direction to preview.</div>
+        <div class="chips" id="designChips"></div>
+      </section>
+
+      <section class="preview-frame" id="previewFrame"></section>
+      <p class="designs-footer">Keyboard: left and right arrows switch designs. Use Home/Lesson to compare the same visual world across screens.</p>
+    </main>
+
+    <script>
+      const star = '<svg class="star-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2.5c1.8 7 5.5 10.7 12.5 12.5C21.5 16.8 17.8 20.5 16 27.5 14.2 20.5 10.5 16.8 3.5 15 10.5 13.2 14.2 9.5 16 2.5Z"/><path d="M5.5 3.5c.6 2.2 1.8 3.4 4 4-2.2.6-3.4 1.8-4 4-.6-2.2-1.8-3.4-4-4 2.2-.6 3.4-1.8 4-4Z"/></svg>';
+
+      const designs = [
+        {
+          name: "Orbital Knowledge Studio",
+          note: "A cinematic learning cockpit where concepts orbit the current lesson like a living map.",
+          chips: ["spatial", "dark", "immersive", "course map"],
+          html: `
+            <section class="screen design-aurora">
+              <div class="aurora-map">
+                <aside class="aurora-side">
+                  <div class="aurora-logo">${star}<span>Lumi</span></div>
+                  <nav class="aurora-nav">
+                    <span>Mission Control</span><span>Courses</span><span>Projects</span><span>Sources</span><span>Notes</span>
+                  </nav>
+                </aside>
+                <div class="aurora-main">
+                  <div>
+                    <h2>Model evaluation, mapped as a solar system.</h2>
+                    <p>Every lesson becomes a body in motion: prerequisites, source packs, assessments, and project milestones stay visible without becoming a spreadsheet.</p>
+                  </div>
+                  <div class="orbit" aria-hidden="true">
+                    <div class="planet one">Bias</div>
+                    <div class="planet two">Recall</div>
+                    <div class="planet three">F1</div>
+                  </div>
+                </div>
+                <aside class="aurora-panel">
+                  <div class="aurora-card"><strong>Now studying</strong><span class="fine">Precision vs recall tradeoffs</span></div>
+                  <div class="aurora-card"><strong>Evidence pack</strong><span class="fine">7 sources linked to this concept</span></div>
+                  <div class="aurora-card"><strong>Next action</strong><span class="fine">Run a tiny confusion-matrix check</span></div>
+                </aside>
+              </div>
+            </section>`
+        },
+        {
+          name: "Annotated Field Notebook",
+          note: "A scholarly, tactile course reader that feels like research notes made navigable.",
+          chips: ["editorial", "warm", "serif", "deep reading"],
+          html: `
+            <section class="screen design-paper">
+              <aside class="paper-rail">
+                <h2>Lumi Research Notes</h2>
+                <div class="paper-index">
+                  <span><b>01 Foundations</b><i>done</i></span>
+                  <span><b>02 Split Strategy</b><i>done</i></span>
+                  <span><b>03 Metrics</b><i>now</i></span>
+                  <span><b>04 Error Analysis</b><i>next</i></span>
+                </div>
+              </aside>
+              <div class="paper-main">
+                <div class="paper-top"><span>Machine Learning Basics</span><span>Source-grounded lesson</span></div>
+                <div class="paper-body">
+                  <div class="paper-headline">
+                    <h2>Accuracy lies when classes are uneven.</h2>
+                    <p>A calm explanation-first surface for learners who want to understand why a metric exists before memorizing its formula.</p>
+                  </div>
+                  <article class="paper-lesson">
+                    <h3>Margin notes</h3>
+                    <div class="paper-columns">Precision asks whether predicted positives were trustworthy. Recall asks whether actual positives were missed. The useful learning moment is not the definition, but the tradeoff: changing a threshold changes which mistakes you accept.</div>
+                  </article>
+                </div>
+              </div>
+            </section>`
+        },
+        {
+          name: "Command Line Mentor",
+          note: "A technical, fast, keyboard-native interface for learners who think in tasks and checks.",
+          chips: ["terminal", "dense", "keyboard", "engineer"],
+          html: `
+            <section class="screen design-command">
+              <div class="command-grid">
+                <aside class="command-rail">
+                  <div class="command-brand"><b>LUMI</b><span>v1.0</span></div>
+                  <div class="cmd-item active">learn / model-eval</div>
+                  <div class="cmd-item">sources / inspect</div>
+                  <div class="cmd-item">quiz / pending</div>
+                  <div class="cmd-item">project / runbook</div>
+                </aside>
+                <div class="command-main">
+                  <div class="terminal-bar"><span>session: ananya</span><span>streak: 7 days</span></div>
+                  <div class="terminal-body">
+                    <div>
+                      <p class="prompt-line">$ lumi continue --course machine-learning</p>
+                      <h2>Next checkpoint: explain F1 without reciting it.</h2>
+                      <p class="fine">The UI treats learning as a sequence of commands, artifacts, and validations. Great for power users, projects, and source inspection.</p>
+                    </div>
+                    <div class="terminal-card">
+                      <div class="terminal-row"><b>read</b><span>Metric definitions</span></div>
+                      <div class="terminal-row"><b>prove</b><span>Manual calculation</span></div>
+                      <div class="terminal-row"><b>ship</b><span>Mini project step</span></div>
+                    </div>
+                  </div>
+                  <div class="terminal-bar"><span>hint: press ? for source citations</span><span>ready</span></div>
+                </div>
+              </div>
+            </section>`
+        },
+        {
+          name: "Concept Cartographer",
+          note: "A bright visual atlas where courses feel like territories, paths, and landmarks.",
+          chips: ["map", "playful", "structured", "roadmap"],
+          html: `
+            <section class="screen design-atlas">
+              <div class="atlas">
+                <div class="atlas-map">
+                  <div class="atlas-copy">
+                    <h2>Navigate the territory, not a list of videos.</h2>
+                    <p>The learner sees prerequisites, dependencies, and weak spots as places on a map. Progress becomes orientation rather than pressure.</p>
+                  </div>
+                  <div class="atlas-path" aria-hidden="true"></div>
+                  <div class="atlas-node a">Data split</div>
+                  <div class="atlas-node b">Metrics</div>
+                  <div class="atlas-node c">Project</div>
+                </div>
+                <aside class="atlas-panel">
+                  <h3>Route plan</h3>
+                  <article><b>Current landmark</b><p class="fine">Common Evaluation Metrics</p></article>
+                  <article><b>Risk zone</b><p class="fine">Precision and recall are often confused.</p></article>
+                  <article><b>Next waypoint</b><p class="fine">Confusion Matrix practice check</p></article>
+                </aside>
+              </div>
+            </section>`
+        },
+        {
+          name: "Brutalist Syllabus",
+          note: "An intentionally loud, anti-SaaS interface that makes learning feel urgent and physical.",
+          chips: ["bold", "youthful", "high contrast", "anti-default"],
+          html: `
+            <section class="screen design-brutal">
+              <div class="brutal">
+                <aside class="brutal-nav">
+                  <h2>LUMI BOOT CAMP</h2>
+                  <div class="stack"><span>LESSONS</span><span>TESTS</span><span>PROJECTS</span></div>
+                </aside>
+                <main class="brutal-main">
+                  <div class="brutal-ticker"><span>NO PASSIVE WATCHING</span><span>12 / 16 COMPLETE</span><span>BUILD NEXT</span></div>
+                  <div class="brutal-stage">
+                    <div>
+                      <h2>LEARN BY BREAKING THE MODEL.</h2>
+                      <div class="brutal-actions"><button>Continue</button><button>Open project</button></div>
+                    </div>
+                    <aside class="brutal-panel">
+                      <div><b>Assignment</b><p>Find a metric that hides a failure.</p></div>
+                      <div><b>Constraint</b><p>No memorized definitions.</p></div>
+                      <button>Start now</button>
+                    </aside>
+                  </div>
+                </main>
+              </div>
+            </section>`
+        },
+        {
+          name: "Creative Studio Boards",
+          note: "A calm but premium workspace that frames course creation like arranging a studio board.",
+          chips: ["premium", "editorial", "creative", "course creation"],
+          html: `
+            <section class="screen design-studio">
+              <div class="studio">
+                <section class="studio-left">
+                  <div>
+                    <h2>Design your own technical apprenticeship.</h2>
+                    <p>Topic, depth, source preferences, and project style become material blocks. The interface feels composed, not configured.</p>
+                  </div>
+                  <b>Course builder / Machine Learning</b>
+                </section>
+                <section class="studio-right">
+                  <div class="paper-top"><span>Lumi Studio</span><span>Generate Course</span></div>
+                  <div class="studio-board">
+                    <article class="studio-tile"><b>Goal</b><span>First principles to implementation</span></article>
+                    <article class="studio-tile"><b>Depth</b><span>Engineer-ready</span></article>
+                    <article class="studio-tile"><b>Sources</b><span>Docs, papers, guides</span></article>
+                    <article class="studio-tile"><b>Project path</b><span>Build a model evaluator from scratch</span></article>
+                    <article class="studio-tile"><b>Ready</b><span>Create curriculum</span></article>
+                  </div>
+                </section>
+              </div>
+            </section>`
+        },
+        {
+          name: "Warm Learning Garden",
+          note: "A friendly, emotionally soft direction for learners who need encouragement without childish UI.",
+          chips: ["warm", "friendly", "soft", "supportive"],
+          html: `
+            <section class="screen design-bloom">
+              <div class="bloom">
+                <main class="bloom-main">
+                  <b>Lumi</b>
+                  <h2>Keep the next step small enough to start.</h2>
+                  <p>The product lowers anxiety by making one lesson, one reason, and one action visible. Progress feels like growth, not a scoreboard.</p>
+                  <div class="bloom-path">
+                    <div><b>Read</b><br><span class="fine">Metrics story</span></div>
+                    <div><b>Try</b><br><span class="fine">Tiny quiz</span></div>
+                    <div><b>Reflect</b><br><span class="fine">Weak spot</span></div>
+                    <div><b>Build</b><br><span class="fine">Project step</span></div>
+                  </div>
+                </main>
+                <aside class="bloom-side">
+                  <article class="bloom-card"><b>Your streak</b><h2>7 days</h2><p class="fine">Quiet consistency, not pressure.</p></article>
+                  <article class="bloom-card"><b>Today</b><p>Finish Model Evaluation and save one note in your own words.</p></article>
+                </aside>
+              </div>
+            </section>`
+        },
+        {
+          name: "Glacier Focus Mode",
+          note: "A low-distraction, high-contrast reader that makes one lesson feel important and quiet.",
+          chips: ["focus", "cool", "minimal", "lesson"],
+          html: `
+            <section class="screen design-glacier">
+              <div class="glacier">
+                <main class="glacier-main">
+                  <div>
+                    <b>Lesson 5 / Machine Learning</b>
+                    <h2>Precision is trust. Recall is coverage.</h2>
+                  </div>
+                  <div class="glacier-dock">
+                    <div><b>01</b><p class="fine">Read the tradeoff</p></div>
+                    <div><b>02</b><p class="fine">Calculate by hand</p></div>
+                    <div><b>03</b><p class="fine">Apply to project</p></div>
+                  </div>
+                </main>
+                <aside class="glacier-side">
+                  <article><b>Focus timer</b><h2>18:00</h2></article>
+                  <article><b>Source pack</b><p class="fine">Only citations used in this section.</p></article>
+                  <article><b>Exit</b><p class="fine">Save note and return later.</p></article>
+                </aside>
+              </div>
+            </section>`
+        },
+        {
+          name: "Museum of Concepts",
+          note: "A refined exhibition-like course overview where each concept is treated as an artifact.",
+          chips: ["museum", "curated", "serif", "overview"],
+          html: `
+            <section class="screen design-museum">
+              <div class="museum">
+                <aside class="museum-nav">
+                  <h2>Lumi</h2>
+                  <span>Gallery</span><span>Archive</span><span>Notes</span>
+                </aside>
+                <main class="museum-gallery">
+                  <h2>Every concept deserves a frame before it becomes a tool.</h2>
+                  <div class="museum-art"><div></div><div></div></div>
+                </main>
+                <aside class="museum-panel">
+                  <article><b>Current exhibit</b><p>Common Evaluation Metrics</p></article>
+                  <article><b>Interpretation</b><p class="fine">The learner compares metrics as artifacts with purpose, history, and limits.</p></article>
+                  <article><b>Next room</b><p>Confusion Matrix</p></article>
+                </aside>
+              </div>
+            </section>`
+        },
+        {
+          name: "Liquid Tutor Console",
+          note: "A vivid AI-native interface where the tutor feels fluid, responsive, and alive.",
+          chips: ["AI-native", "fluid", "bright", "chat"],
+          html: `
+            <section class="screen design-liquid">
+              <div class="liquid">
+                <div class="liquid-grid">
+                  <main class="liquid-copy">
+                    <div><b>Lumi Tutor</b><h2>Ask the course. Get an answer with receipts.</h2></div>
+                    <div class="liquid-pills"><span>Explain simply</span><span>Show source</span><span>Quiz me</span><span>Give example</span></div>
+                  </main>
+                  <aside class="liquid-panel">
+                    <article><b>You asked</b><p>Why is accuracy misleading?</p></article>
+                    <article><b>Lumi answers</b><p class="fine">Because the majority class can dominate the score while minority failures stay hidden.</p></article>
+                    <article><b>Cited concepts</b><p class="fine">Class imbalance, recall, threshold choice</p></article>
+                  </aside>
+                </div>
+              </div>
+            </section>`
+        },
+        {
+          name: "Cinematic Lesson Premiere",
+          note: "A dramatic media-first learning surface that makes each lesson feel like an event.",
+          chips: ["cinematic", "dramatic", "media", "first viewport"],
+          html: `
+            <section class="screen design-cinema">
+              <div class="cinema">
+                <div class="cinema-top"><span>Lumi Feature Lesson</span><span>Now playing: Model Evaluation</span></div>
+                <div class="cinema-stage">
+                  <main class="cinema-hero">
+                    <h2>The metric that decides what kind of mistake you can live with.</h2>
+                  </main>
+                  <aside class="cinema-side">
+                    <article><b>Scene 1</b><p class="fine">Accuracy and its blind spot</p></article>
+                    <article><b>Scene 2</b><p class="fine">Precision under pressure</p></article>
+                    <article><b>Scene 3</b><p class="fine">Recall when misses matter</p></article>
+                    <article><b>After credits</b><p class="fine">Assessment unlocked</p></article>
+                  </aside>
+                </div>
+              </div>
+            </section>`
+        },
+        {
+          name: "Engineering Blueprint",
+          note: "A precise technical drawing style for learners who want systems, constraints, and diagrams.",
+          chips: ["blueprint", "technical", "diagram", "systems"],
+          html: `
+            <section class="screen design-blueprint">
+              <div class="blueprint">
+                <div class="blueprint-grid">
+                  <main class="blueprint-main">
+                    <h2>Build the mental model before the model.</h2>
+                    <p class="fine">A measured interface for system design, machine learning internals, and engineering tradeoffs.</p>
+                    <div class="blueprint-diagram" aria-hidden="true"></div>
+                  </main>
+                  <aside class="blueprint-side">
+                    <article><b>Input</b><p>Topic: Redis internals</p></article>
+                    <article><b>Process</b><p>Research, map, generate, validate</p></article>
+                    <article><b>Output</b><p>Lessons, diagrams, projects, assessments</p></article>
+                  </aside>
+                </div>
+              </div>
+            </section>`
+        },
+        {
+          name: "Longform Reader Pro",
+          note: "A restrained reading-first product where lesson comprehension beats dashboard energy.",
+          chips: ["readable", "calm", "three-column", "professional"],
+          html: `
+            <section class="screen design-reader">
+              <div class="reader">
+                <aside class="reader-left">
+                  <article><b>Outline</b><p class="fine">Accuracy<br>Precision<br>Recall<br>F1 score</p></article>
+                  <article><b>Progress</b><p>75 percent</p></article>
+                </aside>
+                <article class="reader-main">
+                  <h2>Evaluation metrics are a language for choosing mistakes.</h2>
+                  <p>A learning surface for deep technical material should feel closer to a carefully edited chapter than a productivity dashboard.</p>
+                  <p>Definitions stay close to examples. Source references are visible but quiet. The learner can read for ten minutes without fighting the interface.</p>
+                  <div class="reader-callout">Key idea: pick the metric that matches the consequence of being wrong.</div>
+                </article>
+                <aside class="reader-right">
+                  <article><b>Source note</b><p class="fine">Used for this paragraph</p></article>
+                  <article><b>Check yourself</b><p class="fine">Explain the recall tradeoff in one sentence.</p></article>
+                </aside>
+              </div>
+            </section>`
+        },
+        {
+          name: "Learning Ops Dashboard",
+          note: "A serious analytics console for learners who want visibility into generation, coverage, and progress.",
+          chips: ["analytics", "ops", "dense", "enterprise"],
+          html: `
+            <section class="screen design-data">
+              <div class="data">
+                <aside class="data-rail">
+                  <div><h2>Lumi Ops</h2><p class="fine">Course generation and learning telemetry</p></div>
+                  <div class="stack"><span>Research</span><span>Coverage</span><span>Lessons</span><span>Assessments</span></div>
+                </aside>
+                <main class="data-main">
+                  <header class="data-head">
+                    <h2>Your course is becoming verifiable.</h2>
+                    <span class="chip">Live generation</span>
+                  </header>
+                  <section class="data-board">
+                    <article class="chart-card">
+                      <b>Concept coverage</b>
+                      <div class="chart" aria-hidden="true">
+                        <span style="height: 34%"></span><span style="height: 62%"></span><span style="height: 48%"></span><span style="height: 78%"></span><span style="height: 88%"></span><span style="height: 58%"></span>
+                      </div>
+                    </article>
+                    <div class="data-side">
+                      <article class="data-card"><b>Sources crawled</b><h2>38</h2></article>
+                      <article class="data-card"><b>Lessons ready</b><h2>12 / 16</h2></article>
+                      <article class="data-card"><b>Weak concept</b><p class="fine">Threshold selection</p></article>
+                    </div>
+                  </section>
+                </main>
+              </div>
+            </section>`
+        },
+        {
+          name: "Terminal Brutalist Drill",
+          note: "A square-edged fusion of command-line workflow and brutalist urgency: dense, loud, and keyboard-first.",
+          chips: ["terminal", "brutalist", "square", "high contrast"],
+          html: `
+            <section class="screen design-terminal-brutal">
+              <div class="terminal-brutal">
+                <aside class="tb-nav">
+                  <div>
+                    <h2>LUMI<br />DRILL</h2>
+                    <span>learn / metric</span>
+                    <span>run / example</span>
+                    <span>prove / answer</span>
+                  </div>
+                  <b>NO ROUND CORNERS</b>
+                </aside>
+                <main class="tb-main">
+                  <div class="tb-bar"><span>$ lumi continue machine-learning</span><span>12 / 16 COMPLETE</span></div>
+                  <div class="tb-stage">
+                    <section class="tb-copy">
+                      <p class="tb-prompt">> ACTIVE CHECKPOINT</p>
+                      <h2>PRECISION IS TRUST UNDER PRESSURE.</h2>
+                      <p>Command-line density meets brutalist force. Lessons are tasks, checks, and hard-edged proof blocks.</p>
+                      <div class="tb-actions"><button>START DRILL</button><button>OPEN SOURCES</button></div>
+                    </section>
+                    <aside class="tb-panel">
+                      <article><b>NEXT</b><p>Calculate precision from a confusion matrix.</p></article>
+                      <div class="tb-stat">TP 84 / FP 16 / PRECISION 84%</div>
+                      <article><b>RULE</b><p>False positives lower trust.</p></article>
+                    </aside>
+                  </div>
+                </main>
+              </div>
+            </section>`
+        }
+      ];
+
+      const articleBody = `
+          <div>
+            <p class="fine">Machine Learning / Model Evaluation / Lesson 5</p>
+            <h2>Precision tells you how reliable a positive prediction is.</h2>
+          </div>
+          <p>
+            Imagine a fraud detector that flags 100 transactions. If 84 of those flagged transactions are actually fraud,
+            the detector has 84 percent precision. Precision does not ask whether the model found every fraud case.
+            It asks a narrower question: when the model says "positive", how often is it right?
+          </p>
+          <section>
+            <h3>Definition</h3>
+            <p>
+              Precision is the share of predicted positives that are true positives. It is useful when a false positive
+              has a real cost: blocking a legitimate customer, sending an unnecessary medical follow-up, or interrupting
+              a moderation workflow with a harmless post.
+            </p>
+          </section>
+          <div class="formula-box">precision = true positives / (true positives + false positives)</div>
+          <section>
+            <h3>Worked example</h3>
+            <div class="example-grid">
+              <div><b>True positives</b><br />84 correct fraud alerts</div>
+              <div><b>False positives</b><br />16 legitimate transactions flagged</div>
+              <div><b>Precision</b><br />84 / (84 + 16) = 84%</div>
+            </div>
+          </section>
+          <section>
+            <h3>What this means</h3>
+            <p>
+              High precision means the model is careful before making a positive claim. Low precision means the product
+              will create too many false alarms. But precision can be high even when the model misses many actual positives,
+              which is why recall is the next metric.
+            </p>
+          </section>
+          <section>
+            <h3>Common mistake</h3>
+            <ul>
+              <li>Do not read precision as overall correctness. That is accuracy.</li>
+              <li>Do not use precision alone when missed positives are dangerous.</li>
+              <li>Always ask what a false positive costs in the real product.</li>
+            </ul>
+          </section>
+          <div class="lesson-actions">
+            <button type="button">Mark understood</button>
+            <button type="button">Show recall next</button>
+          </div>`;
+
+      const article = `<article class="content-article">${articleBody}</article>`;
+      const sourceStack = `
+        <div class="lesson-rhythm">
+          <div class="source-box">
+            <h3>Source note</h3>
+            <p>Grounded by the lesson source pack on classification metrics and confusion matrices.</p>
+          </div>
+          <div class="check-box">
+            <h3>Check yourself</h3>
+            <p>A model catches only 20 fraud cases, but 19 are real fraud. Is precision high or low? What is missing from that story?</p>
+          </div>
+          <div class="source-box">
+            <h3>Takeaway</h3>
+            <p>Precision punishes false positives. Recall punishes false negatives.</p>
+          </div>
+        </div>`;
+
+      const miniOutline = ["Why accuracy fails", "Precision", "Recall", "F1 score", "Practice check"];
+
+      const richLessonScreens = [
+        `<section class="screen design-aurora">
+          <div class="aurora-map">
+            <aside class="aurora-side"><div class="aurora-logo">${star}<span>Lumi</span></div><nav class="aurora-nav">${miniOutline.map((item, index) => `<span>${index + 1}. ${item}</span>`).join("")}</nav></aside>
+            <main class="aurora-main">${article}</main>
+            <aside class="aurora-panel">${sourceStack}</aside>
+          </div>
+        </section>`,
+        `<section class="screen design-paper">
+          <aside class="paper-rail"><h2>Lesson Folio</h2><div class="paper-index">${miniOutline.map((item, index) => `<span><b>${String(index + 1).padStart(2, "0")} ${item}</b><i>${index === 1 ? "now" : "read"}</i></span>`).join("")}</div></aside>
+          <div class="paper-main"><div class="paper-top"><span>Common Evaluation Metrics</span><span>Annotated lesson</span></div><div class="paper-body">${article}<article class="paper-lesson">${sourceStack}</article></div></div>
+        </section>`,
+        `<section class="screen design-command">
+          <div class="command-grid">
+            <aside class="command-rail"><div class="command-brand"><b>LUMI</b><span>lesson</span></div><div class="cmd-item active">read precision.md</div><div class="cmd-item">run example</div><div class="cmd-item">inspect sources</div><div class="cmd-item">submit check</div></aside>
+            <main class="command-main"><div class="terminal-bar"><span>machine-learning/model-evaluation</span><span>26 min</span></div><div class="terminal-body">${article}<div class="terminal-card">${sourceStack}</div></div><div class="terminal-bar"><span>next: recall</span><span>status: in progress</span></div></main>
+          </div>
+        </section>`,
+        `<section class="screen design-atlas">
+          <div class="atlas"><main class="atlas-map">${article}<div class="atlas-path" aria-hidden="true"></div><div class="atlas-node a">TP</div><div class="atlas-node b">FP</div><div class="atlas-node c">Precision</div></main><aside class="atlas-panel"><h3>Field guide</h3>${sourceStack}</aside></div>
+        </section>`,
+        `<section class="screen design-brutal">
+          <div class="brutal"><aside class="brutal-nav"><h2>LESSON 05</h2><div class="stack">${miniOutline.map((item) => `<span>${item}</span>`).join("")}</div></aside><main class="brutal-main"><div class="brutal-ticker"><span>FALSE ALARMS COST MONEY</span><span>PRECISION = TRUST</span><span>READ THEN PROVE</span></div><div class="brutal-stage">${article}<aside class="brutal-panel">${sourceStack}</aside></div></main></div>
+        </section>`,
+        `<section class="screen design-studio">
+          <div class="studio"><section class="studio-left">${article}</section><section class="studio-right"><div class="paper-top"><span>Lesson Canvas</span><span>Precision</span></div><div class="lesson-rhythm" style="margin-top: 24px">${sourceStack}<div class="studio-board"><article class="studio-tile"><b>Concept</b><span>Trust in positives</span></article><article class="studio-tile"><b>Example</b><span>84 true alerts, 16 false</span></article><article class="studio-tile"><b>Check</b><span>Ready</span></article></div></div></section></div>
+        </section>`,
+        `<section class="screen design-bloom">
+          <div class="bloom"><main class="bloom-main">${article}<div class="bloom-path"><div><b>Read</b><br><span class="fine">Definition</span></div><div><b>Try</b><br><span class="fine">Example</span></div><div><b>Reflect</b><br><span class="fine">Mistake cost</span></div><div><b>Check</b><br><span class="fine">Prompt</span></div></div></main><aside class="bloom-side"><article class="bloom-card">${sourceStack}</article></aside></div>
+        </section>`,
+        `<section class="screen design-glacier">
+          <div class="glacier"><main class="glacier-main">${article}<div class="glacier-dock"><div><b>01</b><p class="fine">Definition</p></div><div><b>02</b><p class="fine">Worked example</p></div><div><b>03</b><p class="fine">Check</p></div></div></main><aside class="glacier-side"><article>${sourceStack}</article></aside></div>
+        </section>`,
+        `<section class="screen design-museum">
+          <div class="museum"><aside class="museum-nav"><h2>Lesson Gallery</h2>${miniOutline.map((item) => `<span>${item}</span>`).join("")}</aside><main class="museum-gallery">${article}</main><aside class="museum-panel">${sourceStack}</aside></div>
+        </section>`,
+        `<section class="screen design-liquid">
+          <div class="liquid"><div class="liquid-grid"><main class="liquid-copy">${article}<div class="liquid-pills"><span>Define</span><span>Example</span><span>Ask tutor</span><span>Quiz me</span></div></main><aside class="liquid-panel">${sourceStack}</aside></div></div>
+        </section>`,
+        `<section class="screen design-cinema">
+          <div class="cinema"><div class="cinema-top"><span>Scene 2</span><span>Precision</span></div><div class="cinema-stage"><main class="cinema-hero">${article}</main><aside class="cinema-side">${sourceStack}</aside></div></div>
+        </section>`,
+        `<section class="screen design-blueprint">
+          <div class="blueprint"><div class="blueprint-grid"><main class="blueprint-main">${article}<div class="blueprint-diagram" aria-hidden="true"></div></main><aside class="blueprint-side">${sourceStack}</aside></div></div>
+        </section>`,
+        `<section class="screen design-reader">
+          <div class="reader"><aside class="reader-left"><article><b>Lesson outline</b><p class="fine">${miniOutline.join("<br>")}</p></article><article><b>Reading time</b><p>8 min</p></article></aside>${article}<aside class="reader-right">${sourceStack}</aside></div>
+        </section>`,
+        `<section class="screen design-data">
+          <div class="data"><aside class="data-rail"><div><h2>Metric Lab</h2><p class="fine">Precision lesson telemetry</p></div><div class="stack">${miniOutline.map((item) => `<span>${item}</span>`).join("")}</div></aside><main class="data-main"><header class="data-head"><h2>Precision lesson</h2><span class="chip">Lesson mode</span></header><section class="data-board">${article}<div class="data-side">${sourceStack}</div></section></main></div>
+        </section>`,
+        `<section class="screen design-terminal-brutal">
+          <div class="terminal-brutal">
+            <aside class="tb-nav"><div><h2>LUMI<br />DRILL</h2>${miniOutline.map((item, index) => `<span>${index + 1}. ${item}</span>`).join("")}</div><b>LESSON 05</b></aside>
+            <main class="tb-main">
+              <div class="tb-bar"><span>$ cat precision.lesson</span><span>NO FALSE CONFIDENCE</span></div>
+              <div class="tb-stage">
+                <section class="tb-copy tb-lesson">${articleBody}</section>
+                <aside class="tb-panel">${sourceStack}<div class="tb-stat">TP 84 / FP 16 / PRECISION 84%</div></aside>
+              </div>
+            </main>
+          </div>
+        </section>`
+      ];
+
+      const select = document.querySelector("#designSelect");
+      const frame = document.querySelector("#previewFrame");
+      const note = document.querySelector("#designNote");
+      const chips = document.querySelector("#designChips");
+      const prev = document.querySelector("#prevBtn");
+      const next = document.querySelector("#nextBtn");
+      const homeBtn = document.querySelector("#homeViewBtn");
+      const lessonBtn = document.querySelector("#lessonViewBtn");
+      const params = new URLSearchParams(window.location.search);
+      let current = Number(params.get("design") || 0);
+      let currentView = params.get("view") === "lesson" ? "lesson" : "home";
+
+      designs.forEach((design, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = `${index + 1}. ${design.name}`;
+        select.append(option);
+      });
+
+      function showDesign(index) {
+        index = Number.isFinite(index) ? index : 0;
+        current = (index + designs.length) % designs.length;
+        const design = designs[current];
+        select.value = String(current);
+        frame.innerHTML = currentView === "home" ? design.html : richLessonScreens[current];
+        homeBtn.classList.toggle("active", currentView === "home");
+        lessonBtn.classList.toggle("active", currentView === "lesson");
+        note.textContent = `${current + 1} of ${designs.length} / ${currentView}: ${design.note}`;
+        chips.innerHTML = design.chips.map((chip) => `<span class="chip">${chip}</span>`).join("");
+      }
+
+      select.addEventListener("change", () => showDesign(Number(select.value)));
+      prev.addEventListener("click", () => showDesign(current - 1));
+      next.addEventListener("click", () => showDesign(current + 1));
+      homeBtn.addEventListener("click", () => {
+        currentView = "home";
+        showDesign(current);
+      });
+      lessonBtn.addEventListener("click", () => {
+        currentView = "lesson";
+        showDesign(current);
+      });
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft") showDesign(current - 1);
+        if (event.key === "ArrowRight") showDesign(current + 1);
+      });
+
+      showDesign(current);
+    </script>
+  </body>
+</html>
