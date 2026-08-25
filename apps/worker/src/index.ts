@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { loadEnvFile } from "node:process";
 import { parseWorkerEnv } from "@lumi/config";
 import { createWorkerDbClient } from "@lumi/db";
+import { createCurriculumHandler } from "./curriculum.ts";
+import { createLessonHandler } from "./lesson.ts";
 import { createResearchHandler } from "./research.ts";
 import { claimOneJob, runClaimedJob } from "./worker.ts";
 
@@ -14,6 +16,8 @@ try {
 const config = parseWorkerEnv(process.env);
 const db = createWorkerDbClient(config);
 const handlers = {
+  curriculum: createCurriculumHandler(db, config),
+  lesson: createLessonHandler(db, config),
   research: createResearchHandler(db, config),
 };
 const workerId = `worker-${randomUUID()}`;

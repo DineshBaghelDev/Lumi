@@ -6,6 +6,7 @@ const localIdSchema = z.string().trim().regex(/^[a-z][a-z0-9-]*$/, {
 const uuidSchema = z.uuid();
 const nonEmptyText = z.string().trim().min(1);
 const orderIndexSchema = z.number().int().positive();
+const blockIdSchema = z.string().trim().regex(/^block-[a-z0-9-]+$/);
 
 const sourcePackSchema = z.object({
   id: localIdSchema,
@@ -58,6 +59,7 @@ const projectSkeletonSchema = z.object({
 });
 
 export const curriculumSchemaVersion = 1;
+export const lessonContentSchemaVersion = 1;
 
 export const curriculumStructuredOutputSchema = z
   .object({
@@ -180,3 +182,90 @@ const validateProjectRefs = (
 };
 
 export type CurriculumStructuredOutput = z.infer<typeof curriculumStructuredOutputSchema>;
+
+const sourceRefSchema = z.object({
+  sourceId: uuidSchema,
+  chunkId: uuidSchema.optional(),
+  label: nonEmptyText.optional(),
+}).strict();
+
+const blockBaseSchema = z.object({
+  id: blockIdSchema,
+}).strict();
+
+const citedBlockBaseSchema = blockBaseSchema.extend({
+  sourceRefs: z.array(sourceRefSchema).default([]),
+}).strict();
+
+const headingBlockSchema = blockBaseSchema.extend({
+  type: z.literal("heading"),
+  level: z.number().int().min(2).max(4),
+  text: nonEmptyText,
+}).strict();
+
+const paragraphBlockSchema = citedBlockBaseSchema.extend({
+  type: z.literal("paragraph"),
+  text: nonEmptyText,
+}).strict();
+
+const listBlockSchema = citedBlockBaseSchema.extend({
+  type: z.literal("list"),
+  style: z.enum(["ordered", "unordered"]),
+  items: z.array(nonEmptyText).min(1),
+}).strict();
+
+const codeBlockSchema = citedBlockBaseSchema.extend({
+  type: z.literal("code"),
+  language: nonEmptyText,
+  code: nonEmptyText,
+  caption: nonEmptyText.optional(),
+}).strict();
+
+const calloutBlockSchema = citedBlockBaseSchema.extend({
+  type: z.literal("callout"),
+  tone: z.enum(["note", "warning", "tip"]),
+  title: nonEmptyText.optional(),
+  text: nonEmptyText,
+}).strict();
+
+const mermaidBlockSchema = citedBlockBaseSchema.extend({
+  type: z.literal("mermaid"),
+  diagram: nonEmptyText,
+  caption: nonEmptyText.optional(),
+}).strict();
+
+const imageBlockSchema = blockBaseSchema.extend({
+  type: z.literal("image"),
+  assetId: uuidSchema,
+  caption: nonEmptyText.optional(),
+}).strict();
+
+export const lessonBlockSchema = z.discriminatedUnion("type", [
+  headingBlockSchema,
+  paragraphBlockSchema,
+  listBlockSchema,
+  codeBlockSchema,
+  calloutBlockSchema,
+  mermaidBlockSchema,
+  imageBlockSchema,
+]);
+
+export const lessonContentSchema = z
+  .object({
+    schemaVersion: z.literal(lessonContentSchemaVersion),
+    title: nonEmptyText,
+    summary: nonEmptyText,
+    blocks: z.array(lessonBlockSchema).min(1),
+  })
+  .superRefine((lesson, context) => {
+    const seen = new Set<string>();
+    for (const [index, block] of lesson.blocks.entries()) {
+      if (seen.has(block.id)) {
+        context.addIssue({ code: "custom", path: ["blocks", index, "id"], message: `duplicate block id: ${block.id}` });
+      }
+      seen.add(block.id);
+    }
+  });
+
+export type LessonContent = z.infer<typeof lessonContentSchema>;
+export type LessonBlock = z.infer<typeof lessonBlockSchema>;

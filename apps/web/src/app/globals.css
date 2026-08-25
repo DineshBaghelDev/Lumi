@@ -1008,6 +1008,95 @@ p {
   line-height: var(--body-large-line);
 }
 
+.lesson-block {
+  margin-top: var(--space-5);
+}
+
+.lesson-content h2.lesson-block,
+.lesson-content h3.lesson-block,
+.lesson-content h4.lesson-block {
+  scroll-margin-top: var(--space-6);
+}
+
+.lesson-list-block {
+  padding-left: var(--space-6);
+  color: var(--slate-700);
+  font-size: var(--body-size);
+  line-height: var(--body-line);
+}
+
+.lesson-list-block li + li {
+  margin-top: var(--space-2);
+}
+
+.lesson-code {
+  overflow-x: auto;
+  margin: var(--space-2) 0 0;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  background: var(--surface-muted);
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: var(--small-size);
+  line-height: var(--small-line);
+}
+
+.lesson-callout,
+.lesson-diagram,
+.lesson-image {
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+}
+
+.lesson-callout.tip {
+  border-color: var(--success-border);
+  background: var(--success-soft);
+}
+
+.lesson-callout.warning {
+  border-color: var(--orange-soft);
+  background: #fff7ed;
+}
+
+.lesson-callout h3,
+figure figcaption {
+  margin-bottom: var(--space-2);
+  color: var(--slate-700);
+  font-size: var(--small-size);
+  font-weight: 700;
+  line-height: var(--small-line);
+}
+
+.lesson-diagram figcaption,
+.lesson-image figcaption {
+  margin: var(--space-3) 0 0;
+}
+
+.diagram-placeholder {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--slate-300);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  background: var(--surface-muted);
+}
+
+.mermaid-output {
+  overflow-x: auto;
+}
+
+.mermaid-output svg,
+.lesson-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .formula-card {
   min-height: 132px;
   padding: var(--space-4);

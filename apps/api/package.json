@@ -15,6 +15,7 @@
     "@insforge/sdk": "^1.5.2",
     "@lumi/config": "workspace:*",
     "@lumi/db": "workspace:*",
+    "@lumi/shared": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.6.2",
     "pg": "^8.23.0",

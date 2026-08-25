@@ -188,8 +188,9 @@ export const claimNextGenerationJob = async (
         case job.type
           when 'research' then 1
           when 'curriculum' then 2
-          when 'project' then 3
-          when 'question' then 4
+          when 'lesson' then 3
+          when 'project' then 4
+          when 'question' then 5
           else 5
         end,
         job.created_at

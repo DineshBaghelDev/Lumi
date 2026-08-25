@@ -1,6 +1,9 @@
 import { AppShell } from "../../ui";
+import { createCourseAction } from "../../actions";
+import { randomUUID } from "node:crypto";
 
-export default function NewCoursePage() {
+export default async function NewCoursePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
   return (
     <AppShell active="Courses">
       <a className="back-link" href="/courses">Back</a>
@@ -8,13 +11,14 @@ export default function NewCoursePage() {
         <h1>Create a new course</h1>
         <p>Tell Lumi what you want to learn.</p>
       </div>
-      <form className="form-box" aria-describedby="course-creation-note">
+      <form className="form-box" action={createCourseAction}>
+        <input type="hidden" name="idempotencyKey" value={randomUUID()} />
         <label htmlFor="topic">What do you want to learn?</label>
-        <textarea id="topic" className="textarea" placeholder="e.g., Quantum Computing, Basic Financial Modeling..." />
+        <textarea id="topic" name="topic" className="textarea" placeholder="e.g., Quantum Computing, Basic Financial Modeling..." required />
         <label>Depth</label>
         <div className="choice-grid">
           <label className="choice selected">
-            <input type="radio" name="depth" defaultChecked />
+            <input type="radio" name="difficultyLevel" value="beginner" defaultChecked />
             <span className="iconbox">1</span>
             <div>
               <strong>Beginner</strong>
@@ -22,7 +26,7 @@ export default function NewCoursePage() {
             </div>
           </label>
           <label className="choice">
-            <input type="radio" name="depth" />
+            <input type="radio" name="difficultyLevel" value="intermediate" />
             <span className="iconbox">2</span>
             <div>
               <strong>Intermediate</strong>
@@ -30,7 +34,7 @@ export default function NewCoursePage() {
             </div>
           </label>
           <label className="choice">
-            <input type="radio" name="depth" />
+            <input type="radio" name="difficultyLevel" value="advanced" />
             <span className="iconbox">3</span>
             <div>
               <strong>Advanced</strong>
@@ -39,22 +43,17 @@ export default function NewCoursePage() {
           </label>
         </div>
         <label htmlFor="goal">Learning goal</label>
-        <select id="goal" className="select" defaultValue="">
+        <select id="goal" name="goal" className="select" defaultValue="" required>
           <option value="" disabled>
             Select your goal
           </option>
           <option>Build projects</option>
           <option>Prepare for interviews</option>
         </select>
-        <button className="button wide-button" type="button" disabled>
-          Saving new courses soon
+        <button className="button wide-button" type="submit">
+          Create course
         </button>
-        <p id="course-creation-note" className="center-note">
-          We are finishing the save step that keeps each new course tied to your account.
-        </p>
-        <a className="preview-link" href="/courses/1">
-          Preview a generated course
-        </a>
+        {error ? <p className="center-note">{error}</p> : null}
       </form>
     </AppShell>
   );

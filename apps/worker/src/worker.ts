@@ -8,6 +8,7 @@ import {
   type GenerationJobRow,
   type LumiDb,
 } from "@lumi/db";
+import { sql } from "drizzle-orm";
 
 export class PermanentJobError extends Error {}
 export class RetryableJobError extends Error {}
@@ -43,12 +44,15 @@ export const runClaimedJob = async (
     await succeedGenerationJob(db, job.id);
   } catch (error) {
     const retryable = !(error instanceof PermanentJobError) && isRetryableError(error);
-    await failRunningGenerationJob(db, job.id, {
+    const failed = await failRunningGenerationJob(db, job.id, {
       error: error instanceof Error ? error.message : "Unknown job failure",
       retryable,
       maxAttempts,
       retryDelaySeconds: retryDelaySeconds(job.attempts),
     });
+    if (failed.status === "failed" && (job.type === "research" || job.type === "curriculum")) {
+      await db.execute(sql`update courses set status = 'failed', updated_at = now() where id = ${job.course_id}`);
+    }
   }
 };
 

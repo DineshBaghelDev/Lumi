@@ -137,12 +137,12 @@ export function AppShell({ active, children }: { active: string; children: React
   );
 }
 
-export function CourseTabs({ active }: { active: string }) {
+export function CourseTabs({ active, courseId = "1" }: { active: string; courseId?: string }) {
   const tabs = [
-    ["Overview", "/courses/1"],
-    ["Lessons", "/courses/1/lessons"],
+    ["Overview", `/courses/${courseId}`],
+    ["Lessons", `/courses/${courseId}/lessons`],
     ["Projects", "/projects"],
-    ["Assessments", "/courses/1/assessment/1"],
+    ["Assessments", `/courses/${courseId}/assessment/1`],
   ];
 
   return (

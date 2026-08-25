@@ -1,6 +1,31 @@
-import { AppShell, CourseIcon, EmptyNotice, ProgressBar, Status, courses } from "../ui";
+import { apiFetch } from "../../lib/api";
+import { AppShell, CourseIcon, EmptyNotice, ProgressBar, Status, courses as previewCourses } from "../ui";
 
-export default function CoursesPage() {
+type Course = {
+  id: string;
+  title: string;
+  topic: string;
+  description: string | null;
+  status: string;
+};
+
+export default async function CoursesPage() {
+  const response = await apiFetch("/courses");
+  const liveCourses = response.ok ? (await response.json() as { courses: Course[] }).courses : [];
+  const rows = liveCourses.length
+    ? liveCourses.map((course) => ({
+      id: course.id,
+      title: course.title,
+      subtitle: course.description ?? course.topic,
+      lessons: "Generating",
+      projects: "Projects pending",
+      progress: course.status === "ready" ? "100%" : "0%",
+      state: course.status === "ready" ? "Complete" : "In Progress",
+      mark: course.topic.slice(0, 2).toUpperCase(),
+      tone: "accent",
+    }))
+    : previewCourses;
+
   return (
     <AppShell active="Courses">
       <div className="topline">
@@ -12,12 +37,14 @@ export default function CoursesPage() {
           Create course
         </a>
       </div>
-      <EmptyNotice
-        title="One course is ready to preview"
-        body="More ways to organize courses will appear when you have a larger learning library."
-      />
+      {liveCourses.length === 0 ? (
+        <EmptyNotice
+          title="No generated courses yet"
+          body="Create your first course to start a new learning path."
+        />
+      ) : null}
       <section className="course-list">
-        {courses.map(({ id, title, subtitle, lessons, projects, progress, state, mark, tone }) => (
+        {rows.map(({ id, title, subtitle, lessons, projects, progress, state, mark, tone }) => (
           <a className="course-row" href={`/courses/${id}`} key={id}>
             <CourseIcon tone={tone}>{mark}</CourseIcon>
             <div>
