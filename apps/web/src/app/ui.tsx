@@ -90,6 +90,8 @@ export function Status({ label }: { label: string }) {
       ? "good"
       : label === "In Progress"
         ? "purple"
+        : label === "Failed"
+          ? "danger"
         : "gray";
   return <span className={`status ${className}`}>{label}</span>;
 }
@@ -106,8 +108,6 @@ export function Sidebar({ active }: { active: string }) {
   const links = [
     ["Home", "/dashboard", "home"],
     ["Courses", "/courses", "book"],
-    ["Projects", "/projects", "folder"],
-    ["Progress", "/progress", "chart"],
   ] as const;
 
   return (
@@ -141,8 +141,6 @@ export function CourseTabs({ active, courseId = "1" }: { active: string; courseI
   const tabs = [
     ["Overview", `/courses/${courseId}`],
     ["Lessons", `/courses/${courseId}/lessons`],
-    ["Projects", "/projects"],
-    ["Assessments", `/courses/${courseId}/assessment/1`],
   ];
 
   return (

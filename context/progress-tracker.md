@@ -3,9 +3,17 @@
 ## Status
 
 Planning: complete  
-Implementation: in progress
-Current milestone: 5 — Projects
-Current spec: `057-project-generation.md`
+Implementation: in progress  
+Current focus: Milestone 5 — Projects, with course-generation repair complete  
+Next spec: `057-project-generation.md`
+
+## Current handoff
+
+- Course generation can now recover from transient research failures such as `fetch failed`.
+- LiteLLM has a real `gpt-5.5` route backed by `OPENROUTER_API_KEY`; secrets stay in env.
+- Course UI now uses live data only: no preview-course fallback, no dead Projects/Progress nav in the course shell, and no hard page reload for generation polling.
+- Course detail now shows progress, failed/cancelled/budget states, cancel action, and same-job retry for failed generation jobs.
+- Browser screenshot QA was blocked by the local Browser runtime error `failed to write kernel assets: The system cannot find the path specified`; targeted tests/typechecks passed.
 
 ## Locked decisions
 
@@ -79,11 +87,14 @@ Current spec: `057-project-generation.md`
   - Verification: `pnpm --config.verify-deps-before-run=false --filter @lumi/worker test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/web typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/web build`; `pnpm --config.verify-deps-before-run=false workspace:check`.
   - Handoff: `apps/worker` now registers the `curriculum` job handler. It calls LiteLLM for the versioned structured curriculum, logs the LLM call, validates prerequisite ordering/required concept coverage, persists idempotent curriculum/module/lesson/assessment/project skeletons, enqueues exactly one lesson job per lesson and one project job per project, and marks fatal research/curriculum failures as course `failed`. `apps/api` now returns roadmap-ready curriculum details, and `apps/web` can create courses, list live courses, poll active course pages, and render generated roadmaps/lesson skeletons from the API.
 - `067-course-creation-ui.md` through `070-roadmap-ui.md` — complete
-  - Handoff: the existing light Lumi UI is wired to authenticated API calls using the InsForge access-token cookie. Polling fallback is implemented with a 5-second page refresh while a course is active; dedicated InsForge realtime subscriptions and retry controls remain deferred hardening because no TanStack Query/realtime data layer exists yet.
+  - Handoff: the existing light Lumi UI is wired to authenticated API calls using the InsForge access-token cookie. Polling fallback now refreshes server data every 5 seconds while generation is active. The course list no longer falls back to sample data, and unsupported course-shell links are hidden.
 - `049-lesson-content-zod-schema.md` through `056-lesson-job-integration.md`, plus `071-lesson-renderer.md` — complete
   - Gate: DB-backed `milestone 4 gate` passes with a Redis-topic lesson fixture: a lesson skeleton retrieves course-owned source chunks, fails deterministic QC once, regenerates, persists validated structured lesson JSON, and enqueues exactly one question job for its assessment. Re-running the lesson handler does not duplicate the question job.
   - Verification: `pnpm --config.verify-deps-before-run=false --filter @lumi/shared test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/shared typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/shared build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/db build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/worker build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api test`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/api build`; `pnpm --config.verify-deps-before-run=false --filter @lumi/web typecheck`; `pnpm --config.verify-deps-before-run=false --filter @lumi/web build`.
   - Handoff: `@lumi/shared` now exports the versioned lesson content contract for heading, paragraph, list, code, callout, Mermaid, and image asset blocks. `apps/worker` registers the lesson handler, retrieves bounded source context/assets, runs structured generation plus deterministic/reviewer QC, retries once on QC failure, persists ready content, and uses the existing idempotent question-job uniqueness. `apps/api` validates stored lesson content and resolves referenced image assets. `apps/web` now renders live lesson content, including a client Mermaid block fallback. Existing job claim ordering now prioritizes lesson jobs after curriculum jobs.
+- Course generation repair and `086-failure-retry-ux.md` first slice — complete
+  - Verification: `pnpm --filter @lumi/worker test`; `pnpm --filter @lumi/api test`; `pnpm --filter @lumi/web typecheck`; `pnpm --filter @lumi/worker typecheck`; `pnpm --filter @lumi/api typecheck`.
+  - Handoff: retryable client errors marked with `retryable: true` now use the existing worker backoff path. `POST /generation-jobs/:id/retry` reuses failed jobs after auth/legal-state checks and returns a safe job DTO. Failed course generation is surfaced in the UI with retry, cancel, progress, success, and error states. LiteLLM local routing now maps `gpt-5.5` to OpenRouter via env-backed config.
 
 ## In progress
 

@@ -20,6 +20,7 @@ export const retryDelaySeconds = (attempts: number) => [5, 15, 45][Math.max(0, a
 
 export const isRetryableError = (error: unknown) =>
   error instanceof RetryableJobError ||
+  (typeof error === "object" && error !== null && "retryable" in error && error.retryable === true) ||
   (error instanceof Error && /(timeout|network|rate.?limit|5\d\d)/i.test(error.message));
 
 export const runClaimedJob = async (

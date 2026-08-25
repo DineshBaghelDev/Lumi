@@ -417,6 +417,12 @@ p {
   background: var(--surface-raised);
 }
 
+.button.ghost {
+  color: var(--slate-700);
+  border: 1px solid var(--slate-300);
+  background: var(--surface-raised);
+}
+
 .quiet-button {
   color: var(--slate-700);
   border: 1px solid var(--line);
@@ -495,6 +501,12 @@ p {
   background: var(--surface-muted);
 }
 
+.status.danger {
+  color: var(--danger);
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
 .progressbar {
   height: 6px;
   overflow: hidden;
@@ -552,6 +564,41 @@ p {
 
 .notice-action {
   margin-top: var(--space-4);
+}
+
+.danger-notice {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.danger-notice form {
+  margin-top: var(--space-4);
+}
+
+.form-message {
+  max-width: 790px;
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.form-message.error {
+  color: var(--danger);
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.form-message.success {
+  color: var(--success-ink);
+  border-color: var(--success-border);
+  background: var(--success-soft);
+}
+
+.disabled-link {
+  pointer-events: none;
+  color: var(--slate-600);
+  background: var(--surface-muted);
 }
 
 .disabled-pill {

@@ -1,5 +1,5 @@
 import { apiFetch } from "../../lib/api";
-import { AppShell, CourseIcon, EmptyNotice, ProgressBar, Status, courses as previewCourses } from "../ui";
+import { AppShell, CourseIcon, EmptyNotice, ProgressBar, Status } from "../ui";
 
 type Course = {
   id: string;
@@ -12,19 +12,17 @@ type Course = {
 export default async function CoursesPage() {
   const response = await apiFetch("/courses");
   const liveCourses = response.ok ? (await response.json() as { courses: Course[] }).courses : [];
-  const rows = liveCourses.length
-    ? liveCourses.map((course) => ({
+  const rows = liveCourses.map((course) => ({
       id: course.id,
       title: course.title,
       subtitle: course.description ?? course.topic,
       lessons: "Generating",
       projects: "Projects pending",
       progress: course.status === "ready" ? "100%" : "0%",
-      state: course.status === "ready" ? "Complete" : "In Progress",
+      state: course.status === "ready" ? "Complete" : course.status === "failed" ? "Failed" : "In Progress",
       mark: course.topic.slice(0, 2).toUpperCase(),
       tone: "accent",
-    }))
-    : previewCourses;
+    }));
 
   return (
     <AppShell active="Courses">
@@ -37,10 +35,16 @@ export default async function CoursesPage() {
           Create course
         </a>
       </div>
-      {liveCourses.length === 0 ? (
+      {!response.ok ? (
+        <EmptyNotice
+          title="Courses could not load"
+          body="Refresh the page or try again after the API is available."
+        />
+      ) : liveCourses.length === 0 ? (
         <EmptyNotice
           title="No generated courses yet"
           body="Create your first course to start a new learning path."
+          action={<a className="button" href="/courses/new">Create course</a>}
         />
       ) : null}
       <section className="course-list">

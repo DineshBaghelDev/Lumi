@@ -5,6 +5,7 @@ import {
   checkDbConnection,
   createApiDbClient,
   createCourseWithResearchJob,
+  manualRetryGenerationJob,
   type LumiDb,
 } from "@lumi/db";
 import { lessonContentSchema } from "@lumi/shared";
@@ -27,6 +28,50 @@ const createCourseBody = z.object({
 });
 
 const paramsWithId = z.object({ id: z.uuid() });
+
+type GenerationJobDto = {
+  id: string;
+  type: string;
+  status: string;
+  progress: number;
+  attempts: number;
+  stage: string;
+  canRetry: boolean;
+  message: string | null;
+};
+
+const safeJobMessage = (job: { status: string; error: string | null }) => {
+  if (job.status === "failed") return "Generation failed. You can retry this step.";
+  if (job.status === "cancelled") return "Generation was cancelled.";
+  return null;
+};
+
+const jobStage = (type: string) =>
+  ({
+    research: "Researching sources",
+    curriculum: "Building curriculum",
+    lesson: "Writing lessons",
+    project: "Preparing projects",
+    question: "Preparing assessments",
+  })[type] ?? "Generating";
+
+const toGenerationJobDto = (job: {
+  id: string;
+  type: string;
+  status: string;
+  progress: number;
+  attempts: number;
+  error: string | null;
+}): GenerationJobDto => ({
+  id: job.id,
+  type: job.type,
+  status: job.status,
+  progress: job.progress,
+  attempts: job.attempts,
+  stage: jobStage(job.type),
+  canRetry: job.status === "failed",
+  message: safeJobMessage(job),
+});
 
 const parse = <T>(schema: z.ZodType<T>, value: unknown) => {
   const result = schema.safeParse(value);
@@ -100,13 +145,62 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     if (!(await canAccessCourse(db, user.id, id))) throw new HttpError(404, "not_found", "Course not found");
 
     const course = await db.execute(sql`select * from courses where id = ${id}`);
-    const jobs = request.query && (request.query as { include?: string }).include === "jobs"
-      ? (await db.execute(sql`select * from generation_jobs where course_id = ${id} order by created_at`)).rows
+    const includeJobs = request.query && (request.query as { include?: string }).include === "jobs";
+    const jobs = includeJobs
+      ? (await db.execute<{
+        id: string;
+        type: string;
+        status: string;
+        progress: number;
+        attempts: number;
+        error: string | null;
+      }>(sql`
+        select id, type, status, progress, attempts, error
+        from generation_jobs
+        where course_id = ${id}
+        order by created_at
+      `)).rows.map(toGenerationJobDto)
       : undefined;
-    const usage = request.query && (request.query as { include?: string }).include === "jobs"
-      ? (await db.execute(sql`select * from course_generation_usage where course_id = ${id}`)).rows[0] ?? null
+    const usage = includeJobs
+      ? (await db.execute(sql`
+        select cancel_requested_at is not null as cancelled,
+               budget_exhausted_at is not null as budget_exhausted
+        from course_generation_usage
+        where course_id = ${id}
+      `)).rows[0] ?? null
       : undefined;
     return { course: course.rows[0], jobs, usage };
+  });
+
+  app.post("/generation-jobs/:id/retry", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { id } = parse(paramsWithId, request.params);
+    const found = (await db.execute<{
+      id: string;
+      course_id: string;
+      type: string;
+      status: string;
+      progress: number;
+      attempts: number;
+      error: string | null;
+    }>(sql`
+      select id, course_id, type, status, progress, attempts, error
+      from generation_jobs
+      where id = ${id}
+    `)).rows[0];
+    if (!found || !(await canAccessCourse(db, user.id, found.course_id))) {
+      throw new HttpError(404, "not_found", "Generation job not found");
+    }
+    if (found.status !== "failed") {
+      throw new HttpError(409, "invalid_job_state", "Only failed generation jobs can be retried");
+    }
+
+    const retried = await manualRetryGenerationJob(db, id);
+    if (retried.type === "research" || retried.type === "curriculum") {
+      await db.execute(sql`update courses set status = 'generating', updated_at = now() where id = ${retried.course_id}`);
+    }
+    return { job: toGenerationJobDto(retried) };
   });
 
   app.post("/courses/:id/cancel-generation", { preHandler: app.requireAuth }, async (request) => {

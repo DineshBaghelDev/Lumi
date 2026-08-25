@@ -12,5 +12,6 @@ test("retry backoff is fixed and bounded", () => {
 test("common transient errors are retryable", () => {
   assert.equal(isRetryableError(new Error("network timeout")), true);
   assert.equal(isRetryableError(new Error("500 upstream")), true);
+  assert.equal(isRetryableError(Object.assign(new Error("fetch failed"), { retryable: true })), true);
   assert.equal(isRetryableError(new Error("validation failed")), false);
 });
