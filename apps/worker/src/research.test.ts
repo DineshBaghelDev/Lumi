@@ -6,7 +6,7 @@ import { claimNextGenerationJob, createCourseWithResearchJob, createDbPool, fail
 import * as schema from "@lumi/db";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { chunkMarkdown, createResearchHandler, embedChunks, isForbiddenAddress, sanitizeMarkdown, validateSourceUrl } from "./research.ts";
+import { chunkMarkdown, createResearchHandler, embedBatches, embedChunks, isForbiddenAddress, sanitizeMarkdown, validateSourceUrl } from "./research.ts";
 
 const config = parseWorkerEnv({
   INSFORGE_PROJECT_URL: "http://localhost:7130",
@@ -64,6 +64,30 @@ test("embeddings are requested in small batches", async () => {
 
   assert.deepEqual(batchSizes, [8, 8, 1]);
   assert.equal(vectors.length, 17);
+});
+
+test("embedding batches respect the character budget", () => {
+  const batches = embedBatches(Array.from({ length: 3 }, () => "x".repeat(4_000)));
+  assert.deepEqual(batches.map((batch) => batch.length), [2, 1]);
+});
+
+test("oversized embedding payloads split and truncate instead of failing", async () => {
+  const calls: number[] = [];
+  const vectors = await embedChunks({
+    embed: async (input) => {
+      calls.push(input.length);
+      if (input.length > 1) {
+        throw new Error("TEI 413");
+      }
+      if (input[0]!.length > 512) {
+        throw new Error("TEI 413");
+      }
+      return input.map(() => [0]);
+    },
+  }, ["a".repeat(900), "b".repeat(300), "c".repeat(900)]);
+
+  assert.deepEqual(calls, [3, 1, 1, 2, 1, 1, 1]);
+  assert.equal(vectors.length, 3);
 });
 
 try {

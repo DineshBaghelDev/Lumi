@@ -142,10 +142,47 @@ export const createResearchHandler = (
   };
 };
 
+export const EMBED_BATCH_MAX_ITEMS = 8;
+export const EMBED_BATCH_MAX_CHARS = 8_000;
+const EMBED_TRUNCATED_CHARS = 512;
+
+const isPayloadTooLargeError = (error: unknown) =>
+  error instanceof Error && /\b413\b|payload too large/i.test(error.message);
+
+export const embedBatches = (chunks: string[]) => {
+  const batches: string[][] = [];
+  let current: string[] = [];
+  let currentChars = 0;
+  for (const chunk of chunks) {
+    if (current.length > 0 && (current.length >= EMBED_BATCH_MAX_ITEMS || currentChars + chunk.length > EMBED_BATCH_MAX_CHARS)) {
+      batches.push(current);
+      current = [];
+      currentChars = 0;
+    }
+    current.push(chunk);
+    currentChars += chunk.length;
+  }
+  if (current.length > 0) batches.push(current);
+  return batches;
+};
+
+const embedBatch = async (embed: EmbedClient, batch: string[]): Promise<number[][]> => {
+  try {
+    return await embed.embed(batch);
+  } catch (error) {
+    if (!isPayloadTooLargeError(error)) throw error;
+    if (batch.length > 1) {
+      const mid = Math.floor(batch.length / 2);
+      return [...await embedBatch(embed, batch.slice(0, mid)), ...await embedBatch(embed, batch.slice(mid))];
+    }
+    return await embed.embed([batch[0]!.slice(0, EMBED_TRUNCATED_CHARS)]);
+  }
+};
+
 export const embedChunks = async (embed: EmbedClient, chunks: string[]) => {
   const vectors: number[][] = [];
-  for (let index = 0; index < chunks.length; index += 8) {
-    vectors.push(...await embed.embed(chunks.slice(index, index + 8)));
+  for (const batch of embedBatches(chunks)) {
+    vectors.push(...await embedBatch(embed, batch));
   }
   return vectors;
 };
