@@ -221,6 +221,23 @@ const buildLessonPrompt = (lesson: LessonRow, context: LessonContext, feedback: 
     altText: asset.alt_text,
     sourceId: asset.source_id,
   })),
+  output: {
+    format: "Return only a single JSON object matching this exact shape. Every block id must be unique and match /^block-[a-z0-9-]+$/. Cite every factual block with sourceRefs using the given chunk/source UUIDs.",
+    shape: {
+      schemaVersion: 1,
+      title: "<lesson title>",
+      summary: "<one-paragraph lesson summary>",
+      blocks: [
+        { type: "heading", id: "block-intro", level: 2, text: "<section heading>" },
+        { type: "paragraph", id: "block-p1", text: "<explanation>", sourceRefs: [{ sourceId: "<source uuid>", chunkId: "<chunk uuid>" }] },
+        { type: "list", id: "block-l1", style: "unordered", items: ["<item>"], sourceRefs: [{ sourceId: "<source uuid>" }] },
+        { type: "code", id: "block-c1", language: "sql", code: "<code>", caption: "<optional caption>", sourceRefs: [{ sourceId: "<source uuid>" }] },
+        { type: "callout", id: "block-n1", tone: "note", title: "<optional title>", text: "<text>", sourceRefs: [] },
+        { type: "mermaid", id: "block-m1", diagram: "graph TD; A-->B;", caption: "<optional caption>", sourceRefs: [{ sourceId: "<source uuid>" }] },
+        { type: "image", id: "block-i1", assetId: "<asset uuid>", caption: "<optional caption>" },
+      ],
+    },
+  },
 });
 
 export const validateLessonQuality = (
