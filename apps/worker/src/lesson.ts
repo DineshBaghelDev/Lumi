@@ -222,7 +222,7 @@ const buildLessonPrompt = (lesson: LessonRow, context: LessonContext, feedback: 
     sourceId: asset.source_id,
   })),
   output: {
-    format: "Return only a single JSON object matching this exact shape. Every block id must be unique and match /^block-[a-z0-9-]+$/. Cite every factual block with sourceRefs using the given chunk/source UUIDs. When requiredPrerequisites is non-empty, teach or briefly recap each prerequisite and name it verbatim, or state that it was previously covered.",
+    format: "Return only a single JSON object matching this exact shape. Every block id must be unique and match /^block-[a-z0-9-]+$/. Every paragraph, list, code, and mermaid block MUST carry a non-empty sourceRefs array citing real UUIDs from sourceChunks; never omit sourceRefs or send an empty array for those block types. When requiredPrerequisites is non-empty, teach or briefly recap each prerequisite and name it verbatim, or state that it was previously covered.",
     shape: {
       schemaVersion: 1,
       title: "<lesson title>",
@@ -232,7 +232,7 @@ const buildLessonPrompt = (lesson: LessonRow, context: LessonContext, feedback: 
         { type: "paragraph", id: "block-p1", text: "<explanation>", sourceRefs: [{ sourceId: "<source uuid>", chunkId: "<chunk uuid>" }] },
         { type: "list", id: "block-l1", style: "unordered", items: ["<item>"], sourceRefs: [{ sourceId: "<source uuid>" }] },
         { type: "code", id: "block-c1", language: "sql", code: "<code>", caption: "<optional caption>", sourceRefs: [{ sourceId: "<source uuid>" }] },
-        { type: "callout", id: "block-n1", tone: "note", title: "<optional title>", text: "<text>", sourceRefs: [] },
+        { type: "callout", id: "block-n1", tone: "note", title: "<optional title>", text: "<text>", sourceRefs: [{ sourceId: "<source uuid>" }] },
         { type: "mermaid", id: "block-m1", diagram: "graph TD; A-->B;", caption: "<optional caption>", sourceRefs: [{ sourceId: "<source uuid>" }] },
         { type: "image", id: "block-i1", assetId: "<asset uuid>", caption: "<optional caption>" },
       ],
