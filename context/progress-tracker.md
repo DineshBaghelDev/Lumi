@@ -4,10 +4,20 @@
 
 Planning: complete  
 Implementation: in progress  
-Current focus: Milestone 5 — Projects, with course-generation repair complete  
+Current focus: Milestone 5 — Projects, with course-generation repair complete and full pipeline verified live on Groq  
 Next spec: `057-project-generation.md`
 
 ## Current handoff
+
+- Live end-to-end test (2026-08-26): course "PostgreSQL indexing" completed research → curriculum → 3/3 lessons `ready` with valid structured content. LiteLLM now routes `gpt-5.5` to Groq (`openai/gpt-oss-120b`) with OpenRouter as a named fallback deployment; OpenRouter balance cannot cover curriculum-sized requests (402).
+- LLM prompts must pin the exact JSON output shape. gpt-oss-120b guesses wrong shapes from prose-only prompts: curriculum returned a string `generationSummary`, lessons omitted `blocks`. Both prompts now embed exact skeletons, plus explicit citation rules because `sourceRefs` defaults to `[]` and omissions only fail later in QC.
+- Deterministic gates must be taught to the model: prerequisite QC requires the concept name verbatim or the phrase "previously covered"; the lesson prompt states this.
+- Groq free tier caps `openai/gpt-oss-120b` at 8000 tokens/minute per request estimate (prompt + max_tokens). Lesson calls are calibrated to ~7200 worst case: 6 source chunks of 1000 chars + `maxTokens: 5000`. Observed successful lessons use ≤3014 completion tokens including reasoning; reasoning counts against max_tokens and truncated JSON when the budget was 3500.
+- TEI returns HTTP 413 for requests containing any input beyond its token limit regardless of batch size (single 4000-char input fails while 32x1000-char inputs pass). Embedding batches are now char-bounded, split recursively on 413, and truncate a single oversized input to 512 chars instead of failing research permanently.
+- API error envelope now preserves framework 4xx status codes (Fastify media-type errors were masked as 500), and the worker logs job success/retry/permanent failure to console.
+- Test artifacts remain in InsForge for inspection: user `lumi-tester+1787741930737@example.com` (email_verified set via CLI because signup enforces email verification) and course `b58cc760-df7b-457e-a18b-afef3f57af48`. Delete before release data hygiene if desired.
+
+## Previous handoff
 
 - Course generation can now recover from transient research failures such as `fetch failed`.
 - LiteLLM has a real `gpt-5.5` route backed by `OPENROUTER_API_KEY`; secrets stay in env.
