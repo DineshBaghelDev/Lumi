@@ -87,7 +87,12 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
   registerAuth(app, db, deps.verifyToken ?? createInsforgeTokenVerifier(config));
 
   app.setErrorHandler((error, request, reply) => {
-    const statusCode = error instanceof HttpError ? error.statusCode : 500;
+    const rawStatus = error instanceof HttpError ? error.statusCode : (error as { statusCode?: unknown }).statusCode;
+    const statusCode = error instanceof HttpError
+      ? error.statusCode
+      : typeof rawStatus === "number" && rawStatus >= 400 && rawStatus < 500
+        ? rawStatus
+        : 500;
     request.log[statusCode >= 500 ? "error" : "warn"](error);
     const message = error instanceof Error ? error.message : "Invalid request";
     void reply.status(statusCode).send({

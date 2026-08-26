@@ -76,6 +76,27 @@ test("manual retry reuses a failed generation job", async () => {
   await app.close();
 });
 
+test("framework 4xx errors keep their status code", async () => {
+  const rows = [[{ id: "user-1", authUserId: "auth-1", email: null }]];
+  const db = { execute: async () => ({ rows: rows.shift() ?? [] }) };
+  const app = createApp({
+    config,
+    db: db as never,
+    verifyToken: async () => ({ authUserId: "auth-1" }),
+  });
+
+  const response = await app.inject({
+    method: "POST",
+    url: "/courses",
+    headers: { authorization: "Bearer token", "content-type": "application/x-www-form-urlencoded" },
+    payload: "nope=1",
+  });
+
+  assert.equal(response.statusCode, 415);
+  assert.equal(response.json().error.code, "internal_error");
+  await app.close();
+});
+
 test("manual retry rejects active jobs", async () => {
   const jobId = "11111111-1111-4111-8111-111111111111";
   const courseId = "22222222-2222-4222-8222-222222222222";
