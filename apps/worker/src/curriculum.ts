@@ -123,7 +123,59 @@ const buildPrompt = (course: CourseRow, concepts: ConceptRow[], maxLessons: numb
     sourceIds: concept.source_ids,
     hardPrerequisiteConceptIds: concept.hard_prerequisites,
   })),
-  output: "JSON object with schemaVersion, conceptIds, sourcePacks, modules, projects, generationSummary.",
+  output: {
+    format: "Return only a single JSON object matching this exact shape. Local IDs must match /^[a-z][a-z0-9-]*$/. Reuse concept and source UUIDs exactly as given.",
+    shape: {
+      schemaVersion: 1,
+      conceptIds: ["<concept uuid>"],
+      sourcePacks: [{
+        id: "<local-id>",
+        conceptId: "<concept uuid>",
+        sourceIds: ["<source uuid>"],
+        coverageStatus: "covered | weakly_covered | explicitly_unresolved",
+      }],
+      modules: [{
+        id: "<local-id>",
+        title: "<non-empty text>",
+        description: "<optional non-empty text>",
+        orderIndex: 1,
+        lessons: [{
+          id: "<local-id>",
+          title: "<non-empty text>",
+          objectives: ["<non-empty text>"],
+          orderIndex: 1,
+          isRequired: true,
+          conceptIds: ["<concept uuid>"],
+          sourcePackIds: ["<source pack local-id>"],
+          requiredPrerequisiteConceptIds: ["<concept uuid>"],
+          assessment: {
+            title: "<non-empty text>",
+            conceptIds: ["<concept uuid>"],
+            questionCount: 5,
+          },
+        }],
+      }],
+      projects: [{
+        id: "<local-id>",
+        title: "<non-empty text>",
+        goal: "<non-empty text>",
+        conceptIds: ["<concept uuid>"],
+        lessonIds: ["<lesson local-id>"],
+        milestones: [{
+          id: "<local-id>",
+          title: "<non-empty text>",
+          orderIndex: 1,
+          conceptIds: ["<concept uuid>"],
+          lessonIds: ["<lesson local-id>"],
+        }],
+      }],
+      generationSummary: {
+        title: "<course title>",
+        coverageStatus: "ready | ready_with_gaps",
+        notes: ["<non-empty text>"],
+      },
+    },
+  },
 });
 
 const parseCurriculum = (content: string) => {
