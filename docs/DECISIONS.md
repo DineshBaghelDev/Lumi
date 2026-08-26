@@ -83,3 +83,18 @@
 - No intent-classification LLM call in V1.
 - No LLM reranker in V1.
 - Store retrieved chunk IDs with assistant messages and link chat messages to `llm_calls`.
+
+## Known operational constraints (from live pipeline testing, 2026-08-26)
+
+Issues hit during end-to-end testing that will recur; documented so they are recognized fast.
+
+- InsForge signup enforces email verification (`requireEmailVerification: true`) and OTP codes are stored hashed, so automated/headless testing cannot complete email auth. Workaround: create a throwaway user via the SDK, set its `email_verified` through `insforge-cli db query`, then sign in for a JWT. Google OAuth cannot be automated headlessly.
+- OpenRouter credits exhausted mid-test with HTTP 402 surfaced by LiteLLM as a permanent job failure. Keep at least one provider route with confirmed balance before running generation.
+- Groq free tier intermittently returns 429 under parallel lesson load even when each request fits the TPM cap; worker backoff handles it but can exhaust 3 attempts on long lessons. Expect manual `POST /generation-jobs/:id/retry` calls after rate-limit storms.
+- Docker Desktop on this machine intermittently fails E: drive bind mounts (`mkdir /run/desktop/mnt/host/e: file exists`); a full Docker Desktop restart fixes it. Recreate compose services after any engine restart.
+- The API masked framework errors as 500: non-HttpError Fastify errors (e.g., FST_ERR_CTP_INVALID_MEDIA_TYPE) were rendered as `internal_error` regardless of their real status. Fixed in `apps/api/src/app.ts`, but new error paths must keep honoring 4xx `statusCode`.
+- Worker job outcomes were invisible outside the database; console logging now exists in `runClaimedJob`. Any new handler must run through it to stay observable.
+- Failed LLM calls are not recorded in `llm_calls` — tracking only captures successes, so spend/failure observability has a blind spot. Changing this alters spec 012 behavior and needs an explicit spec decision first.
+- Course status can remain `ready_with_gaps` after a late lesson retry succeeds: `updateCourseStatus` sees its own still-running job and never re-evaluates to `ready`. Late retries may need a status re-check or the final job should update course state after terminal transition.
+- Manual retry reuses the same job row, so retry history is not preserved per attempt beyond the `attempts` counter.
+- InsForge project memory (`memory remember`) requires a paid plan; repo docs (`docs/`, `context/`) are the system of record for findings and decisions in this environment.
