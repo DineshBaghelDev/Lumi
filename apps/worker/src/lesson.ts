@@ -222,7 +222,7 @@ const buildLessonPrompt = (lesson: LessonRow, context: LessonContext, feedback: 
     sourceId: asset.source_id,
   })),
   output: {
-    format: "Return only a single JSON object matching this exact shape. Every block id must be unique and match /^block-[a-z0-9-]+$/. Cite every factual block with sourceRefs using the given chunk/source UUIDs.",
+    format: "Return only a single JSON object matching this exact shape. Every block id must be unique and match /^block-[a-z0-9-]+$/. Cite every factual block with sourceRefs using the given chunk/source UUIDs. When requiredPrerequisites is non-empty, teach or briefly recap each prerequisite and name it verbatim, or state that it was previously covered.",
     shape: {
       schemaVersion: 1,
       title: "<lesson title>",
