@@ -53,10 +53,21 @@ while (!stopping) {
 }
 
 while (!stopping) {
-  const job = await claimOneJob(db, config, workerId);
-  if (job) {
-    await runClaimedJob(db, job, handlers);
-  } else {
+  try {
+    const job = await claimOneJob(db, config, workerId);
+    if (job) {
+      await runClaimedJob(db, job, handlers, {
+        heartbeatIntervalMs: config.worker.heartbeatIntervalMs,
+        workerId,
+      });
+      continue;
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[worker] polling cycle failed: ${message}`);
+  }
+
+  if (!stopping) {
     await new Promise((resolve) => setTimeout(resolve, config.worker.pollingIntervalMs));
   }
 }

@@ -15,6 +15,11 @@ export class RetryableJobError extends Error {}
 
 export type JobHandler = (job: GenerationJobRow) => Promise<void>;
 export type JobHandlers = Partial<Record<GenerationJobRow["type"], JobHandler>>;
+type RunClaimedJobOptions = {
+  heartbeatIntervalMs?: number;
+  maxAttempts?: number;
+  workerId?: string;
+};
 
 export const retryDelaySeconds = (attempts: number) => [5, 15, 45][Math.max(0, attempts - 1)] ?? 45;
 
@@ -27,7 +32,7 @@ export const runClaimedJob = async (
   db: LumiDb,
   job: GenerationJobRow,
   handlers: JobHandlers,
-  maxAttempts = 3,
+  { heartbeatIntervalMs, maxAttempts = 3, workerId }: RunClaimedJobOptions = {},
 ) => {
   const handler = handlers[job.type];
   if (!handler) {
@@ -40,6 +45,24 @@ export const runClaimedJob = async (
     return;
   }
 
+  let heartbeatRunning = false;
+  const heartbeatTimer =
+    workerId && heartbeatIntervalMs
+      ? setInterval(() => {
+          if (heartbeatRunning) return;
+          heartbeatRunning = true;
+          void heartbeatGenerationJob(db, job.id, workerId)
+            .catch((error: unknown) => {
+              const message = error instanceof Error ? error.message : String(error);
+              console.warn(`[worker] heartbeat failed for job ${job.type} ${job.id}: ${message}`);
+            })
+            .finally(() => {
+              heartbeatRunning = false;
+            });
+        }, heartbeatIntervalMs)
+      : null;
+  heartbeatTimer?.unref();
+
   try {
     await handler(job);
     await succeedGenerationJob(db, job.id);
@@ -47,12 +70,19 @@ export const runClaimedJob = async (
   } catch (error) {
     const retryable = !(error instanceof PermanentJobError) && isRetryableError(error);
     const message = error instanceof Error ? error.message : "Unknown job failure";
-    const failed = await failRunningGenerationJob(db, job.id, {
-      error: message,
-      retryable,
-      maxAttempts,
-      retryDelaySeconds: retryDelaySeconds(job.attempts),
-    });
+    let failed: GenerationJobRow;
+    try {
+      failed = await failRunningGenerationJob(db, job.id, {
+        error: message,
+        retryable,
+        maxAttempts,
+        retryDelaySeconds: retryDelaySeconds(job.attempts),
+      });
+    } catch (failureError) {
+      const failureMessage = failureError instanceof Error ? failureError.message : String(failureError);
+      console.error(`[worker] could not finalize failed job ${job.type} ${job.id}: ${failureMessage}`);
+      return;
+    }
     if (failed.status === "failed" && (job.type === "research" || job.type === "curriculum")) {
       await db.execute(sql`update courses set status = 'failed', updated_at = now() where id = ${job.course_id}`);
     }
@@ -61,6 +91,8 @@ export const runClaimedJob = async (
     } else {
       console.error(`[worker] job ${job.type} ${job.id} failed permanently after ${maxAttempts} attempts: ${message}`);
     }
+  } finally {
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
   }
 };
 
