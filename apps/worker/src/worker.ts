@@ -43,16 +43,23 @@ export const runClaimedJob = async (
   try {
     await handler(job);
     await succeedGenerationJob(db, job.id);
+    console.log(`[worker] job ${job.type} ${job.id} succeeded`);
   } catch (error) {
     const retryable = !(error instanceof PermanentJobError) && isRetryableError(error);
+    const message = error instanceof Error ? error.message : "Unknown job failure";
     const failed = await failRunningGenerationJob(db, job.id, {
-      error: error instanceof Error ? error.message : "Unknown job failure",
+      error: message,
       retryable,
       maxAttempts,
       retryDelaySeconds: retryDelaySeconds(job.attempts),
     });
     if (failed.status === "failed" && (job.type === "research" || job.type === "curriculum")) {
       await db.execute(sql`update courses set status = 'failed', updated_at = now() where id = ${job.course_id}`);
+    }
+    if (failed.status === "queued") {
+      console.warn(`[worker] job ${job.type} ${job.id} failed (attempt ${failed.attempts}, retry scheduled): ${message}`);
+    } else {
+      console.error(`[worker] job ${job.type} ${job.id} failed permanently after ${maxAttempts} attempts: ${message}`);
     }
   }
 };
