@@ -1,0 +1,2 @@
+ALTER TABLE "project_progress" ADD COLUMN "hints_revealed_count" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "project_progress" ADD CONSTRAINT "project_progress_hints_nonnegative" CHECK ("project_progress"."hints_revealed_count" >= 0);

@@ -87,7 +87,7 @@ export const createLessonHandler = (
       if (qc.passed) {
         await setProgress(db, job.id, 80, { stage: "persist" });
         await persistReadyLesson(db, job, lesson, generated.content, qc, attempt);
-        await updateCourseStatus(db, lesson.course_id);
+        await refreshCourseStatus(db, lesson.course_id);
         return;
       }
 
@@ -95,7 +95,7 @@ export const createLessonHandler = (
     }
 
     await setLessonFailed(db, lesson.id, feedback);
-    await updateCourseStatus(db, lesson.course_id);
+    await refreshCourseStatus(db, lesson.course_id);
     throw new PermanentJobError(`Lesson failed QC: ${feedback.join("; ")}`);
   };
 };
@@ -365,23 +365,47 @@ const setLessonFailed = async (db: LumiDb, lessonId: string, reasons: string[]) 
   `);
 };
 
-const updateCourseStatus = async (db: LumiDb, courseId: string) => {
+export const refreshCourseStatus = async (db: LumiDb, courseId: string) => {
   await db.execute(sql`
     update courses
     set status = case
           when exists (
             select 1 from lessons l join modules m on m.id = l.module_id join curricula c on c.id = m.curriculum_id
             where c.course_id = ${courseId} and l.status = 'failed'
+          )
+          or exists (
+            select 1
+            from assessments a
+            join lessons l on l.id = a.lesson_id
+            join modules m on m.id = l.module_id
+            join curricula c on c.id = m.curriculum_id
+            where c.course_id = ${courseId} and l.status <> 'failed' and a.status = 'failed'
+          )
+          or exists (
+            select 1 from projects p
+            where p.course_id = ${courseId} and p.status = 'failed'
           ) then 'ready_with_gaps'::course_status
-          when not exists (
+          when exists (
+            select 1 from generation_jobs
+            where course_id = ${courseId} and status in ('queued', 'running')
+          ) then status
+          when exists (
             select 1 from lessons l join modules m on m.id = l.module_id join curricula c on c.id = m.curriculum_id
             where c.course_id = ${courseId} and l.status in ('pending', 'generating')
           )
-          and not exists (
-            select 1 from generation_jobs
-            where course_id = ${courseId} and status in ('queued', 'running')
-          ) then 'ready'::course_status
-          else status
+          or exists (
+            select 1 from projects p
+            where p.course_id = ${courseId} and p.status in ('pending', 'generating')
+          )
+          or exists (
+            select 1
+            from assessments a
+            join lessons l on l.id = a.lesson_id
+            join modules m on m.id = l.module_id
+            join curricula c on c.id = m.curriculum_id
+            where c.course_id = ${courseId} and l.status <> 'failed' and a.status in ('pending', 'generating')
+          ) then 'ready_with_gaps'::course_status
+          else 'ready'::course_status
         end,
         updated_at = now()
     where id = ${courseId}

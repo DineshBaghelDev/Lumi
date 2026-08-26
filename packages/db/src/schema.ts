@@ -520,10 +520,14 @@ export const projectProgress = pgTable(
     projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
     currentMilestoneId: uuid("current_milestone_id").references(() => projectMilestones.id, { onDelete: "set null" }),
     status: projectProgressStatus("status").notNull().default("not_started"),
+    hintsRevealedCount: integer("hints_revealed_count").notNull().default(0),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (table) => [primaryKey({ columns: [table.userId, table.projectId] })],
+  (table) => [
+    primaryKey({ columns: [table.userId, table.projectId] }),
+    check("project_progress_hints_nonnegative", sql`${table.hintsRevealedCount} >= 0`),
+  ],
 );
 
 export const userNotes = pgTable(

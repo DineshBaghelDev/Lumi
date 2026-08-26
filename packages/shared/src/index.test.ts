@@ -4,6 +4,9 @@ import test from "node:test";
 import {
   curriculumStructuredOutputSchema,
   lessonContentSchema,
+  projectContentSchema,
+  questionCandidateSchema,
+  scoreObjectiveQuestion,
   type CurriculumStructuredOutput,
   type LessonContent,
 } from "./index.ts";
@@ -169,4 +172,66 @@ test("image blocks require assetId and reject permanent URLs", () => {
     }),
     /Unrecognized key/,
   );
+});
+
+test("project content validates ordered milestones and progressive hints", () => {
+  const validProject = {
+    schemaVersion: 1,
+    storyline: "A learner builds a local cache inspector for a small app.",
+    teachingProgression: ["Find the cache problem", "Choose a policy", "Implement locally"],
+    milestones: [
+      {
+        orderIndex: 1,
+        scenario: "The app is evicting important Redis keys during a traffic spike.",
+        learnerDecisionPrompt: "Which key signal should guide the first policy?",
+        implementationGoal: "Build a local script that records cache hits and misses.",
+        constraints: ["Use only local data"],
+        expectedOutcome: "The script prints a hit-rate summary.",
+        relevantConceptIds: [redisConcept],
+        relevantLessonIds: ["66666666-6666-4666-8666-666666666666"],
+        hints: [
+          { level: "conceptual", text: "Start with what a hit means." },
+          { level: "structural", text: "Keep counters beside each lookup." },
+        ],
+      },
+    ],
+  };
+
+  assert.equal(projectContentSchema.parse(validProject).milestones.length, 1);
+  assert.throws(
+    () => projectContentSchema.parse({
+      ...validProject,
+      milestones: [{ ...validProject.milestones[0], hints: [{ level: "implementation", text: "Write the whole script." }] }],
+    }),
+    /first hint/,
+  );
+});
+
+test("question contracts and deterministic scoring cover objective types", () => {
+  const mcq = questionCandidateSchema.parse({
+    id: "question-mcq-1",
+    kind: "mcq",
+    prompt: "Which event means a cache lookup succeeded?",
+    difficulty: 1,
+    sourceRefs: [],
+    primaryConceptId: redisConcept,
+    additionalConceptIds: [],
+    options: [{ id: "opt-hit", text: "Hit" }, { id: "opt-miss", text: "Miss" }],
+    answerKey: { correctOptionId: "opt-hit" },
+  });
+  if (mcq.kind !== "mcq") assert.fail("expected mcq fixture");
+  assert.deepEqual(scoreObjectiveQuestion(mcq, mcq.answerKey, "opt-hit"), { correct: true, reason: "matched" });
+
+  const fillBlank = questionCandidateSchema.parse({
+    id: "question-fill-1",
+    kind: "fill_blank",
+    prompt: "A successful cache lookup is a ___.",
+    difficulty: 1,
+    sourceRefs: [],
+    primaryConceptId: redisConcept,
+    additionalConceptIds: [],
+    answerKey: { acceptedAnswers: ["hit"] },
+  });
+  if (fillBlank.kind !== "fill_blank") assert.fail("expected fill_blank fixture");
+  assert.deepEqual(scoreObjectiveQuestion(fillBlank, fillBlank.answerKey, " Hit. "), { correct: true, reason: "matched_variant" });
 });

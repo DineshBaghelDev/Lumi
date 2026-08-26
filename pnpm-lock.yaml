@@ -23,6 +23,9 @@ importers:
       '@lumi/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@lumi/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       '@lumi/shared':
         specifier: workspace:*
         version: link:../../packages/shared

@@ -54,3 +54,69 @@ export async function cancelGenerationAction(formData: FormData) {
   if (!response.ok) redirect(`/courses/${courseId}?error=${encodeURIComponent("Could not cancel generation.")}`);
   redirect(`/courses/${courseId}?success=${encodeURIComponent("Generation cancelled.")}`);
 }
+
+export type HintRevealResult = {
+  revealedHints?: number;
+  hintCount?: number;
+  hint?: { level: string; text: string } | null;
+  noMoreHints?: boolean;
+};
+
+export async function revealProjectHintAction(courseId: string, projectId: string): Promise<HintRevealResult | null> {
+  const response = await apiFetch(`/projects/${projectId}/hints/reveal`, { method: "POST" });
+  if (!response.ok) return null;
+  revalidatePath(`/courses/${courseId}/project/${projectId}`);
+  return await response.json() as HintRevealResult;
+}
+
+export async function revealProjectHintFormAction(formData: FormData) {
+  const courseId = String(formData.get("courseId") ?? "");
+  const projectId = String(formData.get("projectId") ?? "");
+  await revealProjectHintAction(courseId, projectId);
+}
+
+export async function completeMilestoneAction(formData: FormData) {
+  const courseId = String(formData.get("courseId") ?? "");
+  const projectId = String(formData.get("projectId") ?? "");
+  const milestoneId = String(formData.get("milestoneId") ?? "");
+  const response = await apiFetch(`/projects/${projectId}/milestones/${milestoneId}/complete`, { method: "POST" });
+  if (!response.ok) redirect(`/courses/${courseId}/project/${projectId}?error=${encodeURIComponent("Complete the current milestone first.")}`);
+  revalidatePath(`/courses/${courseId}/project/${projectId}`);
+}
+
+export async function scoreObjectiveAnswer(
+  assessmentId: string,
+  questionId: string,
+  response: string,
+): Promise<{ correct: boolean } | null> {
+  const apiResponse = await apiFetch(`/assessments/${assessmentId}/objective-score`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ questionId, response }),
+  });
+  if (!apiResponse.ok) return null;
+  return await apiResponse.json() as { correct: boolean };
+}
+
+export type SubmittedResult = {
+  questionId: string;
+  kind: string;
+  correct: boolean | null;
+  earnedPoints: number;
+  possiblePoints: number;
+  weakPoints: string[];
+  feedback: string;
+};
+
+export async function submitAssessmentAnswers(
+  assessmentId: string,
+  answers: { questionId: string; response: unknown }[],
+): Promise<{ attempt: { id: string | null; score: number }; results: SubmittedResult[] } | null> {
+  const response = await apiFetch(`/assessments/${assessmentId}/submissions`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ answers }),
+  });
+  if (!response.ok) return null;
+  return await response.json() as { attempt: { id: string | null; score: number }; results: SubmittedResult[] };
+}

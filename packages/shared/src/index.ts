@@ -269,3 +269,324 @@ export const lessonContentSchema = z
 
 export type LessonContent = z.infer<typeof lessonContentSchema>;
 export type LessonBlock = z.infer<typeof lessonBlockSchema>;
+
+// ===== Guided project content (specs 057-059) =====
+
+export const projectContentSchemaVersion = 1;
+
+const hintLevelRank = { conceptual: 0, structural: 1, implementation: 2 } as const;
+
+export const projectHintLevelSchema = z.enum(["conceptual", "structural", "implementation"]);
+
+export const projectHintSchema = z.object({
+  level: projectHintLevelSchema,
+  text: nonEmptyText,
+}).strict();
+
+export const projectMilestoneContentSchema = z
+  .object({
+    orderIndex: orderIndexSchema,
+    scenario: nonEmptyText,
+    learnerDecisionPrompt: nonEmptyText.optional(),
+    implementationGoal: nonEmptyText,
+    constraints: z.array(nonEmptyText).max(6),
+    expectedOutcome: nonEmptyText,
+    relevantConceptIds: z.array(uuidSchema).min(1),
+    relevantLessonIds: z.array(uuidSchema),
+    hints: z.array(projectHintSchema).min(1).max(4),
+  })
+  .strict();
+
+export const projectContentSchema = z
+  .object({
+    schemaVersion: z.literal(projectContentSchemaVersion),
+    storyline: nonEmptyText,
+    teachingProgression: z.array(nonEmptyText).min(2),
+    milestones: z.array(projectMilestoneContentSchema).min(1),
+  })
+  .superRefine((project, context) => {
+    requireOrdered(project.milestones, "milestones", context);
+    for (const [milestoneIndex, milestone] of project.milestones.entries()) {
+      const path = ["milestones", milestoneIndex];
+      requireUnique(milestone.relevantLessonIds, `${path.join(".")}.relevantLessonIds`, context, (id) => id);
+      const ranks = milestone.hints.map((hint) => hintLevelRank[hint.level]);
+      if (ranks.some((rank, index) => index > 0 && rank < (ranks[index - 1] as number))) {
+        context.addIssue({
+          code: "custom",
+          path: [...path, "hints"],
+          message: "hints must escalate from conceptual to structural to implementation",
+        });
+      }
+      if ((ranks[0] ?? 2) === hintLevelRank.implementation) {
+        context.addIssue({
+          code: "custom",
+          path: [...path, "hints", 0],
+          message: "the first hint must be conceptual or structural so the learner keeps meaningful work",
+        });
+      }
+    }
+  });
+
+export type ProjectHint = z.infer<typeof projectHintSchema>;
+export type ProjectMilestoneContent = z.infer<typeof projectMilestoneContentSchema>;
+export type ProjectContent = z.infer<typeof projectContentSchema>;
+
+// ===== Question and scoring contracts (specs 061, 064, 065) =====
+
+export const questionSchemaVersion = 1;
+
+export const objectiveQuestionKinds = ["mcq", "fill_blank", "matching", "prediction"] as const;
+export const freeResponseQuestionKinds = ["short_answer", "scenario", "identify_issue", "pseudocode"] as const;
+
+const optionIdSchema = z.string().trim().regex(/^opt-[a-z0-9-]+$/);
+const pairIdSchema = z.string().trim().regex(/^side-[a-z0-9-]+$/);
+const criterionIdSchema = z.string().trim().regex(/^crit-[a-z0-9-]+$/);
+
+const difficultySchema = z.number().int().min(1).max(5);
+
+const questionMetadataFields = {
+  id: localIdSchema,
+  difficulty: difficultySchema,
+  sourceRefs: z.array(sourceRefSchema).default([]),
+  primaryConceptId: uuidSchema,
+  additionalConceptIds: z.array(uuidSchema).default([]),
+};
+
+const objectiveServingShapes = {
+  mcq: {
+    kind: z.literal("mcq"),
+    prompt: nonEmptyText,
+    codeContext: nonEmptyText.optional(),
+    options: z.array(z.object({ id: optionIdSchema, text: nonEmptyText }).strict()).min(2).max(6),
+  },
+  prediction: {
+    kind: z.literal("prediction"),
+    prompt: nonEmptyText,
+    codeContext: nonEmptyText.optional(),
+    options: z.array(z.object({ id: optionIdSchema, text: nonEmptyText }).strict()).min(2).max(6),
+  },
+  fill_blank: {
+    kind: z.literal("fill_blank"),
+    prompt: nonEmptyText,
+  },
+  matching: {
+    kind: z.literal("matching"),
+    prompt: nonEmptyText,
+    pairs: z
+      .array(
+        z.object({
+          leftId: pairIdSchema,
+          left: nonEmptyText,
+          rightId: pairIdSchema,
+          right: nonEmptyText,
+        }).strict(),
+      )
+      .min(2)
+      .max(6),
+  },
+};
+
+const freeResponseServingShapes = {
+  short_answer: { kind: z.literal("short_answer"), prompt: nonEmptyText },
+  scenario: { kind: z.literal("scenario"), prompt: nonEmptyText },
+  identify_issue: {
+    kind: z.literal("identify_issue"),
+    prompt: nonEmptyText,
+    codeContext: nonEmptyText.optional(),
+  },
+  pseudocode: {
+    kind: z.literal("pseudocode"),
+    prompt: nonEmptyText,
+    starterCode: nonEmptyText.optional(),
+  },
+};
+
+const mcqAnswerKeySchema = z.object({ correctOptionId: optionIdSchema }).strict();
+const fillBlankAnswerKeySchema = z.object({ acceptedAnswers: z.array(nonEmptyText).min(1).max(10) }).strict();
+const matchingAnswerKeySchema = z.object({
+  solution: z.array(z.object({ leftId: pairIdSchema, rightId: pairIdSchema }).strict()).min(2),
+}).strict();
+
+export const rubricSchema = z
+  .object({
+    pointsTotal: z.number().positive(),
+    criteria: z
+      .array(
+        z.object({
+          id: criterionIdSchema,
+          description: nonEmptyText,
+          points: z.number().positive(),
+        }).strict(),
+      )
+      .min(1)
+      .max(8),
+    keyPoints: z.array(nonEmptyText).min(1).max(10),
+  })
+  .strict()
+  .superRefine((rubric, context) => {
+    const total = rubric.criteria.reduce((sum, criterion) => sum + criterion.points, 0);
+    if (Math.abs(total - rubric.pointsTotal) > 1e-9) {
+      context.addIssue({ code: "custom", path: ["pointsTotal"], message: "criteria points must sum to pointsTotal" });
+    }
+  });
+
+const candidateVariants = [
+  z.object({ ...objectiveServingShapes.mcq, ...questionMetadataFields, answerKey: mcqAnswerKeySchema }).strict(),
+  z.object({ ...objectiveServingShapes.prediction, ...questionMetadataFields, answerKey: mcqAnswerKeySchema }).strict(),
+  z.object({ ...objectiveServingShapes.fill_blank, ...questionMetadataFields, answerKey: fillBlankAnswerKeySchema }).strict(),
+  z.object({ ...objectiveServingShapes.matching, ...questionMetadataFields, answerKey: matchingAnswerKeySchema }).strict(),
+  ...Object.values(freeResponseServingShapes).map((serving) =>
+    z.object({ ...serving, ...questionMetadataFields, rubric: rubricSchema }).strict()),
+];
+
+const storedVariants = [
+  ...Object.values(objectiveServingShapes).map((serving) =>
+    z.object({ ...serving, ...questionMetadataFields }).strict()),
+  ...Object.values(freeResponseServingShapes).map((serving) =>
+    z.object({ ...serving, ...questionMetadataFields }).strict()),
+];
+
+export const questionCandidateSchema = z.discriminatedUnion(
+  "kind",
+  candidateVariants as [
+    typeof candidateVariants[0],
+    typeof candidateVariants[1],
+    typeof candidateVariants[2],
+    typeof candidateVariants[3],
+    ...(typeof candidateVariants)[number][],
+  ],
+);
+
+export const storedQuestionContentSchema = z.discriminatedUnion(
+  "kind",
+  storedVariants as [(typeof storedVariants)[number], ...(typeof storedVariants)[number][]],
+);
+
+export type QuestionCandidate = z.infer<typeof questionCandidateSchema>;
+export type StoredQuestionContent = z.infer<typeof storedQuestionContentSchema>;
+export type ObjectiveQuestionContent = Extract<StoredQuestionContent, { kind: (typeof objectiveQuestionKinds)[number] }>;
+export type FreeResponseQuestionContent = Extract<StoredQuestionContent, { kind: (typeof freeResponseQuestionKinds)[number] }>;
+export type QuestionRubric = z.infer<typeof rubricSchema>;
+
+export const isObjectiveQuestionKind = (
+  kind: StoredQuestionContent["kind"],
+): kind is ObjectiveQuestionContent["kind"] =>
+  (objectiveQuestionKinds as readonly string[]).includes(kind);
+
+export const questionFamilyOf = (kind: StoredQuestionContent["kind"]): "objective" | "free_response" =>
+  isObjectiveQuestionKind(kind) ? "objective" : "free_response";
+
+// split an LLM candidate into the persisted column payloads
+export const splitQuestionCandidate = (candidate: QuestionCandidate) => {
+  const rest = { ...candidate } as Record<string, unknown>;
+  const answerKey = rest.answerKey ?? {};
+  const rubric = rest.rubric ?? {};
+  delete rest.answerKey;
+  delete rest.rubric;
+  return {
+    content: rest as StoredQuestionContent,
+    answerKey,
+    rubric,
+    primaryConceptId: candidate.primaryConceptId,
+    difficulty: candidate.difficulty,
+  };
+};
+
+// deterministic objective scoring (spec 064)
+
+export type ObjectiveScoreResult = { correct: boolean; reason: string };
+
+export const normalizeFreeTextAnswer = (value: string) =>
+  value.trim().toLowerCase().replace(/\s+/g, " ").replace(/[.,;:!?"']+$/, "");
+
+export const scoreObjectiveQuestion = (
+  content: ObjectiveQuestionContent,
+  answerKey: unknown,
+  response: unknown,
+): ObjectiveScoreResult => {
+  if (content.kind === "mcq" || content.kind === "prediction") {
+    const key = mcqAnswerKeySchema.safeParse(answerKey);
+    if (!key.success) return { correct: false, reason: "missing_or_invalid_answer_key" };
+    if (typeof response !== "string") return { correct: false, reason: "unanswered" };
+    return response.trim() === key.data.correctOptionId
+      ? { correct: true, reason: "matched" }
+      : { correct: false, reason: "incorrect_option" };
+  }
+
+  if (content.kind === "fill_blank") {
+    const key = fillBlankAnswerKeySchema.safeParse(answerKey);
+    if (!key.success) return { correct: false, reason: "missing_or_invalid_answer_key" };
+    if (typeof response !== "string") return { correct: false, reason: "unanswered" };
+    const normalized = normalizeFreeTextAnswer(response);
+    if (normalized === "") return { correct: false, reason: "unanswered" };
+    return key.data.acceptedAnswers.some((accepted) => normalizeFreeTextAnswer(accepted) === normalized)
+      ? { correct: true, reason: "matched_variant" }
+      : { correct: false, reason: "incorrect_answer" };
+  }
+
+  const key = matchingAnswerKeySchema.safeParse(answerKey);
+  if (!key.success) return { correct: false, reason: "missing_or_invalid_answer_key" };
+  if (typeof response !== "object" || response === null || Array.isArray(response)) {
+    return { correct: false, reason: "unanswered" };
+  }
+  const submitted = response as Record<string, unknown>;
+  const knownRightIds = new Set(content.pairs.map((pair) => pair.rightId));
+  for (const solutionPair of key.data.solution) {
+    if (!knownRightIds.has(solutionPair.rightId)) return { correct: false, reason: "invalid_solution_reference" };
+    const given = submitted[solutionPair.leftId];
+    if (typeof given !== "string") return { correct: false, reason: "unanswered_pair" };
+    if (given !== solutionPair.rightId) return { correct: false, reason: "incorrect_pairing" };
+  }
+  const allowedLeftIds = new Set(content.pairs.map((pair) => pair.leftId));
+  for (const leftId of Object.keys(submitted)) {
+    if (!allowedLeftIds.has(leftId)) return { correct: false, reason: "unknown_left_side" };
+  }
+  return { correct: true, reason: "all_pairs_matched" };
+};
+
+// rubric-based free-response grading contract (spec 065)
+
+export const freeResponseGradeSchema = z.object({
+  scores: z.array(
+    z.object({
+      criterionId: criterionIdSchema,
+      awardedPoints: z.number().min(0),
+      comment: z.string().trim().optional(),
+    }).strict(),
+  ),
+  missingKeyPoints: z.array(nonEmptyText),
+  feedback: nonEmptyText,
+}).strict();
+
+export type FreeResponseGrade = z.infer<typeof freeResponseGradeSchema>;
+
+// derived learner-facing result + concept guidance flags (spec 072)
+
+export const questionKindSchema = z.enum([...objectiveQuestionKinds, ...freeResponseQuestionKinds]);
+
+export const gradedQuestionResultSchema = z.object({
+  questionId: uuidSchema,
+  kind: questionKindSchema,
+  correct: z.boolean().nullable(),
+  earnedPoints: z.number().min(0),
+  possiblePoints: z.number().nonnegative(),
+  conceptIds: z.array(uuidSchema),
+  weakPoints: z.array(nonEmptyText),
+  feedback: nonEmptyText,
+}).strict();
+
+export type GradedQuestionResult = z.infer<typeof gradedQuestionResultSchema>;
+
+export const conceptGuidanceFlagFromResults = (
+  results: readonly Pick<GradedQuestionResult, "earnedPoints" | "possiblePoints" | "conceptIds">[],
+  conceptIds: readonly string[],
+): { conceptId: string; flag: "strong" | "review" | "needs_guidance" }[] => conceptIds.map((conceptId) => {
+  const related = results.filter((result) => result.conceptIds.includes(conceptId));
+  const possible = related.reduce((sum, result) => sum + result.possiblePoints, 0);
+  const earned = related.reduce((sum, result) => sum + result.earnedPoints, 0);
+  const ratio = possible === 0 ? 1 : earned / possible;
+  return {
+    conceptId,
+    flag: ratio >= 0.8 ? "strong" : ratio >= 0.5 ? "review" : "needs_guidance",
+  };
+});

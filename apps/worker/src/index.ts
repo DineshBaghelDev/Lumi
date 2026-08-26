@@ -4,6 +4,8 @@ import { parseWorkerEnv } from "@lumi/config";
 import { createWorkerDbClient } from "@lumi/db";
 import { createCurriculumHandler } from "./curriculum.ts";
 import { createLessonHandler } from "./lesson.ts";
+import { createProjectHandler } from "./project.ts";
+import { createQuestionHandler } from "./question.ts";
 import { createResearchHandler } from "./research.ts";
 import { claimOneJob, runClaimedJob } from "./worker.ts";
 
@@ -18,6 +20,8 @@ const db = createWorkerDbClient(config);
 const handlers = {
   curriculum: createCurriculumHandler(db, config),
   lesson: createLessonHandler(db, config),
+  project: createProjectHandler(db, config),
+  question: createQuestionHandler(db, config),
   research: createResearchHandler(db, config),
 };
 const workerId = `worker-${randomUUID()}`;

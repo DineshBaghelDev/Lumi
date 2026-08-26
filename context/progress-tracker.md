@@ -4,8 +4,8 @@
 
 Planning: complete  
 Implementation: in progress  
-Current focus: Milestone 5 — Projects, with course-generation repair complete and full pipeline verified live on Groq  
-Next spec: `057-project-generation.md`
+Current focus: Milestone 7 — Progress, notes/bookmarks, chat, and happy-path QA
+Next spec: `074-progress-schema.md`
 
 ## Current handoff
 
@@ -105,10 +105,18 @@ Next spec: `057-project-generation.md`
 - Course generation repair and `086-failure-retry-ux.md` first slice — complete
   - Verification: `pnpm --filter @lumi/worker test`; `pnpm --filter @lumi/api test`; `pnpm --filter @lumi/web typecheck`; `pnpm --filter @lumi/worker typecheck`; `pnpm --filter @lumi/api typecheck`.
   - Handoff: retryable client errors marked with `retryable: true` now use the existing worker backoff path. `POST /generation-jobs/:id/retry` reuses failed jobs after auth/legal-state checks and returns a safe job DTO. Failed course generation is surfaced in the UI with retry, cancel, progress, success, and error states. LiteLLM local routing now maps `gpt-5.5` to OpenRouter via env-backed config.
+- `057-project-generation.md` through `060-project-job-integration.md`, plus `073-project-ui.md` — complete
+  - Gate: project skeletons become ready guided projects with storyline, progressive milestone content, local implementation goals, ordered hints, lesson links, and learner progress. Project job retries are idempotent, failed projects remain nonfatal, and the UI reveals only the current milestone plus requested hints.
+  - Verification: `pnpm --filter @lumi/shared test`; `pnpm --filter @lumi/shared typecheck`; `pnpm --filter @lumi/worker test`; `pnpm --filter @lumi/worker typecheck`; `pnpm --filter @lumi/api test`; `pnpm --filter @lumi/api typecheck`; `pnpm --filter @lumi/web typecheck`.
+  - Handoff: `@lumi/shared` exports the project content contract. `apps/worker` registers the project handler, validates project/milestone/hint quality, records LLM calls, and persists milestone content without duplicate rows. `apps/api` serves project progress and hint/milestone actions behind course access checks. `apps/web` adds the guided project route and roadmap links without an in-app IDE or repo review UI.
+- `061-question-schema.md` through `066-question-job-integration.md`, plus `072-assessment-ui.md` — complete
+  - Gate: ready lessons enqueue one assessment question job; successful question jobs populate scoped questions atomically and idempotently; assessment serving hides keys/rubrics, MCQ feedback is immediate, final submission persists graded attempts and concept guidance.
+  - Verification: `pnpm --filter @lumi/shared test`; `pnpm --filter @lumi/shared typecheck`; `pnpm --filter @lumi/worker test`; `pnpm --filter @lumi/worker typecheck`; `pnpm --filter @lumi/api test`; `pnpm --filter @lumi/api typecheck`; `pnpm --filter @lumi/web typecheck`.
+  - Handoff: `@lumi/shared` exports all eight V1 question contracts, deterministic objective scoring, rubric grading schemas, and concept-guidance derivation. `apps/worker` registers the question handler, validates candidate scope/diversity/duplicates, retries once on QC failure, and repopulates assessment rows safely on retry. `apps/api` serves assessment payloads without answer keys, checks enrollment before scoring/submission, grades free responses through LiteLLM, and records attempts. `apps/web` adds the assessment runner for choice, fill-blank, matching, and free-text question types.
 
 ## In progress
 
-- [ ] `057-project-generation.md`
+- [ ] `074-progress-schema.md`
 
 ## Notes / deviations
 

@@ -15,6 +15,7 @@ type Lesson = {
   assessment_status: string | null;
 };
 type Module = { id: string; title: string };
+type Project = { id: string; title: string; goal: string; status: string };
 
 export default async function CourseLessonsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,8 +26,8 @@ export default async function CourseLessonsPage({ params }: { params: Promise<{ 
   if (!detailResponse.ok) return null;
   const { course } = await detailResponse.json() as { course: Course };
   const roadmap = curriculumResponse.ok
-    ? await curriculumResponse.json() as { modules: Module[]; lessons: Lesson[] }
-    : { modules: [], lessons: [] };
+    ? await curriculumResponse.json() as { modules: Module[]; lessons: Lesson[]; projects: Project[] }
+    : { modules: [], lessons: [], projects: [] };
 
   return (
     <AppShell active="Courses">
@@ -74,6 +75,36 @@ export default async function CourseLessonsPage({ params }: { params: Promise<{ 
           </div>
         </section>
       ))}
+      {roadmap.projects.length > 0 ? (
+        <section className="panel module-box section-gap">
+          <h2>Guided projects</h2>
+          <div className="lesson-list">
+            {roadmap.projects.map((project, index) => {
+              const ready = project.status === "ready";
+              const row = (
+                <>
+                  <span className="path-number">{index + 1}</span>
+                  <div>
+                    <h3>{project.title}</h3>
+                    <p>{project.goal}</p>
+                  </div>
+                  <span>Project</span>
+                  <Status label={ready ? "In Progress" : project.status === "failed" ? "Failed" : "Not Started"} />
+                </>
+              );
+              return ready ? (
+                <a className="lesson-row" href={`/courses/${id}/project/${project.id}`} key={project.id}>
+                  {row}
+                </a>
+              ) : (
+                <div className="lesson-row muted-row" key={project.id} aria-disabled="true">
+                  {row}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
     </AppShell>
   );
 }

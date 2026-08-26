@@ -122,3 +122,88 @@ test("manual retry rejects active jobs", async () => {
   assert.equal(response.json().error.code, "invalid_job_state");
   await app.close();
 });
+
+test("objective scoring hides assessments from unenrolled users", async () => {
+  const assessmentId = "11111111-1111-4111-8111-111111111111";
+  const questionId = "22222222-2222-4222-8222-222222222222";
+  const courseId = "33333333-3333-4333-8333-333333333333";
+  const rows = [
+    [{ id: "user-1", authUserId: "auth-1", email: null }],
+    [{
+      answer_key: { correctOptionId: "opt-a" },
+      content: {
+        id: "question-mcq-1",
+        kind: "mcq",
+        prompt: "Pick one",
+        difficulty: 1,
+        sourceRefs: [],
+        primaryConceptId: "44444444-4444-4444-8444-444444444444",
+        additionalConceptIds: [],
+        options: [{ id: "opt-a", text: "A" }, { id: "opt-b", text: "B" }],
+      },
+      type: "objective",
+      course_id: courseId,
+    }],
+    [],
+  ];
+  const db = { execute: async () => ({ rows: rows.shift() ?? [] }) };
+  const app = createApp({
+    config,
+    db: db as never,
+    verifyToken: async () => ({ authUserId: "auth-1" }),
+  });
+
+  const response = await app.inject({
+    method: "POST",
+    url: `/assessments/${assessmentId}/objective-score`,
+    headers: { authorization: "Bearer token" },
+    payload: { questionId, response: "opt-a" },
+  });
+
+  assert.equal(response.statusCode, 404);
+  assert.equal(response.json().error.code, "not_found");
+  await app.close();
+});
+
+test("assessment submissions hide assessments from unenrolled users", async () => {
+  const assessmentId = "11111111-1111-4111-8111-111111111111";
+  const questionId = "22222222-2222-4222-8222-222222222222";
+  const rows = [
+    [{ id: "user-1", authUserId: "auth-1", email: null }],
+    [{
+      id: questionId,
+      content: {
+        id: "question-mcq-1",
+        kind: "mcq",
+        prompt: "Pick one",
+        difficulty: 1,
+        sourceRefs: [],
+        primaryConceptId: "44444444-4444-4444-8444-444444444444",
+        additionalConceptIds: [],
+        options: [{ id: "opt-a", text: "A" }, { id: "opt-b", text: "B" }],
+      },
+      answer_key: { correctOptionId: "opt-a" },
+      rubric: {},
+      order_index: 1,
+      course_id: "33333333-3333-4333-8333-333333333333",
+    }],
+    [],
+  ];
+  const db = { execute: async () => ({ rows: rows.shift() ?? [] }) };
+  const app = createApp({
+    config,
+    db: db as never,
+    verifyToken: async () => ({ authUserId: "auth-1" }),
+  });
+
+  const response = await app.inject({
+    method: "POST",
+    url: `/assessments/${assessmentId}/submissions`,
+    headers: { authorization: "Bearer token" },
+    payload: { answers: [{ questionId, response: "opt-a" }] },
+  });
+
+  assert.equal(response.statusCode, 404);
+  assert.equal(response.json().error.code, "not_found");
+  await app.close();
+});
