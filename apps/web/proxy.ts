@@ -11,7 +11,7 @@ const requiredEnv = (name: string) => {
 };
 
 export async function proxy(request: NextRequest) {
-  const response = NextResponse.next({ request });
+  const response = NextResponse.next();
 
   await updateSession({
     requestCookies: request.cookies,
@@ -24,5 +24,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/api/auth/refresh"],
 };
