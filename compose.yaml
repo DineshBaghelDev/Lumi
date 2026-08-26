@@ -40,18 +40,38 @@ services:
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     environment:
       LITELLM_MASTER_KEY: "${LITELLM_API_KEY:?Set LITELLM_API_KEY in .env to a strong local value}"
+      DATABASE_URL: "postgresql://litellm:litellm@litellm-db:5432/litellm"
+      UI_USERNAME: "${UI_USERNAME:-admin}"
+      UI_PASSWORD: "${UI_PASSWORD:-admin}"
       OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:?Set OPENROUTER_API_KEY in .env}"
       GROQ_API_KEY: "${GROQ_API_KEY:?Set GROQ_API_KEY in .env}"
     ports:
       - "127.0.0.1:4000:4000"
     volumes:
       - ./services/litellm/config.yaml:/app/config.yaml:ro
+    depends_on:
+      litellm-db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 30s
+
+  litellm-db:
+    image: docker.io/postgres:16-alpine
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: litellm
+    volumes:
+      - litellm-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   tei:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8.3@sha256:8de25e75ce39617f17f2f6c77d60a4f75b65e779ed5005420eb1400072a15c1c
@@ -68,5 +88,6 @@ services:
       start_period: 120s
 
 volumes:
+  litellm-db-data:
   searxng-cache:
   tei-model-cache:
