@@ -41,6 +41,11 @@
 - Keep a real backend/worker repo; do not place core orchestration in hosted edge functions.
 - Google OAuth only in V1; email auth deferred to V1.1.
 - LiteLLM owns model routing. In the MVP development environment, codex-as-api is the primary generation provider and OpenRouter is fallback.
+- Live routing (2026-08-26): `gpt-5.5` is served by Groq `openai/gpt-oss-120b` with OpenRouter as a named fallback deployment. OpenRouter balance cannot cover curriculum-sized `max_tokens` (402), so Groq is the effective generation provider until credits are added or codex-as-api returns.
+- LLM prompts must embed the exact JSON output shape (skeleton), not just key names. gpt-oss-120b guesses wrong shapes from prose-only prompts.
+- Deterministic QC rules must be stated verbatim in the prompt (e.g., prerequisite names, citation requirements); the model cannot infer gate mechanics.
+- Groq free tier enforces an 8000 tokens-per-minute cap per request including `max_tokens`; lesson calls are budgeted (~2200 prompt + 5000 completion worst case). Reasoning tokens count against completion budgets on gpt-oss models.
+- TEI rejects requests containing any input beyond its token limit with HTTP 413 regardless of batch composition; embedding clients must size-bound batches, split on 413, and truncate single oversized inputs rather than failing the job permanently.
 - Postgres polling queue instead of Redis.
 - API writes jobs; worker polls. No direct API→worker call.
 - Realtime generation updates plus 5-second polling fallback.
