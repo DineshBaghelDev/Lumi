@@ -35,6 +35,39 @@ test("Crawl4AI client preserves page links and images", async () => {
   assert.equal(pages[0]?.images[0]?.mimeType, "image/png");
 });
 
+test("Crawl4AI client accepts object markdown from the Docker API", async () => {
+  const client = new Crawl4aiClient("http://crawl.test", async () => new Response(JSON.stringify({
+    success: true,
+    results: [{
+      url: "https://redis.io/docs",
+      markdown: { raw_markdown: "# Redis\n\nStreams documentation body with enough useful words." },
+      metadata: { title: "Redis docs" },
+      media: { images: [{ url: "https://redis.io/a.png" }] },
+    }],
+  })));
+
+  const pages = await client.crawl(["https://redis.io/docs"]);
+  assert.match(pages[0]?.markdown ?? "", /Streams documentation/);
+  assert.equal(pages[0]?.images[0]?.url, "https://redis.io/a.png");
+});
+
+test("Crawl4AI client keeps successful pages when one URL fails", async () => {
+  const seen: string[] = [];
+  const client = new Crawl4aiClient("http://crawl.test", async (_url, init) => {
+    const url = (JSON.parse(String(init?.body)) as { urls: string[] }).urls[0]!;
+    seen.push(url);
+    if (url.includes("bad")) return new Response("boom", { status: 500 });
+    return new Response(JSON.stringify({
+      results: [{ url, markdown: "# Good\n\nUseful crawled content for a surviving page." }],
+    }));
+  });
+
+  const pages = await client.crawl(["https://redis.io/good", "https://redis.io/bad"]);
+  assert.deepEqual(seen, ["https://redis.io/good", "https://redis.io/bad"]);
+  assert.equal(pages.length, 1);
+  assert.equal(pages[0]?.url, "https://redis.io/good");
+});
+
 test("TEI client validates embedding dimensions", async () => {
   const ok = new TeiClient(
     { baseUrl: "http://tei.test", dimension: 3, modelId: "test" },

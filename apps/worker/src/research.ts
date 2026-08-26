@@ -14,6 +14,7 @@ type ResearchDeps = {
   embed?: { embed(input: string[]): Promise<number[][]> };
   lookup?: typeof dnsLookup;
 };
+type EmbedClient = NonNullable<ResearchDeps["embed"]>;
 
 type CourseRow = {
   id: string;
@@ -94,9 +95,13 @@ export const createResearchHandler = (
     await markSearchQueries(db, job.course_id, queries.length);
     await setProgress(db, job.id, 25, { stage: "search", queries });
 
-    const searchResults = (await Promise.all(queries.map((query) => search.search(query, { limit: 5 }))))
+    const searchResults = (await Promise.all(queries.map((query) => search.search(query, {
+      limit: 5,
+      signal: AbortSignal.timeout(config.researchSecurity.requestTimeoutMs),
+    }))))
       .flat();
-    const ranked = rankSources(searchResults, course.topic).slice(0, config.generationBudgets.maxCrawledSources);
+    const ranked = rankSources(searchResults, course.topic)
+      .slice(0, Math.min(config.generationBudgets.maxCrawledSources, config.researchSecurity.maxPagesPerCrawl));
     await ensureCanContinue(db, job.course_id, "source selection");
 
     const blocked = [];
@@ -109,7 +114,9 @@ export const createResearchHandler = (
     if (allowed.length === 0) throw new PermanentJobError("Research found no crawlable sources");
 
     await setProgress(db, job.id, 45, { stage: "crawl", blocked });
-    const pages = await crawl.crawl(allowed.map((source) => source.url));
+    const pages = await crawl.crawl(allowed.map((source) => source.url), {
+      signal: AbortSignal.timeout(config.researchSecurity.requestTimeoutMs),
+    });
     const retained = pages.filter((page) => isAllowedPage(page, config));
     await ensureCanContinue(db, job.course_id, "crawling");
     await markCrawlUsage(db, job.course_id, retained);
@@ -119,7 +126,7 @@ export const createResearchHandler = (
 
     const allChunks = [...chunksByUrl.values()].flat();
     if (allChunks.length === 0) throw new PermanentJobError("Research produced no usable chunks");
-    const vectors = await embed.embed(allChunks.map((chunk) => chunk.content));
+    const vectors = await embedChunks(embed, allChunks.map((chunk) => chunk.content));
     await setProgress(db, job.id, 70, { stage: "persist" });
 
     await persistResearch(db, {
@@ -133,6 +140,14 @@ export const createResearchHandler = (
       blocked,
     });
   };
+};
+
+export const embedChunks = async (embed: EmbedClient, chunks: string[]) => {
+  const vectors: number[][] = [];
+  for (let index = 0; index < chunks.length; index += 8) {
+    vectors.push(...await embed.embed(chunks.slice(index, index + 8)));
+  }
+  return vectors;
 };
 
 const getCourse = async (db: LumiDb, courseId: string) => {
@@ -355,7 +370,7 @@ export const chunkMarkdown = (markdown: string) => {
   return sections.flatMap((section, index) => {
     const heading = section.match(/^#{1,3}\s+(.+)$/m)?.[1]?.trim() ?? null;
     const content = section.replace(/^#{1,3}\s+.+$/m, "").trim() || section;
-    return content.length < 40 ? [] : [{ heading, content: content.slice(0, 4_000), role: inferChunkRole(content), order: index }];
+    return content.length < 40 ? [] : [{ heading, content: content.slice(0, 1_000), role: inferChunkRole(content), order: index }];
   });
 };
 

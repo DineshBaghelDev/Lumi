@@ -6,7 +6,7 @@ import { claimNextGenerationJob, createCourseWithResearchJob, createDbPool, fail
 import * as schema from "@lumi/db";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { chunkMarkdown, createResearchHandler, isForbiddenAddress, sanitizeMarkdown, validateSourceUrl } from "./research.ts";
+import { chunkMarkdown, createResearchHandler, embedChunks, isForbiddenAddress, sanitizeMarkdown, validateSourceUrl } from "./research.ts";
 
 const config = parseWorkerEnv({
   INSFORGE_PROJECT_URL: "http://localhost:7130",
@@ -50,6 +50,20 @@ Consumer groups need acknowledgement and pending-entry recovery.`;
   assert.equal(chunks.length, 2);
   assert.equal(chunks[0]?.heading, "Redis Streams");
   assert.equal(chunks[1]?.role, "failure_mode");
+  assert.ok(chunks.every((chunk) => chunk.content.length <= 1_000));
+});
+
+test("embeddings are requested in small batches", async () => {
+  const batchSizes: number[] = [];
+  const vectors = await embedChunks({
+    embed: async (input) => {
+      batchSizes.push(input.length);
+      return input.map(() => [0]);
+    },
+  }, Array.from({ length: 17 }, (_, index) => `chunk ${index}`));
+
+  assert.deepEqual(batchSizes, [8, 8, 1]);
+  assert.equal(vectors.length, 17);
 });
 
 try {

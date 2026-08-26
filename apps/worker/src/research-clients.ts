@@ -83,6 +83,22 @@ export class Crawl4aiClient {
   }
 
   async crawl(urls: string[], { signal }: { signal?: AbortSignal } = {}) {
+    const pages: CrawledPage[] = [];
+    let lastError: unknown;
+    for (const url of urls) {
+      try {
+        pages.push(...await this.crawlBatch([url], signal ? { signal } : {}));
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (pages.length > 0) return pages;
+    if (lastError) throw lastError;
+    return [];
+  }
+
+  private async crawlBatch(urls: string[], { signal }: { signal?: AbortSignal } = {}) {
     const init: RequestInit = {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -103,23 +119,34 @@ export class Crawl4aiClient {
   }
 }
 
+const pickString = (value: unknown, keys: string[]) => {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object") return "";
+  const record = value as Record<string, unknown>;
+  for (const key of keys) {
+    if (typeof record[key] === "string") return record[key];
+  }
+  return "";
+};
+
 const normalizeCrawledPage = (item: unknown): CrawledPage[] => {
   if (!item || typeof item !== "object") return [];
   const page = item as Record<string, unknown>;
   const url = typeof page.url === "string" ? page.url : "";
-  const markdown = typeof page.markdown === "string" ? page.markdown : typeof page.content === "string" ? page.content : "";
+  const markdown = pickString(page.markdown, ["raw_markdown", "markdown", "fit_markdown"]) || pickString(page.content, []);
   if (!url || !markdown) return [];
   const metadata = page.metadata && typeof page.metadata === "object" ? page.metadata as Record<string, unknown> : {};
+  const media = page.media && typeof page.media === "object" ? page.media as Record<string, unknown> : {};
   return [{
     url,
-    finalUrl: typeof page.final_url === "string" ? page.final_url : url,
-    title: typeof metadata.title === "string" ? metadata.title : null,
+    finalUrl: typeof page.final_url === "string" ? page.final_url : typeof page.finalUrl === "string" ? page.finalUrl : url,
+    title: typeof metadata.title === "string" ? metadata.title : typeof page.title === "string" ? page.title : null,
     markdown,
     mimeType: typeof page.mime_type === "string" ? page.mime_type : "text/markdown",
     byteLength: Buffer.byteLength(markdown),
     links: Array.isArray(page.links) ? page.links.filter((link): link is string => typeof link === "string") : [],
-    images: Array.isArray(page.images)
-      ? page.images.flatMap((image): CrawledPage["images"] => {
+    images: (Array.isArray(page.images) ? page.images : Array.isArray(media.images) ? media.images : [])
+      .flatMap((image): CrawledPage["images"] => {
         if (typeof image === "string") return [{ url: image }];
         if (!image || typeof image !== "object" || typeof (image as Record<string, unknown>).url !== "string") return [];
         const record = image as Record<string, unknown>;
@@ -129,8 +156,7 @@ const normalizeCrawledPage = (item: unknown): CrawledPage[] => {
           mimeType: typeof record.mime_type === "string" ? record.mime_type : null,
           byteLength: typeof record.byte_length === "number" ? record.byte_length : null,
         }];
-      })
-      : [],
+      }),
   }];
 };
 
