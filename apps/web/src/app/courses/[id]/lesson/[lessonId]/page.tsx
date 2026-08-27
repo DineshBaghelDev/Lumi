@@ -3,6 +3,7 @@ import { AppShell } from "../../../../ui";
 import { MermaidBlock } from "./mermaid-block";
 import { LessonNotesPanel } from "./lesson-notes-panel";
 import { LessonChatPanel } from "./lesson-chat-panel";
+import { LessonProgressPanel } from "./lesson-progress-panel";
 
 type SourceRef = { sourceId: string; chunkId?: string; label?: string };
 type LessonBlock =
@@ -66,6 +67,10 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
             <details className="side-card lesson-tool" open>
               <summary>Notes & Bookmarks</summary>
               <LessonNotesPanel courseId={id} lessonId={lessonId} blocks={content.blocks} />
+            </details>
+            <details className="side-card lesson-tool section-gap" open>
+              <summary>Progress</summary>
+              <LessonProgressPanel courseId={id} lessonId={lessonId} contentBlockCount={content.blocks.length} />
             </details>
             <details className="side-card lesson-tool section-gap" open>
               <summary>Sources</summary>
