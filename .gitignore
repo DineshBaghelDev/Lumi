@@ -32,3 +32,4 @@ design-fix-screens-*/
 design-density-screens-*/
 .typefix-*.png
 tmp/
+apps/web/test-results/

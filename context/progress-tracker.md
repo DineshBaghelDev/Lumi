@@ -2,9 +2,9 @@
 
 ## Status
 Planning: complete
-Implementation: in progress
-Current focus: Milestone 8 — Hardening and polish
-Next spec: `087-final-v1-polish.md`
+Implementation: complete
+Current focus: V1 release readiness
+Next spec: none (V1 complete)
 
 ## Current handoff
 
@@ -139,10 +139,13 @@ Next spec: `087-final-v1-polish.md`
   - Handoff: `apps/web/e2e/happy-path.spec.ts` with Playwright config covering landing, auth, courses, generation, lesson, assessment, chat, notes, resume flows.
 - `086-failure-retry-ux.md` — complete
   - Handoff: Retry/cancel/budget-stop UI and API fully wired with tests.
+- `087-final-v1-polish.md` — complete; commit `29a2c4d` + cleanup
+  - Verification: all typechecks pass (api, worker, shared, web); all unit/integration tests pass (36 api, 44 worker, 9 shared); all 9 Playwright e2e tests pass; lint passes (7/7 tasks).
+  - Handoff: removed dead hardcoded data from ui.tsx (unused courses/modules/lessons arrays, unused PageTitle and DisabledPill components); fixed lessons page to show proper error instead of null when course not found; removed placeholder progress and projects pages that used hardcoded data and were not linked from sidebar. All V1 screens reviewed for design consistency, loading/empty/error states, and accessibility. Known limitations: Playwright happy-path tests are lightweight stubs for authenticated flows (lesson rendering, assessment, chat) since they require seeded data; live progress/projects pages are deferred to V2.
 
 ## In progress
 
-- [ ] `087-final-v1-polish.md`
+(none — V1 implementation complete)
 
 ## Notes / deviations
 

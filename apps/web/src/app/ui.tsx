@@ -1,35 +1,5 @@
 import type { ReactNode } from "react";
 
-export const courses = [
-  {
-    id: "1",
-    title: "Machine Learning",
-    subtitle: "From fundamentals to model evaluation and applied projects.",
-    lessons: "16 lessons",
-    projects: "4 projects",
-    progress: "75%",
-    state: "In Progress",
-    mark: "AI",
-    tone: "accent",
-  },
-] as const;
-
-export const modules = [
-  ["Foundations", "6 lessons", "Start with the basics: data, features, and the ML workflow.", "100%", "Complete"],
-  ["Core Concepts", "5 lessons", "Explore core algorithms and how they work.", "80%", "In Progress"],
-  ["Advanced Topics", "6 lessons", "Dive deeper into model tuning, evaluation, and overfitting.", "20%", "Not Started"],
-  ["Real World", "4 lessons", "Apply your skills to real datasets and build end-to-end models.", "0%", "Locked"],
-] as const;
-
-export const lessons = [
-  ["1", "What is Machine Learning?", "Key ideas, types and real world applications", "20 min", "Done"],
-  ["2", "Data in Machine Learning", "Understanding datasets and features", "25 min", "Done"],
-  ["3", "Train, Validation, Test Split", "How we test and make models properly", "18 min", "Done"],
-  ["4", "Bias & Variance", "The fundamental trade-off", "22 min", "Done"],
-  ["5", "Model Evaluation", "Metrics that actually matter", "26 min", "In Progress"],
-  ["6", "Overfitting & Underfitting", "Ready after Model Evaluation", "24 min", "Locked"],
-] as const;
-
 export function Logo() {
   return (
     <a className="brand" href="/dashboard">
@@ -96,14 +66,6 @@ export function Status({ label }: { label: string }) {
   return <span className={`status ${className}`}>{label}</span>;
 }
 
-export function DisabledPill({ children }: { children: ReactNode }) {
-  return (
-    <span className="disabled-pill" aria-disabled="true">
-      {children}
-    </span>
-  );
-}
-
 export function Sidebar({ active }: { active: string }) {
   const links = [
     ["Home", "/dashboard", "home"],
@@ -152,15 +114,6 @@ export function CourseTabs({ active, courseId = "1" }: { active: string; courseI
         </a>
       ))}
     </nav>
-  );
-}
-
-export function PageTitle({ title, subtitle }: { title: string; subtitle?: string }) {
-  return (
-    <div className="page-title">
-      <h1>{title}</h1>
-      {subtitle ? <p>{subtitle}</p> : null}
-    </div>
   );
 }
 

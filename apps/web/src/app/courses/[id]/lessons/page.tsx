@@ -23,7 +23,15 @@ export default async function CourseLessonsPage({ params }: { params: Promise<{ 
     apiFetch(`/courses/${id}`),
     apiFetch(`/courses/${id}/curriculum`),
   ]);
-  if (!detailResponse.ok) return null;
+  if (!detailResponse.ok) return (
+    <AppShell active="Courses">
+      <a className="back-link" href="/courses">Back</a>
+      <section className="panel module-box">
+        <h1>Course not found</h1>
+        <p>This course is unavailable or you do not have access.</p>
+      </section>
+    </AppShell>
+  );
   const { course } = await detailResponse.json() as { course: Course };
   const roadmap = curriculumResponse.ok
     ? await curriculumResponse.json() as { modules: Module[]; lessons: Lesson[]; projects: Project[] }
