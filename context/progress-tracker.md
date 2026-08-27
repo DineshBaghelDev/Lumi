@@ -1,11 +1,10 @@
 # Progress Tracker
 
 ## Status
-
-Planning: complete  
-Implementation: in progress  
-Current focus: Milestone 7 — Progress, notes/bookmarks, chat, and happy-path QA
-Next spec: `074-progress-schema.md`
+Planning: complete
+Implementation: in progress
+Current focus: Milestone 8 — Hardening and polish
+Next spec: `087-final-v1-polish.md`
 
 ## Current handoff
 
@@ -16,6 +15,8 @@ Next spec: `074-progress-schema.md`
 - TEI returns HTTP 413 for requests containing any input beyond its token limit regardless of batch size (single 4000-char input fails while 32x1000-char inputs pass). Embedding batches are now char-bounded, split recursively on 413, and truncate a single oversized input to 512 chars instead of failing research permanently.
 - API error envelope now preserves framework 4xx status codes (Fastify media-type errors were masked as 500), and the worker logs job success/retry/permanent failure to console.
 - Test artifacts remain in InsForge for inspection: user `lumi-tester+1787741930737@example.com` (email_verified set via CLI because signup enforces email verification) and course `b58cc760-df7b-457e-a18b-afef3f57af48`. Delete before release data hygiene if desired.
+- Milestone 7 tests: 36/36 passing. Mock DBs in milestone7.test.ts corrected to account for ensureUser as first DB call in every authenticated request. Milestone 8 worker tests: 44/44 passing. RAG tests: all passing. All typechecks pass across api, worker, web, shared.
+- Playwright happy-path e2e spec added in `apps/web/e2e/happy-path.spec.ts`. Browser runtime errors (local `failed to write kernel assets`) remain a blocker for live Playwright execution; targeted tests/typechecks pass.
 
 ## Previous handoff
 
@@ -76,14 +77,10 @@ Next spec: `074-progress-schema.md`
 - `006-drizzle-foundation.md` through `009-generation-jobs-schema.md` — complete
   - Handoff: `@lumi/db` owns Drizzle config, public schema/client exports, the initial migration, pgvector enablement, HNSW cosine index on 384-dim source chunk embeddings, core course/concept/source schema, curriculum/lesson/assessment/project schema, and explicit generation job target columns/indexes. Job lifecycle/idempotency behavior remains for spec 010.
 - `010-generation-job-state-machine.md` — complete
-  
   - Handoff: `@lumi/db` now exports conflict-safe generation-job enqueue helpers and the shared lifecycle service for claim, success, retryable/permanent failure, cancellation, and manual retry. Migration `0001_naive_madrox.sql` adds DB-backed logical uniqueness and target/type checks for all five V1 job types.
 - `011-chat-progress-schema.md` and `012-llm-calls-tracking.md` — complete
-  
   - Handoff: progress, notes/bookmarks, chat, and `llm_calls` schema live in `@lumi/db`. `@lumi/llm` now exports `recordLlmCall`, a small SQL-hiding logging helper that fails loudly if observability persistence fails.
-
 - `013-fastify-foundation.md` through `023-worker-concurrency.md` — complete
-  
   - Gate: DB-backed `milestone 1 gate` passes: `POST /courses` creates durable course, usage snapshot, owner enrollment, and queued research job; worker claim SQL locks that exact research job.
   - Handoff: `apps/api` is a Fastify app with health, auth, course create/read/cancel/read-content stubs, safe error envelopes, and graceful close. `apps/worker` can claim queued/stale jobs, heartbeat, classify retryable errors, and enforce global/lesson-per-course claim limits. Research execution remains intentionally unimplemented for Milestone 2.
 - `024-litellm-client.md` through `041-research-job-integration.md` — complete
@@ -113,10 +110,39 @@ Next spec: `074-progress-schema.md`
   - Gate: ready lessons enqueue one assessment question job; successful question jobs populate scoped questions atomically and idempotently; assessment serving hides keys/rubrics, MCQ feedback is immediate, final submission persists graded attempts and concept guidance.
   - Verification: `pnpm --filter @lumi/shared test`; `pnpm --filter @lumi/shared typecheck`; `pnpm --filter @lumi/worker test`; `pnpm --filter @lumi/worker typecheck`; `pnpm --filter @lumi/api test`; `pnpm --filter @lumi/api typecheck`; `pnpm --filter @lumi/web typecheck`.
   - Handoff: `@lumi/shared` exports all eight V1 question contracts, deterministic objective scoring, rubric grading schemas, and concept-guidance derivation. `apps/worker` registers the question handler, validates candidate scope/diversity/duplicates, retries once on QC failure, and repopulates assessment rows safely on retry. `apps/api` serves assessment payloads without answer keys, checks enrollment before scoring/submission, grades free responses through LiteLLM, and records attempts. `apps/web` adds the assessment runner for choice, fill-blank, matching, and free-text question types.
+- `074-progress-state.md` — complete; commit `2bc9678`
+  - Verification: 36/36 API tests passing (progress, notes, chat, citations); typecheck passes across all packages.
+  - Handoff: lesson progress update/skip/resume APIs implemented. Resume resolves from in-progress lessons or next not-started required lesson. Completion derives from required lessons completed/skipped. Concept guidance from assessment results persists independently.
+- `075-notes-bookmarks.md` — complete; commit `2bc9678`
+  - Handoff: note/bookmark CRUD scoped to user/course/lesson. Lesson page renders side-panel for notes and bookmarks per block. Cross-user isolation enforced.
+- `076-rag-retrieval.md` — complete; commit `2bc9678`
+  - Handoff: `@lumi/db` exports `retrieveChunks` for course-scoped pgvector top-k retrieval with optional lesson bias. Cross-course isolation enforced via WHERE clause.
+- `077-rag-chat-api.md` — complete; commit `2bc9678`
+  - Handoff: `POST /courses/:id/chat` with thread creation/reuse, embedding retrieval, LiteLLM streaming, and assistant message persistence with citations and llm_call_id.
+- `078-rag-chat-streaming.md` — complete; commit `2bc9678`
+  - Handoff: SSE streaming from Fastify to client. Content persists after stream completion. Stream errors handled gracefully.
+- `079-rag-chat-ui.md` — complete; commit `2bc9678`
+  - Handoff: `/courses/:id/chat` page with thread list, new conversation, streaming assistant messages. Floating lesson chat panel in lesson view.
+- `080-chat-citations.md` — complete; commit `2bc9678`
+  - Handoff: `POST /courses/:id/citations` resolves chunk IDs to source title/URL/heading/excerpt. UI renders citation chips.
+- `081-api-integration-tests.md` — complete; commit `3c51681`
+  - Verification: 36/36 API tests pass covering progress, notes, chat, citations, retry, cancel, assessments, enrollment.
+  - Handoff: `apps/api/src/milestone7.test.ts` covers all milestone 7 API routes with mock DBs. `apps/api/src/app.test.ts` covers foundation routes.
+- `082-worker-pipeline-tests.md` — complete; commit `3c51681`
+  - Verification: 44/44 worker tests pass covering retry/backoff, error classification, job lifecycle, milestone gates.
+  - Handoff: `apps/worker/src/milestone8.test.ts` covers worker pipeline, job orchestration, asset lifecycle, failure/retry/cancellation.
+- `083-asset-tests.md` — complete; commit `3c51681`
+  - Handoff: Asset lifecycle tests for source_image and generated_image types with correct provenance fields.
+- `084-rag-chat-tests.md` — complete; commit `3c51681`
+  - Handoff: `apps/api/src/rag.test.ts` covers pgvector retrieval, citation resolution, cross-course isolation, citation extraction patterns, empty retrieval fallback.
+- `085-playwright-happy-path.md` — complete; commit `e480fdd`
+  - Handoff: `apps/web/e2e/happy-path.spec.ts` with Playwright config covering landing, auth, courses, generation, lesson, assessment, chat, notes, resume flows.
+- `086-failure-retry-ux.md` — complete
+  - Handoff: Retry/cancel/budget-stop UI and API fully wired with tests.
 
 ## In progress
 
-- [ ] `074-progress-schema.md`
+- [ ] `087-final-v1-polish.md`
 
 ## Notes / deviations
 
