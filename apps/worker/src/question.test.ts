@@ -7,7 +7,7 @@ import * as schema from "@lumi/db";
 import type { QuestionCandidate } from "@lumi/shared";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { createQuestionHandler, selectFinalQuestions, validateQuestionSet } from "./question.ts";
+import { buildFallbackQuestions, createQuestionHandler, selectFinalQuestions, validateQuestionSet } from "./question.ts";
 
 const conceptA = "11111111-1111-4111-8111-111111111111";
 const conceptB = "22222222-2222-4222-8222-222222222222";
@@ -36,6 +36,33 @@ test("question QC rejects untaught and duplicate candidates", () => {
   assert.equal(result.passed, false);
   assert.match(result.reasons.join("\n"), /untaught primary concept/);
   assert.match(result.reasons.join("\n"), /near-duplicate/);
+});
+
+test("fallback questions satisfy assessment QC", () => {
+  const fallback = buildFallbackQuestions(
+    {
+      lesson_title: "Redis stream foundations",
+      lesson_objectives: ["Explain append-only stream entries"],
+    },
+    {
+      requiredCount: 5,
+      allowedConceptIds: [conceptA, conceptB],
+      concepts: [{ id: conceptA, name: "Redis streams" }, { id: conceptB, name: "Consumer groups" }],
+      chunks: [
+        {
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          source_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          source_title: "Redis Streams",
+          url: "https://redis.io/docs/latest/develop/data-types/streams/",
+          heading: "Streams",
+          content: "Redis streams are append-only logs of entries consumed by readers and consumer groups.",
+        },
+      ],
+    },
+  );
+
+  assert.equal(fallback.length, 5);
+  assert.equal(validateQuestionSet(fallback, { requiredCount: 5, allowedConceptIds: [conceptA, conceptB] }).passed, true);
 });
 
 try {

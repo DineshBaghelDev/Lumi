@@ -386,10 +386,6 @@ export const refreshCourseStatus = async (db: LumiDb, courseId: string) => {
             where p.course_id = ${courseId} and p.status = 'failed'
           ) then 'ready_with_gaps'::course_status
           when exists (
-            select 1 from generation_jobs
-            where course_id = ${courseId} and status in ('queued', 'running')
-          ) then status
-          when exists (
             select 1 from lessons l join modules m on m.id = l.module_id join curricula c on c.id = m.curriculum_id
             where c.course_id = ${courseId} and l.status in ('pending', 'generating')
           )
@@ -404,7 +400,11 @@ export const refreshCourseStatus = async (db: LumiDb, courseId: string) => {
             join modules m on m.id = l.module_id
             join curricula c on c.id = m.curriculum_id
             where c.course_id = ${courseId} and l.status <> 'failed' and a.status in ('pending', 'generating')
-          ) then 'ready_with_gaps'::course_status
+          )
+          or exists (
+            select 1 from generation_jobs
+            where course_id = ${courseId} and status = 'queued'
+          ) then 'generating'::course_status
           else 'ready'::course_status
         end,
         updated_at = now()

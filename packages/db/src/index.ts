@@ -8,6 +8,7 @@ import * as schema from "./schema.ts";
 export * from "./schema.ts";
 export * from "./jobs.ts";
 export * from "./courses.ts";
+export * from "./rag.ts";
 
 export type ServerInsforgeConfig = Pick<ApiConfig["insforge"], "projectUrl" | "apiKey">;
 export type ServerInsforgeClient = InsForgeClient;

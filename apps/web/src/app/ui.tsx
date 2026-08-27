@@ -141,6 +141,7 @@ export function CourseTabs({ active, courseId = "1" }: { active: string; courseI
   const tabs = [
     ["Overview", `/courses/${courseId}`],
     ["Lessons", `/courses/${courseId}/lessons`],
+    ["Chat", `/courses/${courseId}/chat`],
   ];
 
   return (

@@ -6,6 +6,8 @@ import {
   createApiDbClient,
   createCourseWithResearchJob,
   manualRetryGenerationJob,
+  resolveCitations,
+  retrieveChunks,
   type LumiDb,
 } from "@lumi/db";
 import { LiteLlmClient, recordLlmCall, type CompleteResult } from "@lumi/llm";
@@ -578,6 +580,330 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     };
   });
 
+  // ===== Milestone 7: Progress, Notes, Chat, Citations =====
+
+  app.patch("/lessons/:id/progress", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { id } = parse(paramsWithId, request.params);
+    const body = parse(z.object({
+      status: z.enum(["not_started", "in_progress", "completed", "skipped"]).optional(),
+      currentBlockIndex: z.number().int().min(0).optional(),
+    }), request.body);
+
+    const lesson = (await db.execute<{ id: string; course_id: string }>(sql`
+      select l.id, c.course_id
+      from lessons l
+      join modules m on m.id = l.module_id
+      join curricula c on c.id = m.curriculum_id
+      where l.id = ${id}
+    `)).rows[0];
+    if (!lesson || !(await canAccessCourse(db, user.id, lesson.course_id))) {
+      throw new HttpError(404, "not_found", "Lesson not found");
+    }
+
+    await db.execute(sql`
+      insert into lesson_progress (user_id, lesson_id, status, current_block_index)
+      values (${user.id}, ${id}, ${body.status ?? "in_progress"}, ${body.currentBlockIndex ?? 0})
+      on conflict (user_id, lesson_id) do update
+        set status = coalesce(${body.status ?? null}, lesson_progress.status),
+            current_block_index = coalesce(${body.currentBlockIndex ?? null}, lesson_progress.current_block_index),
+            updated_at = now()
+    `);
+    return { ok: true };
+  });
+
+  app.get("/courses/:id/progress/resume", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { id } = parse(paramsWithId, request.params);
+    if (!(await canAccessCourse(db, user.id, id))) throw new HttpError(404, "not_found", "Course not found");
+
+    // Find the last in-progress lesson
+    const inProgressLesson = (await db.execute<{ lesson_id: string; current_block_index: number }>(sql`
+      select lp.lesson_id, lp.current_block_index
+      from lesson_progress lp
+      join lessons l on l.id = lp.lesson_id
+      join modules m on m.id = l.module_id
+      join curricula c on c.id = m.curriculum_id
+      where lp.user_id = ${user.id} and c.course_id = ${id} and lp.status = 'in_progress'
+      order by m.order_index, l.order_index
+      limit 1
+    `)).rows[0];
+
+    if (inProgressLesson) {
+      return { type: "lesson", lessonId: inProgressLesson.lesson_id, blockIndex: inProgressLesson.current_block_index };
+    }
+
+    // Find the next not-started required lesson
+    const nextLesson = (await db.execute<{ lesson_id: string }>(sql`
+      select l.id as lesson_id
+      from lessons l
+      join modules m on m.id = l.module_id
+      join curricula c on c.id = m.curriculum_id
+      left join lesson_progress lp on lp.lesson_id = l.id and lp.user_id = ${user.id}
+      where c.course_id = ${id} and l.is_required = true and l.status = 'ready'
+        and (lp.lesson_id is null or lp.status = 'not_started')
+      order by m.order_index, l.order_index
+      limit 1
+    `)).rows[0];
+
+    if (nextLesson) {
+      return { type: "lesson", lessonId: nextLesson.lesson_id, blockIndex: 0 };
+    }
+
+    return { type: "course_complete" };
+  });
+
+  app.post("/lessons/:id/skip", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { id } = parse(paramsWithId, request.params);
+
+    const lesson = (await db.execute<{ id: string; course_id: string }>(sql`
+      select l.id, c.course_id
+      from lessons l
+      join modules m on m.id = l.module_id
+      join curricula c on c.id = m.curriculum_id
+      where l.id = ${id}
+    `)).rows[0];
+    if (!lesson || !(await canAccessCourse(db, user.id, lesson.course_id))) {
+      throw new HttpError(404, "not_found", "Lesson not found");
+    }
+
+    await db.execute(sql`
+      insert into lesson_progress (user_id, lesson_id, status, current_block_index)
+      values (${user.id}, ${id}, 'skipped', 0)
+      on conflict (user_id, lesson_id) do update
+        set status = 'skipped', updated_at = now()
+    `);
+    return { ok: true };
+  });
+
+  // ===== Notes and Bookmarks =====
+
+  const notesParams = z.object({ courseId: z.uuid(), lessonId: z.uuid() });
+
+  app.get("/courses/:courseId/lessons/:lessonId/notes", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { courseId, lessonId } = parse(notesParams, request.params);
+    if (!(await canAccessCourse(db, user.id, courseId))) throw new HttpError(404, "not_found", "Course not found");
+
+    const rows = await db.execute(sql`
+      select id, type, block_id as "blockId", content, created_at as "createdAt", updated_at as "updatedAt"
+      from user_notes
+      where user_id = ${user.id} and course_id = ${courseId} and lesson_id = ${lessonId}
+      order by created_at
+    `);
+    return { notes: rows.rows };
+  });
+
+  app.post("/courses/:courseId/lessons/:lessonId/notes", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { courseId, lessonId } = parse(notesParams, request.params);
+    if (!(await canAccessCourse(db, user.id, courseId))) throw new HttpError(404, "not_found", "Course not found");
+    const body = parse(z.object({
+      type: z.enum(["note", "bookmark"]),
+      blockId: z.string().optional(),
+      content: z.string().max(10_000).optional(),
+    }), request.body);
+
+    const row = (await db.execute<{ id: string }>(sql`
+      insert into user_notes (user_id, course_id, lesson_id, block_id, type, content)
+      values (${user.id}, ${courseId}, ${lessonId}, ${body.blockId ?? null}, ${body.type}, ${body.content ?? null})
+      returning id
+    `)).rows[0];
+    return { id: row?.id };
+  });
+
+  app.put("/notes/:id", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { id } = parse(paramsWithId, request.params);
+    const body = parse(z.object({ content: z.string().max(10_000) }), request.body);
+
+    const existing = (await db.execute<{ id: string; user_id: string }>(sql`
+      select id, user_id from user_notes where id = ${id}
+    `)).rows[0];
+    if (!existing || existing.user_id !== user.id) throw new HttpError(404, "not_found", "Note not found");
+
+    await db.execute(sql`update user_notes set content = ${body.content}, updated_at = now() where id = ${id}`);
+    return { ok: true };
+  });
+
+  app.delete("/notes/:id", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { id } = parse(paramsWithId, request.params);
+
+    const existing = (await db.execute<{ id: string; user_id: string }>(sql`
+      select id, user_id from user_notes where id = ${id}
+    `)).rows[0];
+    if (!existing || existing.user_id !== user.id) throw new HttpError(404, "not_found", "Note not found");
+
+    await db.execute(sql`delete from user_notes where id = ${id}`);
+    return { ok: true };
+  });
+
+  // ===== Chat (Milestone 7: RAG + Streaming) =====
+
+  app.get("/courses/:id/threads", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { id } = parse(paramsWithId, request.params);
+    if (!(await canAccessCourse(db, user.id, id))) throw new HttpError(404, "not_found", "Course not found");
+
+    const rows = await db.execute(sql`
+      select ct.id, ct.lesson_id as "lessonId", ct.created_at as "createdAt",
+             (select content from chat_messages where thread_id = ct.id order by created_at desc limit 1) as "lastMessage"
+      from chat_threads ct
+      where ct.user_id = ${user.id} and ct.course_id = ${id}
+      order by ct.created_at desc
+    `);
+    return { threads: rows.rows };
+  });
+
+  app.get("/courses/:id/threads/:threadId/messages", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const params = parse(z.object({ id: z.uuid(), threadId: z.uuid() }), request.params);
+    if (!(await canAccessCourse(db, user.id, params.id))) throw new HttpError(404, "not_found", "Course not found");
+
+    const thread = (await db.execute<{ id: string; user_id: string }>(sql`
+      select id, user_id from chat_threads where id = ${params.threadId} and course_id = ${params.id}
+    `)).rows[0];
+    if (!thread || thread.user_id !== user.id) throw new HttpError(404, "not_found", "Thread not found");
+
+    const rows = await db.execute(sql`
+      select id, role, content, citations, model, llm_call_id as "llmCallId", created_at as "createdAt"
+      from chat_messages
+      where thread_id = ${params.threadId}
+      order by created_at
+    `);
+    return { messages: rows.rows };
+  });
+
+  app.post("/courses/:id/chat", { preHandler: app.requireAuth }, async (request, reply) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { id } = parse(paramsWithId, request.params);
+    if (!(await canAccessCourse(db, user.id, id))) throw new HttpError(404, "not_found", "Course not found");
+    const body = parse(z.object({
+      message: z.string().trim().min(1).max(4_000),
+      threadId: z.uuid().optional(),
+      lessonId: z.uuid().optional(),
+    }), request.body);
+
+    // Create or reuse thread
+    let threadId = body.threadId;
+    if (!threadId) {
+      const thread = (await db.execute<{ id: string }>(sql`
+        insert into chat_threads (user_id, course_id, lesson_id)
+        values (${user.id}, ${id}, ${body.lessonId ?? null})
+        returning id
+      `)).rows[0];
+      threadId = thread?.id;
+    }
+    if (!threadId) throw new HttpError(500, "thread_creation_failed", "Could not create chat thread");
+
+    // Persist user message
+    await db.execute(sql`
+      insert into chat_messages (thread_id, role, content)
+      values (${threadId}, 'user', ${body.message})
+    `);
+
+    // Embed query for RAG retrieval
+    const chunks = await embedAndRetrieve(db, config, id, body.message, body.lessonId);
+
+    // Build context prompt
+    const contextBlock = chunks.length
+      ? chunks.map((chunk, i) => `[Source ${i + 1}] ${chunk.heading ?? "Untitled"}\n${chunk.content}`).join("\n\n")
+      : "";
+    const systemPrompt = contextBlock
+      ? `You are a course assistant for this learning course. Answer based on the provided course materials. If the materials do not contain enough information to answer fully, say so honestly. Do not fabricate information. Cite sources using [Source N] notation.\n\nCourse materials:\n${contextBlock}`
+      : `You are a course assistant. No specific course materials were found for this question. Answer based on your general knowledge but note that you do not have course-specific source material for this question.`;
+
+    // Stream response
+    const llm = new LiteLlmClient(config.services.liteLlm);
+    const model = config.services.liteLlm.model;
+
+    reply.raw.setHeader("Content-Type", "text/event-stream");
+    reply.raw.setHeader("Cache-Control", "no-cache");
+    reply.raw.setHeader("Connection", "keep-alive");
+    reply.raw.flushHeaders();
+
+    let fullContent = "";
+    const started = Date.now();
+    let rawRequestId: string | null = null;
+
+    try {
+      const stream = llm.stream({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: body.message },
+        ],
+        temperature: 0.3,
+        maxTokens: 2_000,
+      });
+
+      for await (const chunk of stream) {
+        fullContent += chunk;
+        reply.raw.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+      }
+      reply.raw.write(`data: [DONE]\n\n`);
+    } catch {
+      reply.raw.write(`data: ${JSON.stringify({ error: "Stream failed" })}\n\n`);
+    } finally {
+      reply.raw.end();
+    }
+
+    // Persist assistant message after stream completes
+    const citationChunkIds = extractCitationChunkIds(fullContent, chunks);
+    const latencyMs = Date.now() - started;
+
+    try {
+      let llmCallId: string | null = null;
+      if (fullContent) {
+        const callRow = await recordLlmCall(db, {
+          jobId: null,
+          model,
+          promptVersion: "chat-rag-v1",
+          inputTokens: 0,
+          outputTokens: 0,
+          latencyMs,
+          rawRequestId,
+          metadata: { threadId, courseId: id },
+        });
+        llmCallId = callRow.id;
+      }
+
+      await db.execute(sql`
+        insert into chat_messages (thread_id, role, content, citations, model, llm_call_id)
+        values (${threadId}, 'assistant', ${fullContent}, ${JSON.stringify(citationChunkIds)}::jsonb, ${model}, ${llmCallId})
+      `);
+    } catch {
+      // Log but don't fail the response
+      console.error("[chat] failed to persist assistant message");
+    }
+
+    return reply;
+  });
+
+  // ===== Citation Resolution =====
+
+  app.post("/courses/:id/citations", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { id } = parse(paramsWithId, request.params);
+    if (!(await canAccessCourse(db, user.id, id))) throw new HttpError(404, "not_found", "Course not found");
+    const body = parse(z.object({ chunkIds: z.array(z.uuid()).min(1).max(20) }), request.body);
+
+    const citations = await resolveCitations(db, { chunkIds: body.chunkIds, courseId: id });
+    return { citations };
+  });
+
   app.addHook("onClose", async () => {
     const pool = (db as unknown as { $client?: { end?: () => Promise<void> } }).$client;
     await pool?.end?.();
@@ -846,4 +1172,64 @@ const serveProject = async (db: LumiDb, userId: string, projectId: string) => {
     progressStatus: progress?.status ?? "not_started",
     currentMilestone: currentDetail,
   };
+};
+
+// ===== RAG Embedding + Retrieval helpers =====
+
+type EmbedConfig = Pick<ApiConfig, "services">;
+
+type RetrievedChunkForChat = {
+  chunkId: string;
+  sourceId: string;
+  heading: string | null;
+  content: string;
+  similarity: number;
+  sourceUrl: string;
+  sourceTitle: string | null;
+};
+
+const embedQuery = async (config: EmbedConfig, query: string): Promise<number[]> => {
+  const response = await fetch(new URL("/embed", config.services.tei.baseUrl), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ inputs: query }),
+  });
+  if (!response.ok) throw new HttpError(502, "embedding_failed", "Embedding service unavailable");
+  const body = await response.json() as unknown;
+  const vectors = (Array.isArray(body) ? body : (body as { embeddings?: unknown }).embeddings) as unknown;
+  if (!Array.isArray(vectors) || !Array.isArray(vectors[0])) {
+    throw new HttpError(502, "embedding_failed", "Invalid embedding response");
+  }
+  return vectors[0] as number[];
+};
+
+const embedAndRetrieve = async (
+  db: LumiDb,
+  config: EmbedConfig,
+  courseId: string,
+  query: string,
+  lessonId?: string | null,
+): Promise<RetrievedChunkForChat[]> => {
+  try {
+    const embedding = await embedQuery(config, query);
+    return await retrieveChunks(db, { courseId, embedding, topK: 8, lessonId: lessonId ?? null });
+  } catch {
+    return [];
+  }
+};
+
+const extractCitationChunkIds = (
+  content: string,
+  chunks: readonly RetrievedChunkForChat[],
+): string[] => {
+  const citedIds = new Set<string>();
+  const sourcePattern = /\[Source\s+(\d+)\]/gi;
+  let match;
+  while ((match = sourcePattern.exec(content)) !== null) {
+    const index = Number(match[1]) - 1;
+    if (index >= 0 && index < chunks.length) {
+      citedIds.add(chunks[index]!.chunkId);
+    }
+  }
+  return [...citedIds];
 };

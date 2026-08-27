@@ -25,8 +25,10 @@ const job: GenerationJobRow = {
 test("retry backoff is fixed and bounded", () => {
   assert.equal(retryDelaySeconds(1), 5);
   assert.equal(retryDelaySeconds(2), 15);
-  assert.equal(retryDelaySeconds(3), 45);
   assert.equal(retryDelaySeconds(9), 45);
+  assert.equal(retryDelaySeconds(1, "LiteLLM 429"), 60);
+  assert.equal(retryDelaySeconds(2, "rate limit"), 900);
+  assert.equal(retryDelaySeconds(9, "LiteLLM 429"), 1_800);
 });
 
 test("common transient errors are retryable", () => {

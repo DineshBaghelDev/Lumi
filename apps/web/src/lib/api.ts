@@ -8,9 +8,13 @@ export const apiFetch = async (path: string, init: RequestInit = {}) => {
   if (token) headers.set("authorization", `Bearer ${token}`);
 
   const config = getWebConfig();
-  return fetch(new URL(path, config.apiBaseUrl), {
-    ...init,
-    headers,
-    cache: "no-store",
-  });
+  try {
+    return await fetch(new URL(path, config.apiBaseUrl), {
+      ...init,
+      headers,
+      cache: "no-store",
+    });
+  } catch {
+    return Response.json({ error: "API unavailable" }, { status: 503 });
+  }
 };

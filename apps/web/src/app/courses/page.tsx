@@ -16,10 +16,10 @@ export default async function CoursesPage() {
       id: course.id,
       title: course.title,
       subtitle: course.description ?? course.topic,
-      lessons: "Generating",
-      projects: "Projects pending",
-      progress: course.status === "ready" ? "100%" : "0%",
-      state: course.status === "ready" ? "Complete" : course.status === "failed" ? "Failed" : "In Progress",
+      lessons: course.status === "generating" ? "Generating" : "Lessons ready",
+      projects: course.status === "generating" ? "Projects pending" : "Projects ready",
+      progress: course.status === "generating" ? "0%" : "100%",
+      state: courseStateLabel(course.status),
       mark: course.topic.slice(0, 2).toUpperCase(),
       tone: "accent",
     }));
@@ -71,3 +71,12 @@ export default async function CoursesPage() {
     </AppShell>
   );
 }
+
+const courseStateLabel = (status: string) =>
+  ({
+    ready: "Complete",
+    ready_with_gaps: "Needs attention",
+    failed: "Failed",
+    cancelled: "Cancelled",
+    archived: "Archived",
+  })[status] ?? "In Progress";

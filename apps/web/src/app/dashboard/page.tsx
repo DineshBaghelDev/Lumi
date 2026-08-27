@@ -1,84 +1,93 @@
+import { apiFetch } from "../../lib/api";
 import { AppShell, ProgressBar } from "../ui";
 
-export default function DashboardPage() {
+type Course = { id: string; title: string; topic: string; status: string; description: string | null };
+
+type ResumePoint = { type: string; lessonId?: string; blockIndex?: number };
+
+export default async function DashboardPage() {
+  let courses: Course[] = [];
+  let resumeCourse: Course | null = null;
+  let resumePoint: ResumePoint | null = null;
+
+  try {
+    const res = await apiFetch("/courses");
+    if (res.ok) {
+      const data = await res.json() as { courses: Course[] };
+      courses = data.courses ?? [];
+    }
+  } catch { /* ignore */ }
+
+  // Find the most recent active/generating course for resume
+  const activeCourse = courses.find((c) => c.status === "generating" || c.status === "ready" || c.status === "ready_with_gaps");
+  if (activeCourse) {
+    resumeCourse = activeCourse;
+    try {
+      const res = await apiFetch(`/courses/${activeCourse.id}/progress/resume`);
+      if (res.ok) {
+        resumePoint = await res.json() as ResumePoint;
+      }
+    } catch { /* ignore */ }
+  }
+
+  const resumeHref = resumeCourse
+    ? resumePoint?.type === "lesson" && resumePoint.lessonId
+      ? `/courses/${resumeCourse.id}/lesson/${resumePoint.lessonId}`
+      : `/courses/${resumeCourse.id}/lessons`
+    : "/courses/new";
+
   return (
     <AppShell active="Home">
       <div className="topline">
         <div>
-          <h1>Good morning, Ananya</h1>
-          <p className="lead">Ready to learn something new?</p>
+          <h1>Welcome back</h1>
+          <p className="lead">Ready to continue learning?</p>
         </div>
       </div>
-      <section className="panel focus-panel">
-        <div>
-          <p className="eyebrow">Next up</p>
-          <h2>Model Evaluation</h2>
-          <p>Pick up the Machine Learning course where you left off.</p>
-        </div>
-        <a className="button" href="/courses/1/lesson/5">
-          Continue
-        </a>
-      </section>
-      <details className="mobile-details stats-details">
-        <summary>Progress snapshot</summary>
-        <section className="stat-grid">
-          {([
-            ["3", "In Progress"],
-            ["12", "Lessons Done"],
-            ["84%", "Overall Progress"],
-            ["5h 24m", "Time Learned"],
-          ] as const).map(([value, label]) => {
-            return (
-              <div className="tile" key={label}>
-                <strong>{value}</strong>
-                <p>{label}</p>
-              </div>
-            );
-          })}
-        </section>
-      </details>
-      <section className="dashboard-grid compact-grid">
-        <details className="panel activity-panel">
-          <summary>Recent Activity</summary>
-          <div className="activity">
-            {([
-              ["Finished lesson", "Bias & Variance Tradeoff", "2h ago"],
-              ["Marked complete", "Linear Algebra Essentials", "Yesterday"],
-              ["New practice generated", "Sentiment Analyzer", "2 days ago"],
-            ] as const).map(([label, title, time], index) => {
-              return (
-                <div className="activity-item" key={title}>
-                  <span className={`dot ${index === 1 ? "green" : ""}`} />
-                  <div>
-                    <p className={index === 1 ? "activity-label good" : "activity-label"}>{label}</p>
-                    <h3>{title}</h3>
-                  </div>
-                  <p>{time}</p>
-                </div>
-              );
-            })}
+      {resumeCourse ? (
+        <section className="panel focus-panel">
+          <div>
+            <p className="eyebrow">Continue learning</p>
+            <h2>{resumeCourse.title}</h2>
+            <p>{resumeCourse.description ?? resumeCourse.topic}</p>
           </div>
-        </details>
-      </section>
-      <div className="topline section-gap-lg">
-        <h2>My Courses</h2>
-        <a href="/courses">View all</a>
-      </div>
-      <section className="card-grid">
-        {([
-          ["Machine Learning", "78%"],
-          ["Data Structures", "40%"],
-          ["System Design", "20%"],
-        ] as const).map(([title, value], index) => {
-          return (
-            <a className={`panel course-card ${index === 1 ? "green" : index === 2 ? "pink" : ""}`} href="/courses/1" key={title}>
-              <h3>{title}</h3>
-              <ProgressBar value={value} />
-              <p>{value}</p>
-            </a>
-          );
-        })}
-      </section>
+          <a className="button" href={resumeHref}>Continue</a>
+        </section>
+      ) : (
+        <section className="panel focus-panel">
+          <div>
+            <p className="eyebrow">Get started</p>
+            <h2>Create your first course</h2>
+            <p>Tell Lumi what you want to learn.</p>
+          </div>
+          <a className="button" href="/courses/new">Create course</a>
+        </section>
+      )}
+      {courses.length > 0 ? (
+        <>
+          <div className="topline section-gap-lg">
+            <h2>My Courses</h2>
+            <a href="/courses">View all</a>
+          </div>
+          <section className="card-grid">
+            {courses.slice(0, 6).map((course) => (
+              <a className="panel course-card" href={`/courses/${course.id}`} key={course.id}>
+                <h3>{course.title}</h3>
+                <p className="small" style={{ color: "var(--muted)" }}>{course.topic}</p>
+                <span className="status purple" style={{ marginTop: "8px" }}>{course.status}</span>
+              </a>
+            ))}
+          </section>
+        </>
+      ) : (
+        <section className="notice section-gap">
+          <h2>No courses yet</h2>
+          <p>Create your first course and Lumi will research and structure a learning path for you.</p>
+          <div className="notice-action">
+            <a className="button" href="/courses/new">Create course</a>
+          </div>
+        </section>
+      )}
     </AppShell>
   );
 }

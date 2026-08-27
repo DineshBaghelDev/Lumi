@@ -24,5 +24,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/auth/refresh"],
+  matcher: ["/courses/:path*", "/dashboard", "/projects", "/progress"],
 };

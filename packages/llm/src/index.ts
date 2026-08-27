@@ -78,6 +78,11 @@ export type CompleteResult = {
   latencyMs: number;
 };
 
+export type StreamResult = {
+  model: string;
+  rawRequestId: string | null;
+};
+
 type Fetcher = typeof fetch;
 
 export class LiteLlmClient {
@@ -150,7 +155,70 @@ export class LiteLlmClient {
   }
 
   async *stream(input: CompleteInput): AsyncIterable<string> {
-    const result = await this.complete(input);
-    yield result.content;
+    if (!input.messages.some((message) => message.role === "system")) {
+      throw new LlmClientError("LiteLLM requests require a system message");
+    }
+
+    const init: RequestInit = {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${this.config.apiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: input.model ?? this.config.model,
+        messages: input.messages,
+        temperature: input.temperature ?? 0,
+        max_tokens: input.maxTokens,
+        stream: true,
+      }),
+    };
+    if (input.signal) init.signal = input.signal;
+
+    const response = await this.fetcher(new URL("/v1/chat/completions", this.config.baseUrl), init).catch((error: unknown) => {
+      throw new LlmClientError(error instanceof Error ? error.message : "LiteLLM network error", true);
+    });
+
+    if (!response.ok) {
+      throw new LlmClientError(`LiteLLM stream ${response.status}`, response.status === 429 || response.status >= 500);
+    }
+
+    if (!response.body) {
+      throw new LlmClientError("LiteLLM stream response missing body");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") return;
+
+          try {
+            const parsed = JSON.parse(data) as {
+              choices?: { delta?: { content?: string } }[];
+            };
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) yield content;
+          } catch {
+            // skip malformed SSE chunks
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
   }
 }

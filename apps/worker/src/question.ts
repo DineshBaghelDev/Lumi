@@ -44,6 +44,10 @@ export type QuestionContext = {
   concepts: { id: string; name: string }[];
   chunks: SourceChunkRow[];
 };
+export type QuestionFallbackAssessment = {
+  lesson_title: string;
+  lesson_objectives: string[];
+};
 
 export type CandidateReview = { candidateId: string; reason: string };
 export type QuestionQcResult = { passed: boolean; reasons: string[] };
@@ -71,7 +75,14 @@ export const createQuestionHandler = (
     let feedback: string[] = [];
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       await setProgress(db, job.id, attempt === 1 ? 30 : 55, { stage: "generate", attempt });
-      const generated = await generateCandidates(llm, assessment, context, feedback);
+      let generated: Awaited<ReturnType<typeof generateCandidates>>;
+      try {
+        generated = await generateCandidates(llm, assessment, context, feedback);
+      } catch (error) {
+        if (!isQuestionProviderFailure(error)) throw error;
+        feedback = [`question provider unavailable: ${error instanceof Error ? error.message : String(error)}`];
+        continue;
+      }
       await recordLlmCall(db, {
         jobId: job.id,
         model: generated.result.model,
@@ -117,11 +128,25 @@ export const createQuestionHandler = (
       if (feedback.length === 0) feedback = ["question QC failed"];
     }
 
-    await setAssessmentFailed(db, assessment.id, feedback);
+    const fallback = buildFallbackQuestions(assessment, context);
+    const fallbackQc = validateQuestionSet(fallback, context);
+    if (fallbackQc.passed) {
+      await setProgress(db, job.id, 85, { stage: "persist", fallback: true, feedback });
+      await persistQuestions(db, job, assessment, fallback);
+      await refreshCourseStatus(db, assessment.course_id);
+      return;
+    }
+
+    const reasons = [...feedback, ...fallbackQc.reasons];
+    await setAssessmentFailed(db, assessment.id, reasons);
     await refreshCourseStatus(db, assessment.course_id);
-    throw new PermanentJobError(`Question generation failed QC: ${feedback.join("; ")}`);
+    throw new PermanentJobError(`Question generation failed QC: ${reasons.join("; ")}`);
   };
 };
+
+const isQuestionProviderFailure = (error: unknown) =>
+  error instanceof RetryableJobError ||
+  (error instanceof Error && /rate.?limit|timeout|network|5\d\d|429/i.test(error.message));
 
 const getAssessment = async (db: LumiDb, assessmentId: string) => {
   const result = await db.execute<AssessmentRow>(sql`
@@ -221,6 +246,7 @@ const buildQuestionPrompt = (assessment: AssessmentRow, context: QuestionContext
       "Only require material taught in this lesson or its listed prerequisite concepts.",
       "Mix types across all supported kinds (mcq, fill_blank, matching, prediction, short_answer, scenario, identify_issue, pseudocode); keep recall questions rare and favor mechanism, reasoning, scenario, debugging, prediction, and pseudocode thinking.",
       "Spread difficulty between 1 and 5 without trivia bias.",
+      "Every candidate must cite at least one provided sourceRefs entry. Use exact sourceId and chunkId values from sourceChunks.",
       "Answer keys must be objectively checkable for objective kinds; free-response kinds need rubrics whose criteria points sum to pointsTotal.",
     ].join(" "),
     assessment: { title: assessment.title, requiredQuestions: context.requiredCount },
@@ -255,7 +281,7 @@ const buildQuestionPrompt = (assessment: AssessmentRow, context: QuestionContext
           kind: "fill_blank",
           prompt: "sentence with ___ as the blank",
           difficulty: 2,
-          sourceRefs: [],
+          sourceRefs: [{ sourceId: "<source uuid>", chunkId: "<chunk uuid>" }],
           primaryConceptId: "<concept uuid>",
           additionalConceptIds: [],
           answerKey: { acceptedAnswers: ["<answer>", "<variant>"] },
@@ -266,7 +292,7 @@ const buildQuestionPrompt = (assessment: AssessmentRow, context: QuestionContext
           prompt: "<match these>",
           pairs: [{ leftId: "side-l1", left: "<left text>", rightId: "side-r1", right: "<right text>" }],
           difficulty: 3,
-          sourceRefs: [],
+          sourceRefs: [{ sourceId: "<source uuid>", chunkId: "<chunk uuid>" }],
           primaryConceptId: "<concept uuid>",
           additionalConceptIds: [],
           answerKey: { solution: [{ leftId: "side-l1", rightId: "side-r1" }] },
@@ -276,7 +302,7 @@ const buildQuestionPrompt = (assessment: AssessmentRow, context: QuestionContext
           kind: "short_answer",
           prompt: "<open question>",
           difficulty: 3,
-          sourceRefs: [],
+          sourceRefs: [{ sourceId: "<source uuid>", chunkId: "<chunk uuid>" }],
           primaryConceptId: "<concept uuid>",
           additionalConceptIds: [],
           rubric: {
@@ -292,7 +318,7 @@ const buildQuestionPrompt = (assessment: AssessmentRow, context: QuestionContext
           prompt: "<what is wrong here?>",
           codeContext: "<code or setup>",
           difficulty: 4,
-          sourceRefs: [],
+          sourceRefs: [{ sourceId: "<source uuid>", chunkId: "<chunk uuid>" }],
           primaryConceptId: "<concept uuid>",
           additionalConceptIds: [],
           rubric: {
@@ -302,11 +328,12 @@ const buildQuestionPrompt = (assessment: AssessmentRow, context: QuestionContext
           },
         },
         pseudocode: {
+          id: "<question-local-id>",
           kind: "pseudocode",
           prompt: "<sketch the approach>",
           starterCode: "<optional starting point>",
           difficulty: 5,
-          sourceRefs: [],
+          sourceRefs: [{ sourceId: "<source uuid>", chunkId: "<chunk uuid>" }],
           primaryConceptId: "<concept uuid>",
           additionalConceptIds: [],
           rubric: {
@@ -318,6 +345,113 @@ const buildQuestionPrompt = (assessment: AssessmentRow, context: QuestionContext
       },
     },
   });
+
+const cleanSentence = (value: string) =>
+  value.replace(/\s+/g, " ").trim().replace(/[.!?]+$/, "");
+
+export const buildFallbackQuestions = (
+  assessment: QuestionFallbackAssessment,
+  context: QuestionContext,
+): QuestionCandidate[] => {
+  const concept = context.concepts[0];
+  const chunk = context.chunks[0];
+  if (!concept || !chunk) return [];
+  const secondConcept = context.concepts[1] ?? concept;
+  const secondChunk = context.chunks[1] ?? chunk;
+
+  const ref = { sourceId: chunk.source_id, chunkId: chunk.id };
+  const secondRef = { sourceId: secondChunk.source_id, chunkId: secondChunk.id };
+  const topic = cleanSentence(assessment.lesson_title);
+  const objective = cleanSentence(assessment.lesson_objectives[0] ?? topic);
+  const sourcePoint = cleanSentence(chunk.content).slice(0, 180);
+  const sourceLabel = cleanSentence(chunk.heading ?? chunk.source_title ?? topic);
+  const secondLabel = cleanSentence(secondChunk.heading ?? secondChunk.source_title ?? objective);
+
+  const questions: QuestionCandidate[] = [
+    {
+      id: "question-mcq-fallback",
+      kind: "mcq",
+      prompt: `Which statement best matches the lesson focus on ${topic}?`,
+      difficulty: 1,
+      sourceRefs: [ref],
+      primaryConceptId: concept.id,
+      additionalConceptIds: [],
+      options: [
+        { id: "opt-lesson-focus", text: objective },
+        { id: "opt-unrelated", text: "Ignore the lesson sources and choose an unrelated optimization rule." },
+      ],
+      answerKey: { correctOptionId: "opt-lesson-focus" },
+    },
+    {
+      id: "question-prediction-fallback",
+      kind: "prediction",
+      prompt: `If a learner applies the guidance from "${sourceLabel}", what outcome should they expect first?`,
+      difficulty: 2,
+      sourceRefs: [ref],
+      primaryConceptId: concept.id,
+      additionalConceptIds: [],
+      options: [
+        { id: "opt-use-source", text: sourcePoint },
+        { id: "opt-skip-source", text: "The source material becomes unnecessary." },
+      ],
+      answerKey: { correctOptionId: "opt-use-source" },
+    },
+    {
+      id: "question-matching-fallback",
+      kind: "matching",
+      prompt: "Match each lesson item to the supporting source idea.",
+      difficulty: 3,
+      sourceRefs: [ref, secondRef],
+      primaryConceptId: secondConcept.id,
+      additionalConceptIds: concept.id === secondConcept.id ? [] : [concept.id],
+      pairs: [
+        { leftId: "side-concept", left: concept.name, rightId: "side-source", right: sourceLabel },
+        { leftId: "side-objective", left: objective, rightId: "side-support", right: secondLabel },
+      ],
+      answerKey: {
+        solution: [
+          { leftId: "side-concept", rightId: "side-source" },
+          { leftId: "side-objective", rightId: "side-support" },
+        ],
+      },
+    },
+    {
+      id: "question-short-answer-fallback",
+      kind: "short_answer",
+      prompt: `Explain how the source material supports this lesson objective: ${objective}.`,
+      difficulty: 4,
+      sourceRefs: [ref],
+      primaryConceptId: concept.id,
+      additionalConceptIds: [],
+      rubric: {
+        pointsTotal: 4,
+        criteria: [
+          { id: "crit-source", description: "Uses a concrete idea from the cited source.", points: 2 },
+          { id: "crit-objective", description: "Connects that idea to the lesson objective.", points: 2 },
+        ],
+        keyPoints: [sourcePoint, objective],
+      },
+    },
+    {
+      id: "question-scenario-fallback",
+      kind: "scenario",
+      prompt: `A learner is practicing ${topic}. Describe one decision they should make using the cited source material.`,
+      difficulty: 5,
+      sourceRefs: [secondRef],
+      primaryConceptId: secondConcept.id,
+      additionalConceptIds: concept.id === secondConcept.id ? [] : [concept.id],
+      rubric: {
+        pointsTotal: 5,
+        criteria: [
+          { id: "crit-decision", description: "Names a relevant decision from the lesson context.", points: 2 },
+          { id: "crit-evidence", description: "Justifies the decision with source-backed reasoning.", points: 3 },
+        ],
+        keyPoints: [secondLabel, objective],
+      },
+    },
+  ];
+  return questions.slice(0, context.requiredCount);
+};
 
 const tokensOf = (prompt: string) =>
   new Set(

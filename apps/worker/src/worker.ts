@@ -21,7 +21,10 @@ type RunClaimedJobOptions = {
   workerId?: string;
 };
 
-export const retryDelaySeconds = (attempts: number) => [5, 15, 45][Math.max(0, attempts - 1)] ?? 45;
+export const retryDelaySeconds = (attempts: number, error?: string) => {
+  const delays = /429|rate.?limit/i.test(error ?? "") ? [60, 900, 1_800] : [5, 15, 45];
+  return delays[Math.max(0, attempts - 1)] ?? delays.at(-1)!;
+};
 
 export const isRetryableError = (error: unknown) =>
   error instanceof RetryableJobError ||
@@ -76,7 +79,7 @@ export const runClaimedJob = async (
         error: message,
         retryable,
         maxAttempts,
-        retryDelaySeconds: retryDelaySeconds(job.attempts),
+        retryDelaySeconds: retryDelaySeconds(job.attempts, message),
       });
     } catch (failureError) {
       const failureMessage = failureError instanceof Error ? failureError.message : String(failureError);

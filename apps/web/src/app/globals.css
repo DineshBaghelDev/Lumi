@@ -1235,6 +1235,148 @@ figure figcaption {
   font-weight: 600;
 }
 
+/* Chat */
+.chat-container {
+  max-width: 800px;
+}
+
+.chat-messages {
+  display: grid;
+  gap: var(--space-3);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--space-4) 0;
+}
+
+.chat-messages.compact {
+  max-height: 300px;
+  gap: var(--space-2);
+}
+
+.chat-empty {
+  text-align: center;
+  padding: var(--space-8) 0;
+  color: var(--muted);
+}
+
+.chat-bubble {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  max-width: 85%;
+}
+
+.chat-bubble.compact {
+  padding: var(--space-2) var(--space-3);
+}
+
+.chat-bubble.user {
+  justify-self: end;
+  background: var(--mist);
+  border-color: var(--primary-200);
+}
+
+.chat-bubble.assistant {
+  background: var(--surface-raised);
+}
+
+.chat-bubble-content {
+  font-size: var(--body-size);
+  line-height: var(--body-line);
+  white-space: pre-wrap;
+}
+
+.chat-bubble-content.small {
+  font-size: var(--small-size);
+  line-height: var(--small-line);
+}
+
+.chat-thinking {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.chat-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.citation-chip {
+  display: inline-flex;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  color: var(--indigo);
+  background: var(--mist);
+  text-decoration: none;
+}
+
+.citation-chip:hover {
+  background: var(--lavender);
+}
+
+.chat-input-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+  margin-top: var(--space-3);
+}
+
+.chat-input-row.compact {
+  gap: var(--space-1);
+}
+
+.chat-input {
+  flex: 1;
+  min-height: 48px;
+  padding: var(--space-3);
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  font-size: var(--body-size);
+  line-height: var(--body-line);
+  resize: vertical;
+}
+
+.chat-input:focus {
+  border-color: var(--brand);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+}
+
+/* Lesson Notes */
+.lesson-notes-panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.notes-section {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.note-item {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+
+.note-content {
+  font-size: var(--small-size);
+  line-height: var(--small-line);
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+/* Lesson Chat */
+.lesson-chat {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .home-hero {
   min-height: 100vh;
   overflow: hidden;
