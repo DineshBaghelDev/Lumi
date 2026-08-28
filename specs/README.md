@@ -1,5 +1,9 @@
 # Specs Index
 
+> `088-local-infrastructure-migration.md` supersedes the InsForge-specific
+> portions of specs 002-006 and 013-014. Use its ticket sequence for the active
+> infrastructure migration.
+
 Use these specs as implementation detail, not as 87 serial stops.
 
 ## Execution model
