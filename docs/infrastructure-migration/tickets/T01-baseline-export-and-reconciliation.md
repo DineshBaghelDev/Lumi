@@ -14,4 +14,6 @@ Acceptance: current InsForge can be inventoried without writes or secret output;
 fixture export/reconciliation tests pass. Verify with package tests/typecheck and
 a read-only dry run. Commit: `feat(migration): add safe baseline exporter`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=exporter unit tests,
+workspace check, read-only live dry run; risks=source state must be re-exported at
+cutover.
