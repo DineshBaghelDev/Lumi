@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { requireCurrentUser } from "../lib/auth";
-import { signOutAction } from "./actions";
+import { SignOutButton } from "./sign-out-button";
 
 export function Logo() {
   return (
@@ -86,11 +86,8 @@ export function Sidebar({ active }: { active: string }) {
         ))}
       </nav>
       <div className="sidebar-bottom">
-        <form action={signOutAction}>
-          <button className="button ghost wide-button" type="submit">
-            Sign out
-          </button>
-        </form>
+        <a className="button ghost wide-button" href="/account/security">Account security</a>
+        <SignOutButton />
         <img className="side-mascot" src="/mascot-waving.png" alt="" />
       </div>
     </aside>

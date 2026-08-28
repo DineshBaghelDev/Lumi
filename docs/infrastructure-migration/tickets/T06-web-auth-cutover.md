@@ -14,4 +14,5 @@ Acceptance: anonymous/protected redirects, password and Google initiation,
 session restore/update, stale-cookie cleanup, and sign-out tests pass. Commit:
 `feat(web): migrate sessions to better auth`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=web tests/typecheck/build;
+risks=Google redirect and live session behavior require the Compose gate.

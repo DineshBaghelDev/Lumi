@@ -57,12 +57,18 @@ importers:
       '@insforge/sdk':
         specifier: ^1.5.2
         version: 1.5.2
+      '@lumi/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@lumi/config':
         specifier: workspace:*
         version: link:../../packages/config
       '@next/env':
         specifier: 16.2.9
         version: 16.2.9
+      better-auth:
+        specifier: 1.6.23
+        version: 1.6.23(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@types/pg@8.23.1)(kysely@0.29.5)(pg@8.23.0))(next@16.2.9(@playwright/test@1.62.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(pg@8.23.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       mermaid:
         specifier: ^11.12.1
         version: 11.17.1

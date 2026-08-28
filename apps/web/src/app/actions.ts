@@ -3,19 +3,35 @@
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createLumiAuthActions } from "../lib/auth";
+import { headers } from "next/headers";
+import { getLumiAuth } from "../lib/auth";
 import { apiFetch } from "../lib/api";
-import { signInPath } from "../lib/auth-routes";
-
-export async function signOutAction() {
-  const auth = await createLumiAuthActions();
-  await auth.signOut();
-  redirect(signInPath);
-}
+import { passwordOperation } from "../lib/password-policy";
 
 export type FormState = { ok: boolean; message: string };
 
 const fail = (message: string): FormState => ({ ok: false, message });
+
+export async function updatePasswordAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  const newPassword = String(formData.get("newPassword") ?? "");
+  if (newPassword.length < 12) return fail("New password must contain at least 12 characters.");
+  const auth = getLumiAuth();
+  const requestHeaders = await headers();
+  try {
+    const accounts = await auth.api.listUserAccounts({ headers: requestHeaders });
+    const operation = passwordOperation(accounts.some((account) => account.providerId === "credential"), currentPassword, newPassword);
+    if ("error" in operation) return fail(operation.error);
+    if (operation.kind === "change") {
+      await auth.api.changePassword({ headers: requestHeaders, body: { currentPassword, newPassword } });
+    } else {
+      await auth.api.setPassword({ headers: requestHeaders, body: { newPassword } });
+    }
+    return { ok: true, message: "Password updated." };
+  } catch {
+    return fail("Password could not be updated.");
+  }
+}
 
 export async function createCourseAction(_state: FormState, formData: FormData): Promise<FormState> {
   const topic = String(formData.get("topic") ?? "").trim();

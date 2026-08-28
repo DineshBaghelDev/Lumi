@@ -1,13 +1,10 @@
-import { updateSession } from "@insforge/sdk/ssr/middleware";
 import { NextResponse, type NextRequest } from "next/server";
+import { getLumiAuth } from "./src/lib/auth";
+import { legacyAuthCookieNames, signInPath } from "./src/lib/auth-routes";
 
-const requiredEnv = (name: string) => {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return value;
+const clearLegacyCookies = (response: NextResponse) => {
+  for (const name of legacyAuthCookieNames) response.cookies.delete(name);
+  return response;
 };
 
 export async function proxy(request: NextRequest) {
@@ -15,16 +12,16 @@ export async function proxy(request: NextRequest) {
 
   if (process.env.LUMI_E2E_SKIP_AUTH === "1") return response;
 
-  await updateSession({
-    requestCookies: request.cookies,
-    responseCookies: response.cookies,
-    baseUrl: requiredEnv("NEXT_PUBLIC_INSFORGE_URL"),
-    anonKey: requiredEnv("NEXT_PUBLIC_INSFORGE_ANON_KEY"),
-  });
-
-  return response;
+  const session = await getLumiAuth().api.getSession({ headers: request.headers }).catch(() => null);
+  if (!session) {
+    const url = request.nextUrl.clone();
+    url.pathname = signInPath;
+    url.searchParams.set("next", request.nextUrl.pathname);
+    return clearLegacyCookies(NextResponse.redirect(url));
+  }
+  return clearLegacyCookies(response);
 }
 
 export const config = {
-  matcher: ["/courses/:path*", "/dashboard", "/projects", "/progress"],
+  matcher: ["/courses/:path*", "/dashboard", "/projects", "/progress", "/account/:path*"],
 };

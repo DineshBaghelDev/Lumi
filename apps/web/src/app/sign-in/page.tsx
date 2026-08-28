@@ -1,4 +1,5 @@
 import { Logo } from "../ui";
+import { AuthForms } from "./auth-forms";
 
 type SignInPageProps = {
   searchParams: Promise<{ error?: string }>;
@@ -38,6 +39,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             Continue with Google
           </button>
         </form>
+        <AuthForms />
       </section>
     </main>
   );

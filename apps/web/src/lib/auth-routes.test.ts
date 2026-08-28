@@ -3,19 +3,19 @@ import test from "node:test";
 import {
   authenticatedHomePath,
   authErrorRedirect,
-  buildOAuthRedirectTo,
+  legacyAuthCookieNames,
   resolveSessionHomePath,
   signInPath,
 } from "./auth-routes.ts";
 
 test("google auth redirects stay inside the app", () => {
-  assert.equal(buildOAuthRedirectTo("http://localhost:3000"), "http://localhost:3000/auth/callback");
   assert.equal(authErrorRedirect("http://localhost:3000", "missing_verifier").pathname, signInPath);
   assert.equal(
     authErrorRedirect("http://localhost:3000", "missing_verifier").searchParams.get("error"),
     "missing_verifier",
   );
   assert.equal(authenticatedHomePath, "/courses");
+  assert.deepEqual(legacyAuthCookieNames, ["insforge_access_token", "insforge_refresh_token", "insforge_code_verifier"]);
 });
 
 test("session restoration routes users to the correct shell", () => {
