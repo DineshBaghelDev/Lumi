@@ -3,7 +3,6 @@ import test from "node:test";
 import {
   authenticatedHomePath,
   authErrorRedirect,
-  legacyAuthCookieNames,
   resolveSessionHomePath,
   signInPath,
 } from "./auth-routes.ts";
@@ -15,7 +14,6 @@ test("google auth redirects stay inside the app", () => {
     "missing_verifier",
   );
   assert.equal(authenticatedHomePath, "/courses");
-  assert.deepEqual(legacyAuthCookieNames, ["insforge_access_token", "insforge_refresh_token", "insforge_code_verifier"]);
 });
 
 test("session restoration routes users to the correct shell", () => {

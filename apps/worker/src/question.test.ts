@@ -12,9 +12,6 @@ import { buildFallbackQuestions, createQuestionHandler, selectFinalQuestions, va
 const conceptA = "11111111-1111-4111-8111-111111111111";
 const conceptB = "22222222-2222-4222-8222-222222222222";
 const config = parseWorkerEnv({
-  INSFORGE_PROJECT_URL: "http://localhost:7130",
-  INSFORGE_ANON_KEY: "anon",
-  INSFORGE_API_KEY: "api",
   WORKER_DATABASE_URL: "postgres://u:p@localhost/db",
   LITELLM_API_KEY: "litellm",
 });

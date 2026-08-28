@@ -10,9 +10,6 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { createCurriculumHandler, validateCurriculum } from "./curriculum.ts";
 
 const config = parseWorkerEnv({
-  INSFORGE_PROJECT_URL: "http://localhost:7130",
-  INSFORGE_ANON_KEY: "anon",
-  INSFORGE_API_KEY: "api",
   WORKER_DATABASE_URL: "postgres://u:p@localhost/db",
   LITELLM_API_KEY: "litellm",
 });
