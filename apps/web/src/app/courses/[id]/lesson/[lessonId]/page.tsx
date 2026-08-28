@@ -137,7 +137,7 @@ function renderBlock(block: LessonBlock, assets: ReadonlyMap<string, Asset>, cou
     );
   }
   const asset = assets.get(block.assetId);
-  const src = asset ? assetImageSrc(asset.storage_path) : null;
+  const src = asset ? assetImageSrc(asset.storage_path, block.assetId) : null;
   return (
     <figure className="lesson-image lesson-block" key={block.id}>
       {src ? <img src={src} alt={asset?.alt_text ?? asset?.title ?? "Lesson image"} /> : <div className="diagram-placeholder">Image unavailable until this asset is uploaded.</div>}

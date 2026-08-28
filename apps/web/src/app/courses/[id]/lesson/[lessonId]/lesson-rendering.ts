@@ -4,7 +4,11 @@ export type InlineSegment =
   | { type: "strong"; text: string }
   | { type: "link"; text: string; href: string };
 
-export const assetImageSrc = (storagePath: string) => {
+export const assetImageSrc = (storagePath: string, assetId?: string) => {
+  // Local storage paths are MinIO object keys — route through the authenticated proxy
+  if (assetId && !storagePath.startsWith("http") && !storagePath.startsWith("/")) {
+    return `/api/proxy/assets/${assetId}/stream`;
+  }
   if (storagePath.startsWith("/")) return storagePath;
   try {
     const url = new URL(storagePath);

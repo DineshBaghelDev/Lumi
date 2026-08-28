@@ -9,6 +9,11 @@ test("assetImageSrc only renders actual browser-fetchable safe assets", () => {
   assert.equal(assetImageSrc("http://cdn.example.test/image.png"), null);
 });
 
+test("assetImageSrc routes local storage paths through the authenticated proxy", () => {
+  assert.equal(assetImageSrc("assets/course-1/abc.png", "asset-uuid"), "/api/proxy/assets/asset-uuid/stream");
+  assert.equal(assetImageSrc("assets/course-1/abc.png"), null);
+});
+
 test("inlineMarkdown keeps a tiny safe markdown subset", () => {
   assert.deepEqual(inlineMarkdown("Use **indexes** with `EXPLAIN` and [docs](https://example.test)."), [
     { type: "text", text: "Use " },

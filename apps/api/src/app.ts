@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createLumiAuthFromEnv } from "@lumi/auth";
 import { parseApiEnv, type ApiConfig } from "@lumi/config";
+import { createReaderClient, parseStorageConfig, statObject, getObject } from "@lumi/storage";
 import {
   canAccessCourse,
   cancelCourseGeneration,
@@ -355,6 +356,37 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
       `)).rows
       : [];
     return { lesson: { ...lesson, content_json: parsedContent?.success ? parsedContent.data : null }, assets };
+  });
+
+  // ─── Asset stream ───────────────────────────────────────────────────
+  app.get("/assets/:id/stream", { preHandler: app.requireAuth }, async (request, reply) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { id } = parse(paramsWithId, request.params);
+
+    const asset = (await db.execute<{
+      id: string;
+      course_id: string;
+      storage_path: string;
+      mime_type: string;
+      file_size: number | null;
+    }>(sql`
+      select id, course_id, storage_path, mime_type, file_size
+      from assets where id = ${id}
+    `)).rows[0];
+    if (!asset || !(await canAccessCourse(db, user.id, asset.course_id))) {
+      throw new HttpError(404, "not_found", "Asset not found");
+    }
+
+    const storageCfg = parseStorageConfig(process.env);
+    const client = createReaderClient(storageCfg);
+    const data = await getObject(client, storageCfg.bucket, asset.storage_path);
+    if (!data) throw new HttpError(404, "not_found", "Asset file missing from storage");
+
+    reply.header("Content-Type", asset.mime_type);
+    reply.header("Cache-Control", "private, max-age=3600");
+    reply.header("Content-Length", String(data.length));
+    return reply.send(data);
   });
 
   app.get("/assessments/:id", { preHandler: app.requireAuth }, async (request) => {
