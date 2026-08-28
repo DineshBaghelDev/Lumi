@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { requireCurrentUser } from "../lib/auth";
+import { signOutAction } from "./actions";
 
 export function Logo() {
   return (
@@ -58,7 +60,7 @@ export function Status({ label }: { label: string }) {
   const className =
     label === "Complete" || label === "Done"
       ? "good"
-      : label === "In Progress"
+      : label === "In Progress" || label === "Continue" || label === "Ready" || label === "Available"
         ? "purple"
         : label === "Failed"
           ? "danger"
@@ -84,13 +86,20 @@ export function Sidebar({ active }: { active: string }) {
         ))}
       </nav>
       <div className="sidebar-bottom">
+        <form action={signOutAction}>
+          <button className="button ghost wide-button" type="submit">
+            Sign out
+          </button>
+        </form>
         <img className="side-mascot" src="/mascot-waving.png" alt="" />
       </div>
     </aside>
   );
 }
 
-export function AppShell({ active, children }: { active: string; children: ReactNode }) {
+export async function AppShell({ active, children }: { active: string; children: ReactNode }) {
+  await requireCurrentUser();
+
   return (
     <main className="app">
       <Sidebar active={active} />

@@ -1,14 +1,13 @@
 import { apiFetch } from "../../lib/api";
-import { AppShell, ProgressBar } from "../ui";
+import { deriveCourseProgress, resolveResumeHref, type ResumePoint } from "../../lib/course-progress";
+import { AppShell } from "../ui";
 
 type Course = { id: string; title: string; topic: string; status: string; description: string | null };
-
-type ResumePoint = { type: string; lessonId?: string; blockIndex?: number };
 
 export default async function DashboardPage() {
   let courses: Course[] = [];
   let resumeCourse: Course | null = null;
-  let resumePoint: ResumePoint | null = null;
+  let resumePoint: ResumePoint = null;
 
   try {
     const res = await apiFetch("/courses");
@@ -18,23 +17,34 @@ export default async function DashboardPage() {
     }
   } catch { /* ignore */ }
 
-  // Find the most recent active/generating course for resume
-  const activeCourse = courses.find((c) => c.status === "generating" || c.status === "ready" || c.status === "ready_with_gaps");
-  if (activeCourse) {
-    resumeCourse = activeCourse;
-    try {
-      const res = await apiFetch(`/courses/${activeCourse.id}/progress/resume`);
-      if (res.ok) {
-        resumePoint = await res.json() as ResumePoint;
+  const resumeStates = await Promise.all(
+    courses.map(async (course) => {
+      let point: ResumePoint = null;
+
+      if (course.status !== "generating") {
+        try {
+          const res = await apiFetch(`/courses/${course.id}/progress/resume`);
+          if (res.ok) {
+            point = await res.json() as ResumePoint;
+          }
+        } catch { /* ignore */ }
       }
-    } catch { /* ignore */ }
+
+      return {
+        course,
+        resumePoint: point,
+        state: deriveCourseProgress({ courseStatus: course.status, resumePoint: point }),
+      };
+    }),
+  );
+
+  const activeCourseState = resumeStates.find((entry) => entry.state.stateLabel !== "Complete") ?? resumeStates[0];
+  if (activeCourseState) {
+    resumeCourse = activeCourseState.course;
+    resumePoint = activeCourseState.resumePoint;
   }
 
-  const resumeHref = resumeCourse
-    ? resumePoint?.type === "lesson" && resumePoint.lessonId
-      ? `/courses/${resumeCourse.id}/lesson/${resumePoint.lessonId}`
-      : `/courses/${resumeCourse.id}/lessons`
-    : "/courses/new";
+  const resumeHref = resumeCourse ? resolveResumeHref(resumeCourse.id, resumePoint) : "/courses/new";
 
   return (
     <AppShell active="Home">
@@ -70,13 +80,19 @@ export default async function DashboardPage() {
             <a href="/courses">View all</a>
           </div>
           <section className="card-grid">
-            {courses.slice(0, 6).map((course) => (
+            {courses.slice(0, 6).map((course) => {
+              const entry = resumeStates.find((state) => state.course.id === course.id);
+
+              return (
               <a className="panel course-card" href={`/courses/${course.id}`} key={course.id}>
                 <h3>{course.title}</h3>
                 <p className="small" style={{ color: "var(--muted)" }}>{course.topic}</p>
-                <span className="status purple" style={{ marginTop: "8px" }}>{course.status}</span>
+                <span className="status purple" style={{ marginTop: "8px" }}>
+                  {entry?.state.stateLabel ?? course.status}
+                </span>
               </a>
-            ))}
+              );
+            })}
           </section>
         </>
       ) : (

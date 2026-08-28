@@ -1,4 +1,5 @@
 import { apiFetch } from "../../lib/api";
+import { deriveCourseProgress, type ResumePoint } from "../../lib/course-progress";
 import { AppShell, CourseIcon, EmptyNotice, ProgressBar, Status } from "../ui";
 
 type Course = {
@@ -12,17 +13,52 @@ type Course = {
 export default async function CoursesPage() {
   const response = await apiFetch("/courses");
   const liveCourses = response.ok ? (await response.json() as { courses: Course[] }).courses : [];
-  const rows = liveCourses.map((course) => ({
-      id: course.id,
-      title: course.title,
-      subtitle: course.description ?? course.topic,
-      lessons: course.status === "generating" ? "Generating" : "Lessons ready",
-      projects: course.status === "generating" ? "Projects pending" : "Projects ready",
-      progress: course.status === "generating" ? "0%" : "100%",
-      state: courseStateLabel(course.status),
-      mark: course.topic.slice(0, 2).toUpperCase(),
-      tone: "accent",
-    }));
+  const rows = await Promise.all(
+    liveCourses.map(async (course) => {
+      let resumePoint: ResumePoint = null;
+      let lessons: Array<{ id: string; status: string; is_required?: boolean; assessment_id?: string | null; assessment_status?: string | null }> = [];
+      let projects: Array<{ status: string }> = [];
+
+      if (course.status !== "generating") {
+        const [resumeResponse, curriculumResponse] = await Promise.all([
+          apiFetch(`/courses/${course.id}/progress/resume`),
+          apiFetch(`/courses/${course.id}/curriculum`),
+        ]);
+
+        if (resumeResponse.ok) {
+          resumePoint = await resumeResponse.json() as ResumePoint;
+        }
+
+        if (curriculumResponse.ok) {
+          const body = await curriculumResponse.json() as {
+            lessons?: Array<{ id: string; status: string; is_required?: boolean; assessment_id?: string | null; assessment_status?: string | null }>;
+            projects?: Array<{ status: string }>;
+          };
+          lessons = body.lessons ?? [];
+          projects = body.projects ?? [];
+        }
+      }
+
+      const progressState = deriveCourseProgress({
+        courseStatus: course.status,
+        resumePoint,
+        lessons,
+        projects,
+      });
+
+      return {
+        id: course.id,
+        title: course.title,
+        subtitle: course.description ?? course.topic,
+        lessons: progressState.lessonSummary,
+        projects: progressState.projectSummary,
+        progress: progressState.progressLabel,
+        state: progressState.stateLabel,
+        mark: course.topic.slice(0, 2).toUpperCase(),
+        tone: "accent",
+      };
+    }),
+  );
 
   return (
     <AppShell active="Courses">
@@ -71,12 +107,3 @@ export default async function CoursesPage() {
     </AppShell>
   );
 }
-
-const courseStateLabel = (status: string) =>
-  ({
-    ready: "Complete",
-    ready_with_gaps: "Needs attention",
-    failed: "Failed",
-    cancelled: "Cancelled",
-    archived: "Archived",
-  })[status] ?? "In Progress";

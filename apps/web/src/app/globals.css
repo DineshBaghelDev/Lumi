@@ -1089,6 +1089,39 @@ p {
   line-height: var(--small-line);
 }
 
+.lesson-content a {
+  color: var(--indigo);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lesson-content code:not(.lesson-code code) {
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-muted);
+}
+
+.source-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.source-links a,
+.source-links span {
+  display: inline-flex;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  color: var(--indigo);
+  font-size: 11px;
+  line-height: 16px;
+  background: var(--mist);
+  text-decoration: none;
+}
+
 .lesson-callout,
 .lesson-diagram,
 .lesson-image {

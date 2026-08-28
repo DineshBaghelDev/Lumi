@@ -1,4 +1,5 @@
 import { apiFetch } from "../../../lib/api";
+import { deriveCourseProgress, type ResumePoint } from "../../../lib/course-progress";
 import { cancelGenerationAction, retryGenerationJobAction } from "../../actions";
 import { AppShell, CourseIcon, CourseTabs, ProgressBar, Status } from "../../ui";
 import { AutoRefresh } from "./auto-refresh";
@@ -21,9 +22,10 @@ type Usage = { cancelled?: boolean; budget_exhausted?: boolean } | null;
 export default async function CourseOverviewPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; success?: string }> }) {
   const { id } = await params;
   const notice = await searchParams;
-  const [detailResponse, curriculumResponse] = await Promise.all([
+  const [detailResponse, curriculumResponse, resumeResponse] = await Promise.all([
     apiFetch(`/courses/${id}?include=jobs`),
     apiFetch(`/courses/${id}/curriculum`),
+    apiFetch(`/courses/${id}/progress/resume`),
   ]);
 
   if (!detailResponse.ok) return <CourseMissing />;
@@ -37,7 +39,14 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
   const active = course.status === "generating" || jobs.some((job) => job.status === "queued" || job.status === "running");
   const failedJobs = jobs.filter((job) => job.status === "failed");
   const doneLessons = roadmap.lessons.filter((lesson) => lesson.status === "ready").length;
-  const progress = roadmap.lessons.length ? `${Math.round((doneLessons / roadmap.lessons.length) * 100)}%` : `${Math.max(...jobs.map((job) => job.progress), 0)}%`;
+  const resumePoint = resumeResponse.ok ? await resumeResponse.json() as ResumePoint : null;
+  const learningState = deriveCourseProgress({
+    courseStatus: course.status,
+    resumePoint,
+    lessons: roadmap.lessons,
+    projects: roadmap.projects,
+  });
+  const progress = active ? `${Math.max(...jobs.map((job) => job.progress), 0)}%` : learningState.progressLabel;
 
   return (
     <AppShell active="Courses">
@@ -64,16 +73,16 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
             <h2>About this course</h2>
             <p>{course.description ?? `A generated learning path for ${course.topic}.`}</p>
             <div className="meta-row">
-              <span className="chip active">{course.status.replaceAll("_", " ")}</span>
+              <span className="chip active">{active ? course.status.replaceAll("_", " ") : learningState.stateLabel.toLowerCase()}</span>
               {course.difficulty_level ? <span>{course.difficulty_level}</span> : null}
               {course.estimated_duration_minutes ? <span>{Math.round(course.estimated_duration_minutes / 60)}h</span> : null}
             </div>
           </div>
         </div>
         <div className="right">
-          <h3>Generation</h3>
+          <h3>{active ? "Generation" : "Learning progress"}</h3>
           <strong className="progress-value">{progress}</strong>
-          <p>{generationSummary(jobs, roadmap.lessons.length, doneLessons, detail.usage ?? null)}</p>
+          <p>{active ? generationSummary(jobs, roadmap.lessons.length, doneLessons, detail.usage ?? null) : learningState.summary}</p>
           <ProgressBar value={progress} />
           <a className={`button wide-button ${roadmap.lessons.length ? "" : "disabled-link"}`} href={roadmap.lessons.length ? `/courses/${id}/lessons` : "#"}>
             View roadmap
@@ -104,8 +113,8 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
           </div>
         ) : roadmap.modules.map((module, index) => {
           const moduleLessons = roadmap.lessons.filter((lesson) => lesson.module_id === module.id);
-          const moduleDone = moduleLessons.filter((lesson) => lesson.status === "ready").length;
-          const moduleProgress = moduleLessons.length ? `${Math.round((moduleDone / moduleLessons.length) * 100)}%` : "0%";
+          const moduleReady = moduleLessons.filter((lesson) => lesson.status === "ready").length;
+          const moduleProgress = moduleLessons.length ? `${Math.round((moduleReady / moduleLessons.length) * 100)}%` : "0%";
           return (
             <div className="path-row" key={module.id}>
               <span className="path-number">{index + 1}</span>
@@ -120,7 +129,7 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
                   <strong>{moduleProgress}</strong>
                   <ProgressBar value={moduleProgress} />
                 </div>
-                <Status label={moduleDone === moduleLessons.length ? "Complete" : moduleDone > 0 ? "In Progress" : "Not Started"} />
+                <Status label={moduleReady === moduleLessons.length ? "Ready" : moduleReady > 0 ? "In Progress" : "Not Started"} />
               </div>
             </div>
           );
@@ -137,7 +146,7 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
                   <h2>{project.title}</h2>
                   <p>Project content will unlock from its generation job.</p>
                 </div>
-                <Status label={project.status === "ready" ? "Complete" : "Not Started"} />
+                <Status label={project.status === "ready" ? "Available" : "Not Started"} />
               </div>
             ))}
           </section>

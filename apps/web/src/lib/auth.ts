@@ -2,7 +2,9 @@ import { createAuthActions, createServerClient } from "@insforge/sdk/ssr";
 import { loadEnvConfig } from "@next/env";
 import { parseWebPublicEnv } from "@lumi/config";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { resolve } from "node:path";
+import { signInPath } from "./auth-routes";
 
 let loadedWorkspaceEnv = false;
 
@@ -47,4 +49,14 @@ export const getCurrentUser = async (): Promise<Record<string, unknown> | null> 
   }
 
   return data.user as Record<string, unknown>;
+};
+
+export const requireCurrentUser = async () => {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect(signInPath);
+  }
+
+  return user;
 };

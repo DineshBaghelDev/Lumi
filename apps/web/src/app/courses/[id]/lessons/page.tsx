@@ -66,7 +66,7 @@ export default async function CourseLessonsPage({ params }: { params: Promise<{ 
                     {ready && lesson.assessment_id && lesson.assessment_status !== "ready" ? <p className="helper-text">Assessment preparing</p> : null}
                   </div>
                   <span>{lesson.is_required ? "Required" : "Optional"}</span>
-                  <Status label={ready ? "Done" : lesson.status === "failed" ? "Failed" : "Not Started"} />
+                  <Status label={ready ? "Ready" : lesson.status === "failed" ? "Failed" : "Not Started"} />
                 </>
               );
 
@@ -97,7 +97,7 @@ export default async function CourseLessonsPage({ params }: { params: Promise<{ 
                     <p>{project.goal}</p>
                   </div>
                   <span>Project</span>
-                  <Status label={ready ? "In Progress" : project.status === "failed" ? "Failed" : "Not Started"} />
+                  <Status label={ready ? "Available" : project.status === "failed" ? "Failed" : "Not Started"} />
                 </>
               );
               return ready ? (
