@@ -6,6 +6,7 @@ import {
   V1_CONFIG_DEFAULTS,
   V1_CONFIG_LIMITS,
   parseApiEnv,
+  parseAuthEnv,
   parseSharedServicesEnv,
   parseWebPublicEnv,
   parseWorkerEnv,
@@ -154,4 +155,22 @@ test("public parsing returns only the explicit public allowlist", () => {
   assert.equal(serialized.includes("litellm-api-key"), false);
   assert.equal("apiKey" in publicConfig.insforge, false);
   assert.equal("database" in publicConfig, false);
+});
+
+test("auth parsing locks production to verified email", () => {
+  const authEnv = {
+    AUTH_DATABASE_URL: "postgresql://lumi_auth:password@localhost:5432/lumi",
+    BETTER_AUTH_URL: "http://localhost:3000",
+    BETTER_AUTH_SECRET: "a-secure-development-secret-at-least-32-characters",
+    BETTER_AUTH_TRUSTED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000",
+    GOOGLE_CLIENT_ID: "google-client",
+    GOOGLE_CLIENT_SECRET: "google-secret",
+  };
+  const parsed = parseAuthEnv(authEnv);
+  assert.equal(parsed.requireEmailVerification, false);
+  assert.equal(parsed.trustedOrigins.length, 2);
+  assert.throws(
+    () => parseAuthEnv({ ...authEnv, NODE_ENV: "production", AUTH_REQUIRE_EMAIL_VERIFICATION: "false" }),
+    /AUTH_REQUIRE_EMAIL_VERIFICATION: must be true in production/,
+  );
 });

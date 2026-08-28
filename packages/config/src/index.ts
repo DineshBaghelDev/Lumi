@@ -297,6 +297,31 @@ const webPublicEnvSchema = z.object({
   NEXT_PUBLIC_API_BASE_URL: httpUrl,
 });
 
+const authEnvSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  AUTH_DATABASE_URL: databaseUrl,
+  BETTER_AUTH_URL: httpUrl,
+  BETTER_AUTH_SECRET: z.string().min(32, "must contain at least 32 characters"),
+  BETTER_AUTH_TRUSTED_ORIGINS: z
+    .string()
+    .transform((value) => value.split(",").map((origin) => origin.trim()).filter(Boolean))
+    .pipe(z.array(httpUrl).min(1)),
+  GOOGLE_CLIENT_ID: requiredSecret,
+  GOOGLE_CLIENT_SECRET: requiredSecret,
+  AUTH_REQUIRE_EMAIL_VERIFICATION: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
+}).superRefine((env, context) => {
+  if (env.NODE_ENV === "production" && !env.AUTH_REQUIRE_EMAIL_VERIFICATION) {
+    context.addIssue({
+      code: "custom",
+      path: ["AUTH_REQUIRE_EMAIL_VERIFICATION"],
+      message: "must be true in production",
+    });
+  }
+});
+
 export class ConfigValidationError extends Error {
   constructor(scope: string, issues: readonly z.core.$ZodIssue[]) {
     const details = issues.map((issue) => {
@@ -436,7 +461,21 @@ export const parseWebPublicEnv = (env: Env) => {
   };
 };
 
+export const parseAuthEnv = (env: Env) => {
+  const parsed = parseSchema(authEnvSchema, env, "auth");
+  return {
+    databaseUrl: parsed.AUTH_DATABASE_URL,
+    baseUrl: parsed.BETTER_AUTH_URL,
+    secret: parsed.BETTER_AUTH_SECRET,
+    trustedOrigins: parsed.BETTER_AUTH_TRUSTED_ORIGINS,
+    google: { clientId: parsed.GOOGLE_CLIENT_ID, clientSecret: parsed.GOOGLE_CLIENT_SECRET },
+    requireEmailVerification: parsed.AUTH_REQUIRE_EMAIL_VERIFICATION,
+    secureCookies: parsed.NODE_ENV === "production",
+  };
+};
+
 export type SharedServicesConfig = ReturnType<typeof parseSharedServicesEnv>;
 export type ApiConfig = ReturnType<typeof parseApiEnv>;
 export type WorkerConfig = ReturnType<typeof parseWorkerEnv>;
 export type WebPublicConfig = ReturnType<typeof parseWebPublicEnv>;
+export type AuthConfig = ReturnType<typeof parseAuthEnv>;

@@ -1,0 +1,30 @@
+{
+  "name": "@lumi/auth",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "node --test src/**/*.test.ts",
+    "lint": "tsc -p tsconfig.json --noEmit --allowImportingTsExtensions",
+    "typecheck": "tsc -p tsconfig.json --noEmit --allowImportingTsExtensions"
+  },
+  "dependencies": {
+    "@lumi/config": "workspace:*",
+    "@lumi/db": "workspace:*",
+    "better-auth": "1.6.23",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^5.9.3"
+  }
+}

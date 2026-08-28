@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 const root = process.cwd();
 const apps = ["web", "api", "worker"];
-const packages = ["db", "shared", "config", "llm"];
+const packages = ["auth", "db", "shared", "config", "llm"];
 const appPackages = new Set(apps.map((name) => `@lumi/${name}`));
 
 for (const path of [...apps.map((name) => join("apps", name)), ...packages.map((name) => join("packages", name))]) {

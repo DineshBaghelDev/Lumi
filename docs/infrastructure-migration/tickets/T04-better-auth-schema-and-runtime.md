@@ -13,4 +13,6 @@ unverified email mode. Runtime schema mutation is forbidden.
 Acceptance: schema is migration-owned; auth config/session tests and package
 checks pass. Commit: `feat(auth): add better auth runtime`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=auth/config/DB tests,
+typecheck, build, reviewed Drizzle migration; risks=live auth requires local
+PostgreSQL and real Google credentials.
