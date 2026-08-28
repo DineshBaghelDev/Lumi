@@ -1,6 +1,27 @@
 name: lumi-services
 
 services:
+  postgres:
+    image: docker.io/pgvector/pgvector:0.7.4-pg16@sha256:85b8346639c4e55b763801babac0ad3cbb93043b9f38cb777a6a3379f562a865
+    environment:
+      POSTGRES_DB: lumi
+      POSTGRES_USER: lumi_migrator
+      POSTGRES_PASSWORD: "${MIGRATOR_DB_PASSWORD:?Set MIGRATOR_DB_PASSWORD in .env}"
+      LUMI_AUTH_DB_PASSWORD: "${AUTH_DB_PASSWORD:?Set AUTH_DB_PASSWORD in .env}"
+      LUMI_API_DB_PASSWORD: "${API_DB_PASSWORD:?Set API_DB_PASSWORD in .env}"
+      LUMI_WORKER_DB_PASSWORD: "${WORKER_DB_PASSWORD:?Set WORKER_DB_PASSWORD in .env}"
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - lumi-db-data:/var/lib/postgresql/data
+      - ./services/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lumi_migrator -d lumi && psql -U lumi_migrator -d lumi -tAc \"select extversion from pg_extension where extname='vector'\" | grep -qx 0.7.4"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
   searxng:
     image: docker.io/searxng/searxng:2026.8.22-9fea41204@sha256:11a9b34cdc0b1ec2b991470a2762ecb5a1a531898289fb51dcd015260450729e
     entrypoint: ["/bin/sh", "-c"]
@@ -88,6 +109,7 @@ services:
       start_period: 120s
 
 volumes:
+  lumi-db-data:
   litellm-db-data:
   searxng-cache:
   tei-model-cache:

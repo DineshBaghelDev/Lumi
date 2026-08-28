@@ -13,4 +13,6 @@ Acceptance: `docker compose config --quiet`; clean-volume pgvector/version and
 role probes pass; existing services remain valid. Commit:
 `feat(infra): add local postgres pgvector`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=Compose configuration and
+immutable manifest inspection; risks=Docker engine must run for clean-volume
+role/extension probes.
