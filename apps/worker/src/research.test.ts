@@ -12,7 +12,7 @@ const config = parseWorkerEnv({
   INSFORGE_PROJECT_URL: "http://localhost:7130",
   INSFORGE_ANON_KEY: "anon",
   INSFORGE_API_KEY: "api",
-  INSFORGE_DB_STRING: "postgres://u:p@localhost/db",
+  WORKER_DATABASE_URL: "postgres://u:p@localhost/db",
   LITELLM_API_KEY: "litellm",
 });
 
@@ -137,14 +137,14 @@ test("oversized embedding payloads split and truncate instead of failing", async
 try {
   process.loadEnvFile("../../.env");
 } catch {
-  // CI can provide INSFORGE_DB_STRING directly.
+  // CI can provide TEST_DATABASE_URL directly.
 }
 
-const databaseUrl = process.env.INSFORGE_DB_STRING;
+const databaseUrl = process.env.TEST_DATABASE_URL;
 
 test(
   "milestone 2 gate: research persists source packs and queues one curriculum job",
-  { skip: !databaseUrl && "INSFORGE_DB_STRING is required for DB integration gate" },
+  { skip: !databaseUrl && "TEST_DATABASE_URL is required for DB integration gate" },
   async () => {
     assert.ok(databaseUrl);
     const liveConfig = parseWorkerEnv(process.env);
@@ -266,7 +266,7 @@ Production stream processors use acknowledgements, retries, pending-entry recove
 
 test(
   "budget-stop fixture records exhaustion before crawling",
-  { skip: !databaseUrl && "INSFORGE_DB_STRING is required for DB integration gate" },
+  { skip: !databaseUrl && "TEST_DATABASE_URL is required for DB integration gate" },
   async () => {
     assert.ok(databaseUrl);
     const liveConfig = parseWorkerEnv(process.env);

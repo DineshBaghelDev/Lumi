@@ -15,7 +15,7 @@ const config = parseWorkerEnv({
   INSFORGE_PROJECT_URL: "http://localhost:7130",
   INSFORGE_ANON_KEY: "anon",
   INSFORGE_API_KEY: "api",
-  INSFORGE_DB_STRING: "postgres://u:p@localhost/db",
+  WORKER_DATABASE_URL: "postgres://u:p@localhost/db",
   LITELLM_API_KEY: "litellm",
 });
 
@@ -55,14 +55,14 @@ test("project QC rejects untaught concepts and thin milestones", () => {
 try {
   process.loadEnvFile("../../.env");
 } catch {
-  // CI can provide INSFORGE_DB_STRING directly.
+  // CI can provide TEST_DATABASE_URL directly.
 }
 
-const databaseUrl = process.env.INSFORGE_DB_STRING;
+const databaseUrl = process.env.TEST_DATABASE_URL;
 
 test(
   "milestone 5 gate: project job persists ready project content idempotently",
-  { skip: !databaseUrl && "INSFORGE_DB_STRING is required for DB integration gate" },
+  { skip: !databaseUrl && "TEST_DATABASE_URL is required for DB integration gate" },
   async () => {
     assert.ok(databaseUrl);
     const pool = createDbPool({ databaseUrl });

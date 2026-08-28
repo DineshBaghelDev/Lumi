@@ -9,14 +9,14 @@ import * as schema from "./schema.ts";
 try {
   process.loadEnvFile("../../.env");
 } catch {
-  // CI can provide INSFORGE_DB_STRING directly.
+  // CI can provide TEST_DATABASE_URL directly.
 }
 
-const databaseUrl = process.env.INSFORGE_DB_STRING;
+const databaseUrl = process.env.TEST_DATABASE_URL;
 
 test(
   "concurrent generation job enqueues collapse to one row",
-  { skip: !databaseUrl && "INSFORGE_DB_STRING is required for DB integration smoke" },
+  { skip: !databaseUrl && "TEST_DATABASE_URL is required for DB integration smoke" },
   async () => {
     assert.ok(databaseUrl);
 
@@ -49,7 +49,7 @@ test(
 
 test(
   "database schema supports specs 006-012 invariants",
-  { skip: !databaseUrl && "INSFORGE_DB_STRING is required for DB integration smoke" },
+  { skip: !databaseUrl && "TEST_DATABASE_URL is required for DB integration smoke" },
   async () => {
     assert.ok(databaseUrl);
 

@@ -12,4 +12,6 @@ lifecycle, jobs, and retrieval. Remove the InsForge dependency from `@lumi/db`.
 Acceptance: config/db tests, typecheck, build, workspace graph, and migration
 config pass. Commit: `refactor(db): use local postgres contracts`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=config and DB test,
+typecheck, build, workspace graph; risks=legacy InsForge auth fields remain only
+until T04-T07.

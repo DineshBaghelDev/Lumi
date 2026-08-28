@@ -10,14 +10,14 @@ import { createApp } from "./app.ts";
 try {
   process.loadEnvFile("../../.env");
 } catch {
-  // CI can provide INSFORGE_DB_STRING directly.
+  // CI can provide TEST_DATABASE_URL directly.
 }
 
-const databaseUrl = process.env.INSFORGE_DB_STRING;
+const databaseUrl = process.env.TEST_DATABASE_URL;
 
 test(
   "milestone 1 gate: POST /courses creates owner enrollment and worker-claimable research job",
-  { skip: !databaseUrl && "INSFORGE_DB_STRING is required for DB integration gate" },
+  { skip: !databaseUrl && "TEST_DATABASE_URL is required for DB integration gate" },
   async () => {
     assert.ok(databaseUrl);
     const config = parseApiEnv(process.env);

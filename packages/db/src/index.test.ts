@@ -1,34 +1,15 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { InsForgeError, type InsForgeClient } from "@insforge/sdk";
-import { checkServerInsforgeConnection, createServerInsforgeClient } from "./index.ts";
+import { checkDbConnection, createDbPool } from "./index.ts";
 
-test("creates an InsForge admin client for trusted processes", () => {
-  const client = createServerInsforgeClient({
-    projectUrl: "https://project.example.insforge.app",
-    apiKey: "server-api-key",
-  });
-
-  assert.ok(client.database);
-  assert.ok(client.storage);
-  assert.equal(client.getHttpClient().getHeaders().Authorization, "Bearer server-api-key");
+test("creates a provider-neutral PostgreSQL pool", async () => {
+  const pool = createDbPool({ databaseUrl: "postgresql://lumi_api:password@localhost:5432/lumi" });
+  assert.equal((pool as unknown as { options: { connectionString: string } }).options.connectionString, "postgresql://lumi_api:password@localhost:5432/lumi");
+  await pool.end();
 });
 
-test("reports InsForge auth-config probe failures", async () => {
-  const getPublicAuthConfig = async () => ({
-    data: {} as NonNullable<Awaited<ReturnType<InsForgeClient["auth"]["getPublicAuthConfig"]>>["data"]>,
-    error: null,
-  });
-
-  await assert.doesNotReject(checkServerInsforgeConnection({ auth: { getPublicAuthConfig } }));
-
-  const failedProbe = async () => ({
-    data: null,
-    error: new InsForgeError("upstream unavailable", 503, "SERVER_ERROR"),
-  });
-
-  await assert.rejects(
-    checkServerInsforgeConnection({ auth: { getPublicAuthConfig: failedProbe } }),
-    /InsForge connectivity check failed: upstream unavailable/,
-  );
+test("checks PostgreSQL through the shared execute boundary", async () => {
+  let called = false;
+  await checkDbConnection({ execute: async () => { called = true; return { rows: [] }; } } as never);
+  assert.equal(called, true);
 });

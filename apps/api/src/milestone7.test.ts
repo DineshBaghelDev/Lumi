@@ -7,7 +7,7 @@ const config = parseApiEnv({
   INSFORGE_PROJECT_URL: "http://localhost:7130",
   INSFORGE_ANON_KEY: "anon",
   INSFORGE_API_KEY: "api",
-  INSFORGE_DB_STRING: "postgres://u:p@localhost/db",
+  DATABASE_URL: "postgres://u:p@localhost/db",
   LITELLM_API_KEY: "litellm",
 });
 

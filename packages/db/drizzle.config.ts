@@ -11,7 +11,7 @@ export default defineConfig({
   schema: "./src/schema.ts",
   out: "./drizzle",
   dbCredentials: {
-    url: process.env.INSFORGE_DB_STRING ?? "",
+    url: process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL ?? "",
   },
   migrations: {
     table: "__drizzle_migrations",

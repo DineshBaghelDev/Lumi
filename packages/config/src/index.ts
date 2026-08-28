@@ -137,11 +137,10 @@ const sharedServicesEnvSchema = z.object({
     .default(V1_CONFIG_DEFAULTS.services.teiEmbeddingDimension),
 });
 
-const insforgeServerEnvSchema = z.object({
+const legacyInsforgeAuthEnvSchema = z.object({
   INSFORGE_PROJECT_URL: httpUrl,
   INSFORGE_ANON_KEY: requiredSecret,
   INSFORGE_API_KEY: requiredSecret,
-  INSFORGE_DB_STRING: databaseUrl,
   LITELLM_API_KEY: requiredSecret,
 });
 
@@ -233,7 +232,7 @@ const researchSecurityEnvSchema = z.object({
   ),
 });
 
-const commonServerEnvSchema = insforgeServerEnvSchema
+const commonServerEnvSchema = legacyInsforgeAuthEnvSchema
   .extend(sharedServicesEnvSchema.shape)
   .extend(generationBudgetEnvSchema.shape)
   .extend(researchSecurityEnvSchema.shape)
@@ -254,8 +253,13 @@ const commonServerEnvSchema = insforgeServerEnvSchema
     }
   });
 
+const apiEnvSchema = commonServerEnvSchema.safeExtend({
+  DATABASE_URL: databaseUrl,
+});
+
 const workerEnvSchema = commonServerEnvSchema
   .safeExtend({
+    WORKER_DATABASE_URL: databaseUrl,
     WORKER_POLL_INTERVAL_MS: boundedInteger(
       V1_CONFIG_LIMITS.worker.pollingIntervalMs,
       V1_CONFIG_DEFAULTS.worker.pollingIntervalMs,
@@ -337,7 +341,6 @@ const mapCommonServerConfig = (env: CommonServerEnv) => ({
     projectUrl: env.INSFORGE_PROJECT_URL,
     anonKey: env.INSFORGE_ANON_KEY,
     apiKey: env.INSFORGE_API_KEY,
-    databaseUrl: env.INSFORGE_DB_STRING,
   },
   auth: {
     baseUrl: env.INSFORGE_PROJECT_URL,
@@ -387,14 +390,17 @@ const mapCommonServerConfig = (env: CommonServerEnv) => ({
 export const parseSharedServicesEnv = (env: Env) =>
   mapSharedServices(parseSchema(sharedServicesEnvSchema, env, "shared services"));
 
-export const parseApiEnv = (env: Env) =>
-  mapCommonServerConfig(parseSchema(commonServerEnvSchema, env, "API"));
+export const parseApiEnv = (env: Env) => {
+  const parsed = parseSchema(apiEnvSchema, env, "API");
+  return { ...mapCommonServerConfig(parsed), database: { url: parsed.DATABASE_URL } };
+};
 
 export const parseWorkerEnv = (env: Env) => {
   const parsed = parseSchema(workerEnvSchema, env, "worker");
 
   return {
     ...mapCommonServerConfig(parsed),
+    database: { url: parsed.WORKER_DATABASE_URL },
     worker: {
       pollingIntervalMs: parsed.WORKER_POLL_INTERVAL_MS,
       heartbeatIntervalMs: parsed.WORKER_HEARTBEAT_INTERVAL_MS,

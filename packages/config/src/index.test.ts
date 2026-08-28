@@ -16,7 +16,8 @@ const validServerEnv: Env = {
   INSFORGE_PROJECT_URL: "https://project.example.insforge.app",
   INSFORGE_ANON_KEY: "public-anon-key",
   INSFORGE_API_KEY: "server-api-key",
-  INSFORGE_DB_STRING: "postgresql://user:password@localhost:5432/lumi",
+  DATABASE_URL: "postgresql://lumi_api:password@localhost:5432/lumi",
+  WORKER_DATABASE_URL: "postgresql://lumi_worker:password@localhost:5432/lumi",
   LITELLM_API_KEY: "litellm-api-key",
 };
 
@@ -54,8 +55,8 @@ test("missing and invalid required values name the offending variables", () => {
   );
 
   assert.throws(
-    () => parseWorkerEnv({ ...validServerEnv, INSFORGE_DB_STRING: "https://not-postgres.example" }),
-    /INSFORGE_DB_STRING: must be a postgres:\/\/ or postgresql:\/\/ URL/,
+    () => parseWorkerEnv({ ...validServerEnv, WORKER_DATABASE_URL: "https://not-postgres.example" }),
+    /WORKER_DATABASE_URL: must be a postgres:\/\/ or postgresql:\/\/ URL/,
   );
 });
 
@@ -152,5 +153,5 @@ test("public parsing returns only the explicit public allowlist", () => {
   assert.equal(serialized.includes("openrouter-server-secret"), false);
   assert.equal(serialized.includes("litellm-api-key"), false);
   assert.equal("apiKey" in publicConfig.insforge, false);
-  assert.equal("databaseUrl" in publicConfig.insforge, false);
+  assert.equal("database" in publicConfig, false);
 });

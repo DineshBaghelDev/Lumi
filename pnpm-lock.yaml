@@ -138,9 +138,6 @@ importers:
 
   packages/db:
     dependencies:
-      '@insforge/sdk':
-        specifier: ^1.5.2
-        version: 1.5.2
       '@lumi/config':
         specifier: workspace:*
         version: link:../config

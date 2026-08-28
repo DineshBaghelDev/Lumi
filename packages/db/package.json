@@ -22,7 +22,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit --allowImportingTsExtensions"
   },
   "dependencies": {
-    "@insforge/sdk": "^1.5.2",
     "@lumi/config": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "pg": "^8.23.0"
