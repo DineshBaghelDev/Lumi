@@ -58,7 +58,7 @@ USER lumi
 EXPOSE 3001
 HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
   CMD wget -qO /dev/null http://127.0.0.1:3001/health || exit 1
-CMD ["node", "--import", "tsx", "apps/api/src/index.ts"]
+CMD ["node", "apps/api/dist/index.js"]
 
 # ── Worker target ─────────────────────────────────────────────────────
 FROM runtime AS worker
