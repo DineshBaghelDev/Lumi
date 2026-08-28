@@ -11,7 +11,8 @@
     "workspace:check": "node scripts/workspace-graph.mjs",
     "migration:baseline": "node scripts/migration/export-insforge.mjs",
     "migration:identities": "node scripts/migration/import-identities.mjs",
-    "migration:activate-user": "node scripts/migration/activate-legacy-user.mjs"
+    "migration:activate-user": "node scripts/migration/activate-legacy-user.mjs",
+    "migration:application": "node scripts/migration/import-application.mjs"
   },
   "devDependencies": {
     "turbo": "^2.5.6"

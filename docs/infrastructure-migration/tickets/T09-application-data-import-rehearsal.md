@@ -14,4 +14,5 @@ Acceptance: repeatable empty-database rehearsal matches the source manifest and
 second import fails safely without duplication. Commit:
 `feat(migration): rehearse application data import`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=batched after T10;
+risks=live empty-volume rehearsal waits for Docker Desktop.
