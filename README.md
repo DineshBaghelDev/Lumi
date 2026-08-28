@@ -8,7 +8,9 @@ Current state as of 2026-08-28: V1 implementation is complete in-repo. The API, 
 
 - Next.js, React, TypeScript, Tailwind CSS, shadcn/ui
 - Fastify API and Node/TypeScript worker
-- InsForge Cloud for auth, Postgres, storage, and realtime
+- PostgreSQL 16 with pgvector for data and embeddings
+- Better Auth for authentication and sessions
+- MinIO for object storage (lesson images, research assets)
 - Drizzle for schema and migrations
 - LiteLLM for model routing
 - SearXNG, Crawl4AI, and Hugging Face TEI for research and embeddings
@@ -16,10 +18,9 @@ Current state as of 2026-08-28: V1 implementation is complete in-repo. The API, 
 
 ## Prerequisites
 
-- Node.js
+- Node.js 22+
 - pnpm 11.22.0
 - Docker Desktop
-- InsForge project credentials
 
 ## Setup
 
@@ -28,7 +29,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Fill in `.env` with the InsForge and LiteLLM values. Keep real credentials out of `.env.example`.
+Fill in `.env` with database passwords, auth secrets, and MinIO credentials. Keep real credentials out of `.env.example`.
 
 ## Start Local Services
 
@@ -40,14 +41,18 @@ docker compose ps
 
 Service endpoints:
 
+- Web: `http://127.0.0.1:3000`
+- API: `http://127.0.0.1:3001/health`
+- PostgreSQL: `127.0.0.1:5432` (role-based access)
+- MinIO Console: `http://127.0.0.1:9001`
 - LiteLLM: `http://127.0.0.1:4000/health/liveliness`
 - SearXNG: `http://127.0.0.1:8080/search?q=lumi&format=json`
 - Crawl4AI: `http://127.0.0.1:11235/health`
 - TEI: `http://127.0.0.1:8081/health`
 
-Use `docker compose stop` to stop services. Avoid `docker compose down -v` unless you want to delete the SearXNG and TEI caches.
+Use `docker compose stop` to stop services. Avoid `docker compose down -v` unless you want to delete persistent data.
 
-## Start The App
+## Start The App (local dev without containers)
 
 ```sh
 pnpm dev
@@ -72,10 +77,14 @@ Run the smallest relevant check while developing, then run the broader checks be
 - `apps/web` - Next.js app and auth routes
 - `apps/api` - Fastify API package
 - `apps/worker` - background worker and research pipeline
+- `packages/auth` - Better Auth integration
 - `packages/config` - typed environment parsing and V1 defaults
-- `packages/db` - InsForge server client helpers, Drizzle schema, and job services
-- `packages/shared` - shared package placeholder
-- `services` - local LiteLLM, SearXNG, Crawl4AI, and TEI configuration
+- `packages/db` - Drizzle schema, RLS policies, and job services
+- `packages/storage` - MinIO client and object operations
+- `packages/shared` - shared validation schemas
+- `packages/llm` - LiteLLM client wrapper
+- `services` - local Docker service configurations
+- `scripts/migration` - data migration tooling
 - `context` - current project state and agent-facing handoff docs
 - `docs` - durable product and architecture docs
 - `specs` - numbered implementation specs
