@@ -4,6 +4,9 @@ import { MermaidBlock } from "./mermaid-block";
 import { LessonNotesPanel } from "./lesson-notes-panel";
 import { LessonChatPanel } from "./lesson-chat-panel";
 import { LessonProgressPanel } from "./lesson-progress-panel";
+import { LessonResume } from "./lesson-resume";
+import { assetImageSrc, inlineMarkdown } from "./lesson-rendering";
+import { SourceLinks } from "./source-links";
 
 type SourceRef = { sourceId: string; chunkId?: string; label?: string };
 type LessonBlock =
@@ -46,6 +49,11 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         </section>
       ) : (
         <section className="lesson-page">
+          <LessonResume
+            blockIds={content.blocks.map((block) => block.id)}
+            courseId={id}
+            lessonId={lessonId}
+          />
           <details className="lesson-nav lesson-outline" open>
             <summary>On this lesson</summary>
             <div className="outline-links">
@@ -57,7 +65,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
           <article className="lesson-content">
             <h1>{content.title}</h1>
             <p>{content.summary}</p>
-            {content.blocks.map((block) => renderBlock(block, assetMap))}
+            {content.blocks.map((block) => renderBlock(block, assetMap, id))}
             <div className="topline section-gap">
               <a className="button ghost-button" href={`/courses/${id}/lessons`}>Roadmap</a>
               {lesson.assessment_id ? <a className="button" href={`/courses/${id}/assessment/${lesson.assessment_id}`}>Assessment</a> : null}
@@ -87,21 +95,27 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
   );
 }
 
-function renderBlock(block: LessonBlock, assets: ReadonlyMap<string, Asset>) {
+function renderBlock(block: LessonBlock, assets: ReadonlyMap<string, Asset>, courseId: string) {
   if (block.type === "heading") {
     const Tag = `h${block.level}` as "h2" | "h3" | "h4";
     return <Tag className="lesson-block" id={block.id} key={block.id}>{block.text}</Tag>;
   }
-  if (block.type === "paragraph") return <p className="lesson-block" key={block.id}>{block.text}</p>;
+  if (block.type === "paragraph") return <p className="lesson-block" key={block.id}>{renderInline(block.text)}<SourceLinks courseId={courseId} refs={block.sourceRefs} /></p>;
   if (block.type === "list") {
     const Tag = block.style === "ordered" ? "ol" : "ul";
-    return <Tag className="lesson-list-block lesson-block" key={block.id}>{block.items.map((item) => <li key={item}>{item}</li>)}</Tag>;
+    return (
+      <div className="lesson-block" key={block.id}>
+        <Tag className="lesson-list-block">{block.items.map((item) => <li key={item}>{renderInline(item)}</li>)}</Tag>
+        <SourceLinks courseId={courseId} refs={block.sourceRefs} />
+      </div>
+    );
   }
   if (block.type === "code") {
     return (
       <figure className="lesson-block" key={block.id}>
         {block.caption ? <figcaption>{block.caption}</figcaption> : null}
         <pre className="lesson-code"><code>{block.code}</code></pre>
+        <SourceLinks courseId={courseId} refs={block.sourceRefs} />
       </figure>
     );
   }
@@ -109,7 +123,7 @@ function renderBlock(block: LessonBlock, assets: ReadonlyMap<string, Asset>) {
     return (
       <aside className={`lesson-callout ${block.tone}`} key={block.id}>
         {block.title ? <h3>{block.title}</h3> : null}
-        <p>{block.text}</p>
+        <p>{renderInline(block.text)}<SourceLinks courseId={courseId} refs={block.sourceRefs} /></p>
       </aside>
     );
   }
@@ -118,16 +132,27 @@ function renderBlock(block: LessonBlock, assets: ReadonlyMap<string, Asset>) {
       <figure className="lesson-diagram lesson-block" key={block.id}>
         <MermaidBlock diagram={block.diagram} />
         {block.caption ? <figcaption>{block.caption}</figcaption> : null}
+        <SourceLinks courseId={courseId} refs={block.sourceRefs} />
       </figure>
     );
   }
   const asset = assets.get(block.assetId);
+  const src = asset ? assetImageSrc(asset.storage_path) : null;
   return (
     <figure className="lesson-image lesson-block" key={block.id}>
-      {asset ? <img src={asset.storage_path} alt={asset.alt_text ?? asset.title} /> : <div className="diagram-placeholder">Image unavailable</div>}
+      {src ? <img src={src} alt={asset?.alt_text ?? asset?.title ?? "Lesson image"} /> : <div className="diagram-placeholder">Image unavailable until this asset is uploaded.</div>}
       <figcaption>{block.caption ?? asset?.title ?? "Lesson image"}</figcaption>
     </figure>
   );
+}
+
+function renderInline(text: string) {
+  return inlineMarkdown(text).map((part, index) => {
+    if (part.type === "code") return <code key={index}>{part.text}</code>;
+    if (part.type === "strong") return <strong key={index}>{part.text}</strong>;
+    if (part.type === "link") return <a href={part.href} key={index} rel="noreferrer" target="_blank">{part.text}</a>;
+    return part.text;
+  });
 }
 
 function sourceCount(content: LessonContent) {

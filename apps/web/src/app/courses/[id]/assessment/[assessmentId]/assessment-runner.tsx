@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { scoreObjectiveAnswer, submitAssessmentAnswers } from "../../../../actions";
+import { instantFeedbackMessage, locksInstantChoice } from "./assessment-state";
 
 export type ClientQuestion = {
   questionId: string;
@@ -46,7 +47,7 @@ export function AssessmentRunner({
 }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | Record<string, string>>>({});
-  const [mcqFeedback, setMcqFeedback] = useState<Record<string, boolean>>({});
+  const [mcqFeedback, setMcqFeedback] = useState<Record<string, boolean | null>>({});
   const [results, setResults] = useState<Result[] | null>(null);
   const [score, setScore] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -110,12 +111,12 @@ export function AssessmentRunner({
     });
 
   const pickOption = (optionId: string) => {
-    if (mcqFeedback[question.questionId] !== undefined) return;
+    if (locksInstantChoice(mcqFeedback[question.questionId])) return;
     setAnswers((current) => ({ ...current, [question.questionId]: optionId }));
     if (!givesInstantFeedback(question.kind)) return;
     startTransition(async () => {
       const outcome = await scoreObjectiveAnswer(assessmentId, question.questionId, optionId);
-      setMcqFeedback((current) => ({ ...current, [question.questionId]: outcome?.correct ?? false }));
+      setMcqFeedback((current) => ({ ...current, [question.questionId]: outcome?.correct ?? null }));
     });
   };
 
@@ -150,7 +151,7 @@ export function AssessmentRunner({
             {question.options.map((option) => (
               <button
                 className={`chip${currentAnswer === option.id ? " active" : ""}`}
-                disabled={(givesInstantFeedback(question.kind) && mcqFeedback[question.questionId] !== undefined) || pending}
+                disabled={(givesInstantFeedback(question.kind) && locksInstantChoice(mcqFeedback[question.questionId])) || pending}
                 key={option.id}
                 onClick={() => pickOption(option.id)}
                 type="button"
@@ -207,8 +208,8 @@ export function AssessmentRunner({
         ) : null}
 
         {givesInstantFeedback(question.kind) && mcqFeedback[question.questionId] !== undefined ? (
-          <p className={`status ${mcqFeedback[question.questionId] ? "good" : "danger"}`}>
-            {mcqFeedback[question.questionId] ? "Correct." : "Not quite — keep this in mind for scoring."}
+          <p className={`status ${mcqFeedback[question.questionId] === null ? "gray" : mcqFeedback[question.questionId] ? "good" : "danger"}`}>
+            {instantFeedbackMessage(mcqFeedback[question.questionId])}
           </p>
         ) : null}
       </section>
