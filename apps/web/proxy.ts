@@ -1,11 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getLumiAuth } from "./src/lib/auth";
-import { legacyAuthCookieNames, signInPath } from "./src/lib/auth-routes";
-
-const clearLegacyCookies = (response: NextResponse) => {
-  for (const name of legacyAuthCookieNames) response.cookies.delete(name);
-  return response;
-};
+import { signInPath } from "./src/lib/auth-routes";
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
@@ -17,9 +12,9 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = signInPath;
     url.searchParams.set("next", request.nextUrl.pathname);
-    return clearLegacyCookies(NextResponse.redirect(url));
+    return NextResponse.redirect(url);
   }
-  return clearLegacyCookies(response);
+  return response;
 }
 
 export const config = {
