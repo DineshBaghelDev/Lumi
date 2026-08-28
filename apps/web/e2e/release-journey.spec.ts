@@ -31,7 +31,7 @@ test("seeded authenticated V1 journey proves creation, learning, assessment, pro
 
   await page.getByRole("link", { name: "Create course" }).first().click();
   await page.getByLabel("What do you want to learn?").fill("PostgreSQL indexing");
-  await page.getByLabel("Learning goal").selectOption("Build projects");
+  await page.getByLabel("What should this course help you do?").fill("Build projects");
   await page.getByRole("button", { name: "Create course" }).click();
 
   await expect(page).toHaveURL(/\/courses\/course-e2e$/);

@@ -64,7 +64,7 @@ export const registerAuth = (app: FastifyInstance, db: LumiDb, resolveSession: S
       await transaction.setUserId(request.user.id);
     } catch (error) {
       await transaction.finish(false);
-      request.dbTransaction = undefined;
+      delete request.dbTransaction;
       throw error;
     }
   });
@@ -75,7 +75,7 @@ export const registerAuth = (app: FastifyInstance, db: LumiDb, resolveSession: S
 
 export const finishRequestTransaction = async (request: FastifyRequest, commit: boolean) => {
   const transaction = request.dbTransaction;
-  request.dbTransaction = undefined;
+  delete request.dbTransaction;
   await transaction?.finish(commit);
 };
 

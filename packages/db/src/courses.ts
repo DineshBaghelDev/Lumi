@@ -115,12 +115,12 @@ export const createCourseWithResearchJob = async (db: Db, input: CreateCourseInp
     if (!course) throw new Error("course insert failed");
 
     await tx.execute(sql`
-      insert into course_generation_usage (course_id, limits)
-      values (${course.id}, ${JSON.stringify(input.limits)}::jsonb)
-    `);
-    await tx.execute(sql`
       insert into enrollments (user_id, course_id, role, status)
       values (${input.user.id}, ${course.id}, 'owner', 'active')
+    `);
+    await tx.execute(sql`
+      insert into course_generation_usage (course_id, limits)
+      values (${course.id}, ${JSON.stringify(input.limits)}::jsonb)
     `);
     await tx.execute(sql`
       insert into course_creation_requests (user_id, idempotency_key, course_id)

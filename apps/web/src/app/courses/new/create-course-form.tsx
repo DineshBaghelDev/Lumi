@@ -1,12 +1,18 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createCourseAction, type FormState } from "../../actions";
 
 const initialState: FormState = { ok: true, message: "" };
+const depths = [
+  { value: "beginner", icon: "1", title: "Beginner", body: "New to the topic" },
+  { value: "intermediate", icon: "2", title: "Intermediate", body: "Know the basics" },
+  { value: "advanced", icon: "3", title: "Advanced", body: "Want depth" },
+];
 
 export function CreateCourseForm({ idempotencyKey }: { idempotencyKey: string }) {
   const [state, action, pending] = useActionState(createCourseAction, initialState);
+  const [depth, setDepth] = useState("beginner");
 
   return (
     <form className="form-box" action={action}>
@@ -15,39 +21,31 @@ export function CreateCourseForm({ idempotencyKey }: { idempotencyKey: string })
       <textarea id="topic" name="topic" className="textarea" placeholder="e.g., Quantum Computing, Basic Financial Modeling..." required />
       <label>Depth</label>
       <div className="choice-grid">
-        <label className="choice selected">
-          <input type="radio" name="difficultyLevel" value="beginner" defaultChecked />
-          <span className="iconbox">1</span>
-          <div>
-            <strong>Beginner</strong>
-            <p>New to the topic</p>
-          </div>
-        </label>
-        <label className="choice">
-          <input type="radio" name="difficultyLevel" value="intermediate" />
-          <span className="iconbox">2</span>
-          <div>
-            <strong>Intermediate</strong>
-            <p>Know the basics</p>
-          </div>
-        </label>
-        <label className="choice">
-          <input type="radio" name="difficultyLevel" value="advanced" />
-          <span className="iconbox">3</span>
-          <div>
-            <strong>Advanced</strong>
-            <p>Want depth</p>
-          </div>
-        </label>
+        {depths.map((option) => (
+          <label className={`choice ${depth === option.value ? "selected" : ""}`} key={option.value}>
+            <input
+              checked={depth === option.value}
+              name="difficultyLevel"
+              onChange={() => setDepth(option.value)}
+              type="radio"
+              value={option.value}
+            />
+            <span className="iconbox">{option.icon}</span>
+            <div>
+              <strong>{option.title}</strong>
+              <p>{option.body}</p>
+            </div>
+          </label>
+        ))}
       </div>
-      <label htmlFor="goal">Learning goal</label>
-      <select id="goal" name="goal" className="select" defaultValue="" required>
-        <option value="" disabled>
-          Select your goal
-        </option>
-        <option>Build projects</option>
-        <option>Prepare for interviews</option>
-      </select>
+      <label htmlFor="goal">What should this course help you do?</label>
+      <textarea
+        id="goal"
+        name="goal"
+        className="textarea compact-textarea"
+        placeholder="e.g., debug slow SQL queries and explain index tradeoffs"
+        required
+      />
       <button className="button wide-button" type="submit" disabled={pending}>
         {pending ? (
           <span className="spinner-row">

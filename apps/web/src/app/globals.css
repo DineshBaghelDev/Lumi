@@ -969,6 +969,10 @@ p {
   padding: var(--space-4);
 }
 
+.compact-textarea {
+  min-height: 72px;
+}
+
 .select {
   min-height: 42px;
   padding: 0 var(--space-4);

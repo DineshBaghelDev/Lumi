@@ -57,6 +57,20 @@
       "when": 1787930000000,
       "tag": "0007_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787931000000,
+      "tag": "0008_nonrecursive_enrollment_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787932000000,
+      "tag": "0009_auth_user_bootstrap_rls",
+      "breakpoints": true
     }
   ]
 }

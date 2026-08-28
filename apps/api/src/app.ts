@@ -1189,10 +1189,8 @@ const assertCanCreateCourse = async (
 
   const active = (await db.execute<{ count: unknown }>(sql`
     select count(*) as count
-    from enrollments e
-    join courses c on c.id = e.course_id
-    where e.user_id = ${userId}
-      and e.status = 'active'
+    from courses c
+    where c.owner_user_id = ${userId}
       and c.status = 'generating'
   `)).rows[0];
   if (parseCount(active?.count) >= limits.maxActiveCoursesPerUser) {

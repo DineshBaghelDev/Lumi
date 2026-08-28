@@ -61,7 +61,7 @@ export type RequestDbTransaction = {
 const transactionDb = (client: PoolClient): LumiDb => drizzle(client, { schema: fullSchema });
 
 export const beginRequestTransaction = async (baseDb: LumiDb, authUserId: string): Promise<RequestDbTransaction> => {
-  const pool = baseDb.$client as Pool | undefined;
+  const pool = (baseDb as { $client?: Pool }).$client;
   if (!pool?.connect) return { db: baseDb, setUserId: async () => {}, finish: async () => {} };
   const client = await pool.connect();
   let finished = false;

@@ -19,24 +19,22 @@ export default async function CoursesPage() {
       let lessons: Array<{ id: string; status: string; is_required?: boolean; assessment_id?: string | null; assessment_status?: string | null }> = [];
       let projects: Array<{ status: string }> = [];
 
-      if (course.status !== "generating") {
-        const [resumeResponse, curriculumResponse] = await Promise.all([
-          apiFetch(`/courses/${course.id}/progress/resume`),
-          apiFetch(`/courses/${course.id}/curriculum`),
-        ]);
+      const [resumeResponse, curriculumResponse] = await Promise.all([
+        apiFetch(`/courses/${course.id}/progress/resume`),
+        apiFetch(`/courses/${course.id}/curriculum`),
+      ]);
 
-        if (resumeResponse.ok) {
-          resumePoint = await resumeResponse.json() as ResumePoint;
-        }
+      if (resumeResponse.ok) {
+        resumePoint = await resumeResponse.json() as ResumePoint;
+      }
 
-        if (curriculumResponse.ok) {
-          const body = await curriculumResponse.json() as {
-            lessons?: Array<{ id: string; status: string; is_required?: boolean; assessment_id?: string | null; assessment_status?: string | null }>;
-            projects?: Array<{ status: string }>;
-          };
-          lessons = body.lessons ?? [];
-          projects = body.projects ?? [];
-        }
+      if (curriculumResponse.ok) {
+        const body = await curriculumResponse.json() as {
+          lessons?: Array<{ id: string; status: string; is_required?: boolean; assessment_id?: string | null; assessment_status?: string | null }>;
+          projects?: Array<{ status: string }>;
+        };
+        lessons = body.lessons ?? [];
+        projects = body.projects ?? [];
       }
 
       const progressState = deriveCourseProgress({

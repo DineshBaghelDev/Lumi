@@ -49,14 +49,18 @@ test(
       assert.equal(body.job.type, "research");
       assert.equal(body.job.status, "queued");
 
+      await pool.query("select set_config('lumi.auth_user_id', $1, false)", [authUserId]);
+      const user = await pool.query<{ id: string }>("select id from users where auth_user_id = $1", [authUserId]);
+      const userId = user.rows[0]?.id;
+      assert.ok(userId);
+      await pool.query("select set_config('lumi.user_id', $1, false)", [userId]);
       const enrollment = await pool.query<{ count: string }>(
         `
           select count(*)::text
           from enrollments e
-          join users u on u.id = e.user_id
-          where u.auth_user_id = $1 and e.course_id = $2 and e.role = 'owner'
+          where e.user_id = $1 and e.course_id = $2 and e.role = 'owner'
         `,
-        [authUserId, body.course.id],
+        [userId, body.course.id],
       );
       assert.equal(enrollment.rows[0]?.count, "1");
 
@@ -69,8 +73,9 @@ test(
       assert.equal(claimed?.status, "running");
       assert.equal(claimed?.locked_by, "gate-worker");
     } finally {
+      await pool.query("select set_config('lumi.auth_user_id', $1, false)", [authUserId]).catch(() => undefined);
       await pool.query(
-        "delete from courses where id in (select e.course_id from enrollments e join users u on u.id = e.user_id where u.auth_user_id = $1)",
+        "delete from courses where owner_user_id in (select id from users where auth_user_id = $1)",
         [authUserId],
       ).catch(() => undefined);
       await pool.query("delete from users where auth_user_id = $1", [authUserId]).catch(() => undefined);

@@ -49,6 +49,22 @@ test("course progress uses learner resume state instead of content readiness", (
   assert.equal(state.projectSummary, "1 projects available");
 });
 
+test("course progress shows partial content while generation continues", () => {
+  const state = deriveCourseProgress({
+    courseStatus: "generating",
+    resumePoint: null,
+    lessons: [
+      { id: "l1", status: "ready", is_required: true },
+      { id: "l2", status: "queued", is_required: true },
+    ],
+    projects: [{ status: "ready" }],
+  });
+
+  assert.equal(state.progressLabel, "50%");
+  assert.equal(state.lessonSummary, "1 / 2 lessons ready");
+  assert.equal(state.projectSummary, "1 projects available");
+});
+
 test("resume links stay on the lesson when there is an active lesson target", () => {
   assert.equal(resolveResumeHref("course-1", { type: "lesson", lessonId: "lesson-9", blockIndex: 4 }), "/courses/course-1/lesson/lesson-9");
   assert.equal(resolveResumeHref("course-1", { type: "course_complete" }), "/courses/course-1/lessons");

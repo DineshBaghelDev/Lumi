@@ -35,6 +35,7 @@ export const deriveCourseProgress = ({
   projects = [],
 }: CourseProgressOptions) => {
   const readyLessons = lessons.filter((lesson) => lesson.status === "ready");
+  const totalRequiredLessons = lessons.filter((lesson) => lesson.is_required !== false);
   const requiredLessons = readyLessons.filter((lesson) => lesson.is_required !== false);
   const readyProjects = projects.filter((project) => project.status === "ready").length;
   const readyAssessments = readyLessons.filter((lesson) => lesson.assessment_id && lesson.assessment_status === "ready").length;
@@ -42,12 +43,15 @@ export const deriveCourseProgress = ({
   const hasExtraCoursework = readyProjects > 0 || readyAssessments > 0;
 
   if (courseStatus === "generating") {
+    const progressPercent = totalRequiredLessons.length
+      ? Math.round((requiredLessons.length / totalRequiredLessons.length) * 100)
+      : 0;
     return {
-      progressLabel: "0%",
+      progressLabel: `${progressPercent}%`,
       stateLabel: "In Progress",
-      lessonSummary: "Generating",
-      projectSummary: "Projects pending",
-      summary: "Lumi is still building your course.",
+      lessonSummary: totalRequiredLessons.length ? `${requiredLessons.length} / ${totalRequiredLessons.length} lessons ready` : "Generating",
+      projectSummary: readyProjects ? `${readyProjects} projects available` : "Projects pending",
+      summary: hasReadyCoursework ? "Ready lessons are available while Lumi keeps building." : "Lumi is still building your course.",
     };
   }
 
@@ -86,8 +90,8 @@ export const deriveCourseProgress = ({
   // Count skipped lessons as completed for progress calculation
   const skippedLessons = lessons.filter((lesson) => lesson.status === "skipped" && lesson.is_required !== false);
   const completedRequiredLessons = (resumeLessonIndex > 0 ? resumeLessonIndex : 0) + skippedLessons.length;
-  const progressPercent = requiredLessons.length
-    ? Math.round((completedRequiredLessons / requiredLessons.length) * 100)
+  const progressPercent = totalRequiredLessons.length
+    ? Math.round((completedRequiredLessons / totalRequiredLessons.length) * 100)
     : 0;
 
   return {
