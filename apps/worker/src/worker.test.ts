@@ -50,6 +50,35 @@ test("failed job finalization errors do not escape runClaimedJob", async () => {
   });
 });
 
+test("missing handlers still refresh course status after terminal failure", async () => {
+  let executeCount = 0;
+  const db = {
+    execute: async () => {
+      executeCount += 1;
+      if (executeCount === 1) {
+        return {
+          rows: [{ ...job, status: "failed", error: "No handler registered for lesson" }],
+        };
+      }
+      if (executeCount === 2) {
+        return {
+          rows: [{ status: "generating", has_curriculum: true }],
+        };
+      }
+      if (executeCount === 3) {
+        return {
+          rows: [{ type: "lesson", status: "failed" }],
+        };
+      }
+      return { rows: [] };
+    },
+  } as unknown as LumiDb;
+
+  await runClaimedJob(db, job, {});
+
+  assert.equal(executeCount, 4);
+});
+
 test("long-running jobs heartbeat while handler is active", async () => {
   let executeCount = 0;
   const db = {

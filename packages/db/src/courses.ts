@@ -38,18 +38,44 @@ export type CreatedCourse = {
 export const deriveCourseStatus = ({
   hasCurriculum,
   jobs,
-  cancelled,
+  currentStatus,
 }: {
   hasCurriculum: boolean;
   jobs: readonly { type: string; status: string }[];
-  cancelled: boolean;
+  currentStatus: CourseStatus;
 }): CourseStatus => {
-  if (cancelled) return "cancelled";
-  if (jobs.some((job) => ["queued", "running"].includes(job.status))) return "generating";
-  if (jobs.some((job) => ["research", "curriculum"].includes(job.type) && job.status === "failed")) return "failed";
-  if (!hasCurriculum) return "generating";
+  if (currentStatus === "archived" || currentStatus === "cancelled") return currentStatus;
+  if (jobs.some((job) => job.status === "queued" || job.status === "running")) return "generating";
+  if (jobs.some((job) => (job.type === "research" || job.type === "curriculum") && job.status !== "succeeded")) {
+    return "failed";
+  }
+  if (!hasCurriculum) return jobs.length === 0 ? "generating" : "failed";
   if (jobs.some((job) => ["failed", "cancelled"].includes(job.status))) return "ready_with_gaps";
   return "ready";
+};
+
+export const refreshCourseStatus = async (
+  db: Pick<NodePgDatabase<typeof schema>, "execute">,
+  courseId: string,
+) => {
+  const state = await db.execute<{ status: CourseStatus; has_curriculum: boolean }>(sql`
+    select c.status, exists (
+      select 1 from curricula curriculum where curriculum.course_id = c.id
+    ) as has_curriculum
+    from courses c where c.id = ${courseId}
+  `);
+  const row = state.rows[0];
+  if (!row) return null;
+  const jobs = await db.execute<{ type: string; status: string }>(sql`
+    select type, status from generation_jobs where course_id = ${courseId}
+  `);
+  const status = deriveCourseStatus({
+    hasCurriculum: row.has_curriculum,
+    jobs: jobs.rows,
+    currentStatus: row.status,
+  });
+  await db.execute(sql`update courses set status = ${status}, updated_at = now() where id = ${courseId}`);
+  return status;
 };
 
 export const ensureUser = async (

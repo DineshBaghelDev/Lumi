@@ -4,6 +4,7 @@ import {
   failRunningGenerationJob,
   heartbeatGenerationJob,
   reclaimStaleGenerationJob,
+  refreshCourseStatus,
   succeedGenerationJob,
   type GenerationJobRow,
   type LumiDb,
@@ -19,6 +20,13 @@ type RunClaimedJobOptions = {
   heartbeatIntervalMs?: number;
   maxAttempts?: number;
   workerId?: string;
+};
+type WorkerLoopOptions = {
+  claimJob: () => Promise<GenerationJobRow | null>;
+  runJob: (job: GenerationJobRow) => Promise<void>;
+  pollingIntervalMs: number;
+  stop: Promise<void>;
+  onPollingError?: (error: unknown) => void;
 };
 
 export const retryDelaySeconds = (attempts: number, error?: string) => {
@@ -45,6 +53,7 @@ export const runClaimedJob = async (
       maxAttempts,
       retryDelaySeconds: 0,
     });
+    await refreshCourseStatus(db, job.course_id);
     return;
   }
 
@@ -69,6 +78,7 @@ export const runClaimedJob = async (
   try {
     await handler(job);
     await succeedGenerationJob(db, job.id);
+    await refreshCourseStatus(db, job.course_id);
     console.log(`[worker] job ${job.type} ${job.id} succeeded`);
   } catch (error) {
     const retryable = !(error instanceof PermanentJobError) && isRetryableError(error);
@@ -89,6 +99,7 @@ export const runClaimedJob = async (
     if (failed.status === "failed" && (job.type === "research" || job.type === "curriculum")) {
       await db.execute(sql`update courses set status = 'failed', updated_at = now() where id = ${job.course_id}`);
     }
+    await refreshCourseStatus(db, job.course_id);
     if (failed.status === "queued") {
       console.warn(`[worker] job ${job.type} ${job.id} failed (attempt ${failed.attempts}, retry scheduled): ${message}`);
     } else {
@@ -117,3 +128,35 @@ export const claimOneJob = async (
 
 export const heartbeat = (db: LumiDb, job: GenerationJobRow, workerId: string) =>
   heartbeatGenerationJob(db, job.id, workerId);
+
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    timer.unref?.();
+  });
+
+export const runWorkerLoop = async ({
+  claimJob,
+  runJob,
+  pollingIntervalMs,
+  stop,
+  onPollingError = (error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[worker] polling cycle failed: ${message}`);
+  },
+}: WorkerLoopOptions) => {
+  while (true) {
+    try {
+      const job = await claimJob();
+      if (job) {
+        await runJob(job);
+        continue;
+      }
+    } catch (error) {
+      onPollingError(error);
+    }
+
+    const stopped = await Promise.race([stop.then(() => true), sleep(pollingIntervalMs).then(() => false)]);
+    if (stopped) return;
+  }
+};
