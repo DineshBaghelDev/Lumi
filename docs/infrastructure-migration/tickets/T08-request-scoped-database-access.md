@@ -13,4 +13,5 @@ streaming DB phases short.
 Acceptance: ownership backfill and pooled-connection leakage tests pass; all API
 tests retain behavior. Commit: `refactor(api): scope database access per user`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=batched after T10;
+risks=live transaction and streaming behavior requires the Compose gate.

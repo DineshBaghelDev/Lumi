@@ -5,11 +5,14 @@ import {
   canAccessCourse,
   cancelCourseGeneration,
   checkDbConnection,
+  createRequestDbProxy,
   createApiDbClient,
   createCourseWithResearchJob,
   manualRetryGenerationJob,
   resolveCitations,
   retrieveChunks,
+  runWithRequestDb,
+  withUserTransaction,
   type LumiDb,
 } from "@lumi/db";
 import { LiteLlmClient, recordLlmCall, type CompleteResult } from "@lumi/llm";
@@ -29,7 +32,7 @@ import {
 import { sql } from "drizzle-orm";
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
-import { createBetterAuthSessionResolver, HttpError, registerAuth, type SessionResolver } from "./auth.ts";
+import { createBetterAuthSessionResolver, finishRequestTransaction, HttpError, registerAuth, type SessionResolver } from "./auth.ts";
 
 type GraderLlm = { complete(input: { messages: { role: "system" | "user"; content: string }[]; temperature?: number; maxTokens?: number }): Promise<CompleteResult> };
 
@@ -123,11 +126,13 @@ const parse = <T>(schema: z.ZodType<T>, value: unknown) => {
 
 export const createApp = (deps: AppDeps = {}): FastifyInstance => {
   const config = deps.config ?? parseApiEnv(process.env);
-  const db = deps.db ?? createApiDbClient(config);
+  const rootDb = deps.db ?? createApiDbClient(config);
+  const db = createRequestDbProxy(rootDb);
   const grader = deps.grader ?? new LiteLlmClient(config.services.liteLlm);
   const app = Fastify({ logger: true });
 
-  registerAuth(app, db, deps.resolveSession ?? createBetterAuthSessionResolver(createLumiAuthFromEnv()));
+  app.addHook("onRequest", (request, _reply, done) => runWithRequestDb(rootDb, done));
+  registerAuth(app, rootDb, deps.resolveSession ?? createBetterAuthSessionResolver(createLumiAuthFromEnv()));
 
   app.setErrorHandler((error, request, reply) => {
     const rawStatus = error instanceof HttpError ? error.statusCode : (error as { statusCode?: unknown }).statusCode;
@@ -867,6 +872,7 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     reply.raw.setHeader("Cache-Control", "no-cache");
     reply.raw.setHeader("Connection", "keep-alive");
     reply.raw.setHeader("X-Thread-Id", threadId);
+    await finishRequestTransaction(request, true);
     reply.raw.flushHeaders();
     reply.raw.write(`data: ${JSON.stringify({ threadId })}\n\n`);
 
@@ -900,26 +906,27 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     const latencyMs = Date.now() - started;
 
     try {
-      let llmCallId: string | null = null;
-      if (fullContent) {
-        const callRow = await recordLlmCall(db, {
-          jobId: null,
-          model,
-          promptVersion: "chat-rag-v1",
-          inputTokens: 0,
-          outputTokens: 0,
-          latencyMs,
-          rawRequestId,
-          metadata: { threadId, courseId: id },
-        });
-        llmCallId = callRow.id;
-        await recordCourseLlmCall(db, id, 1);
-      }
-
-      await db.execute(sql`
-        insert into chat_messages (thread_id, role, content, citations, model, llm_call_id)
-        values (${threadId}, 'assistant', ${fullContent}, ${JSON.stringify(citationChunkIds)}::jsonb, ${model}, ${llmCallId})
-      `);
+      await withUserTransaction(rootDb, { authUserId: user.authUserId, userId: user.id }, async (tx) => {
+        let llmCallId: string | null = null;
+        if (fullContent) {
+          const callRow = await recordLlmCall(tx, {
+            jobId: null,
+            model,
+            promptVersion: "chat-rag-v1",
+            inputTokens: 0,
+            outputTokens: 0,
+            latencyMs,
+            rawRequestId,
+            metadata: { threadId, courseId: id },
+          });
+          llmCallId = callRow.id;
+          await recordCourseLlmCall(tx, id, 1);
+        }
+        await tx.execute(sql`
+          insert into chat_messages (thread_id, role, content, citations, model, llm_call_id)
+          values (${threadId}, 'assistant', ${fullContent}, ${JSON.stringify(citationChunkIds)}::jsonb, ${model}, ${llmCallId})
+        `);
+      });
     } catch {
       // Log but don't fail the response
       console.error("[chat] failed to persist assistant message");
@@ -943,7 +950,7 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
   });
 
   app.addHook("onClose", async () => {
-    const pool = (db as unknown as { $client?: { end?: () => Promise<void> } }).$client;
+    const pool = (rootDb as unknown as { $client?: { end?: () => Promise<void> } }).$client;
     await pool?.end?.();
   });
 

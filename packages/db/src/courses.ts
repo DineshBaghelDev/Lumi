@@ -107,8 +107,8 @@ export const createCourseWithResearchJob = async (db: Db, input: CreateCourseInp
 
     const title = input.topic.trim();
     const courseResult = await tx.execute<CreatedCourse["course"]>(sql`
-      insert into courses (title, description, topic, target_audience, difficulty_level, status)
-      values (${title}, ${input.goal}, ${input.topic}, ${input.targetAudience ?? null}, ${input.difficultyLevel ?? null}, 'generating')
+      insert into courses (owner_user_id, title, description, topic, target_audience, difficulty_level, status)
+      values (${input.user.id}, ${title}, ${input.goal}, ${input.topic}, ${input.targetAudience ?? null}, ${input.difficultyLevel ?? null}, 'generating')
       returning id, title, topic, description, status
     `);
     const course = courseResult.rows[0];

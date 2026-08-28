@@ -102,6 +102,7 @@ export const courses = pgTable(
   "courses",
   {
     id: id(),
+    ownerUserId: uuid("owner_user_id").references(() => users.id, { onDelete: "restrict" }),
     title: text("title").notNull(),
     description: text("description"),
     topic: text("topic").notNull(),

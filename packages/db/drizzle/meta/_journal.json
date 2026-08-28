@@ -43,6 +43,13 @@
       "when": 1787922725059,
       "tag": "0005_big_logan",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787925534762,
+      "tag": "0006_regular_ulik",
+      "breakpoints": true
     }
   ]
 }

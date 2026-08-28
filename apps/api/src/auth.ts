@@ -1,10 +1,18 @@
 import type { LumiAuth } from "@lumi/auth";
-import { ensureUser, type AuthenticatedUser, type LumiDb } from "@lumi/db";
+import {
+  beginRequestTransaction,
+  ensureUser,
+  setRequestDb,
+  type AuthenticatedUser,
+  type LumiDb,
+  type RequestDbTransaction,
+} from "@lumi/db";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
 declare module "fastify" {
   interface FastifyRequest {
     user?: AuthenticatedUser;
+    dbTransaction?: RequestDbTransaction;
   }
 }
 
@@ -45,8 +53,27 @@ export const registerAuth = (app: FastifyInstance, db: LumiDb, resolveSession: S
     const authUser = await resolveSession(headers);
     if (!authUser) throw new HttpError(401, "unauthorized", "Invalid auth session");
 
-    request.user = await ensureUser(db, authUser);
+    const transaction = await beginRequestTransaction(db, authUser.authUserId);
+    request.dbTransaction = transaction;
+    setRequestDb(transaction.db);
+    try {
+      request.user = await ensureUser(transaction.db, authUser);
+      await transaction.setUserId(request.user.id);
+    } catch (error) {
+      await transaction.finish(false);
+      request.dbTransaction = undefined;
+      throw error;
+    }
   });
+
+  app.addHook("onError", async (request) => { await finishRequestTransaction(request, false); });
+  app.addHook("onResponse", async (request) => { await finishRequestTransaction(request, true); });
+};
+
+export const finishRequestTransaction = async (request: FastifyRequest, commit: boolean) => {
+  const transaction = request.dbTransaction;
+  request.dbTransaction = undefined;
+  await transaction?.finish(commit);
 };
 
 declare module "fastify" {
