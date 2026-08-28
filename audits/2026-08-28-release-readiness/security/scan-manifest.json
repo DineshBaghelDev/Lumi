@@ -1,0 +1,42 @@
+{
+  "documentType": "codex-security.scan-manifest",
+  "scan": {
+    "artifacts": [
+      {
+        "mediaType": "application/json",
+        "path": "findings.json",
+        "sha256": "f90c225185a4fe8139240aaa0c59e12a7306f1487dd84aacf1150d02cd3d6628"
+      },
+      {
+        "mediaType": "application/json",
+        "path": "coverage.json",
+        "sha256": "dc34302afbcbf9607c14e79f0b739210216bbc6e8be208d9ac25972cffa45008"
+      }
+    ],
+    "completedAt": "2026-08-27T18:34:54Z",
+    "coverageRef": "coverage.json",
+    "findingsRef": "findings.json",
+    "id": "scan_lumi_20260828",
+    "producer": {
+      "name": "codex-security-plugin",
+      "version": "0.1.22"
+    },
+    "scope": {
+      "excludePaths": [],
+      "includePaths": [
+        "."
+      ]
+    },
+    "sealedAt": "2026-08-27T18:34:54Z",
+    "startedAt": "2026-08-27T17:30:00Z",
+    "status": "completed",
+    "target": {
+      "displayName": "Lumi",
+      "kind": "git_worktree",
+      "revision": "cc4ba18532bc9653f182d502a0217a260d58c5b0",
+      "snapshotDigest": "codex-security-snapshot/v1:sha256:d86928477681a786f7c2751e605ab9aaaa5423b84fc710d25da8386aa9d4a728",
+      "targetId": "lumi-cc4ba18"
+    }
+  },
+  "schemaVersion": "1.0"
+}

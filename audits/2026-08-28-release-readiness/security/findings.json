@@ -1,0 +1,246 @@
+{
+  "documentType": "codex-security.findings",
+  "findings": [
+    {
+      "attackPath": null,
+      "confidence": {
+        "level": "high",
+        "rationale": "Source trace was confirmed with the Node URL implementation used by the runtime."
+      },
+      "extensions": {},
+      "findingId": "csf_2ee404fd7d63795154fa5532",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:bb51276476402f5cb7dfd89267c1101ad473f5a9320824135f9c8ec221e7d07b"
+      },
+      "identity": {
+        "anchor": "web-api-proxy-untrusted-url"
+      },
+      "locations": [
+        {
+          "endLine": 58,
+          "path": "apps/web/src/app/api/proxy/[...path]/route.ts",
+          "role": "source-and-sink",
+          "startLine": 11
+        }
+      ],
+      "occurrenceId": "occ_0f3b2dcc78edb637279c6fc1",
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Require an authenticated request where needed, reject absolute and scheme-relative inputs, construct only a leading-slash path under the configured API origin, and enforce timeout and response-size limits.",
+      "ruleId": "ssrf.web-proxy-origin-override",
+      "severity": {
+        "level": "high",
+        "rationale": "Remote attackers can make the server fetch arbitrary origins; authenticated requests can disclose bearer tokens.",
+        "score": 8.1,
+        "scoringSystem": "CVSS:3.1"
+      },
+      "summary": "An unauthenticated path controls the URL passed to fetch; a URL such as https:/attacker overrides the configured API origin, and an available session token is forwarded as Authorization.",
+      "taxonomy": {
+        "category": "ssrf",
+        "cwe": [
+          "CWE-918",
+          "CWE-200"
+        ]
+      },
+      "title": "Catch-all web proxy permits external requests and bearer-token disclosure",
+      "validation": null
+    },
+    {
+      "attackPath": null,
+      "confidence": {
+        "level": "high",
+        "rationale": "The adjacent read route validates thread ownership, while the write route directly inserts the supplied UUID."
+      },
+      "extensions": {},
+      "findingId": "csf_05f3f640b94deec8e885834e",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:7c6e9eb4bcfdda1fa0118fb1986fa058e960c7b1ffe510ff583a5f42fb9ced25"
+      },
+      "identity": {
+        "anchor": "chat-post-unverified-thread-id"
+      },
+      "locations": [
+        {
+          "endLine": 815,
+          "path": "apps/api/src/app.ts",
+          "role": "authorization-boundary",
+          "startLine": 788
+        }
+      ],
+      "occurrenceId": "occ_ce4592c752f7b647528af3c3",
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Before using a supplied threadId, require a matching chat_threads row for the authenticated user, route course, and optional lesson.",
+      "ruleId": "authorization.chat-thread-idor",
+      "severity": {
+        "level": "medium",
+        "rationale": "Exploitation requires a thread UUID but crosses tenant ownership and corrupts another conversation.",
+        "score": 6.5,
+        "scoringSystem": "CVSS:3.1"
+      },
+      "summary": "A user authorized for one course can supply any UUID as threadId and insert messages into that thread because the POST route does not bind it to the requesting user and course.",
+      "taxonomy": {
+        "category": "broken-access-control",
+        "cwe": [
+          "CWE-639"
+        ]
+      },
+      "title": "Chat endpoint accepts a thread ID without ownership validation",
+      "validation": null
+    },
+    {
+      "attackPath": null,
+      "confidence": {
+        "level": "high",
+        "rationale": "Repository-wide call-site search found configuration declarations but no production enforcement; live usage counters remained zero despite recorded LLM calls."
+      },
+      "extensions": {},
+      "findingId": "csf_c2f6597a3778ff34c23554b7",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:78b324df42574a653593b509569f7a13c41fdc391af8d0905d381450945d84d6"
+      },
+      "identity": {
+        "anchor": "generation-and-user-quotas-dead-config"
+      },
+      "locations": [
+        {
+          "endLine": 34,
+          "path": "packages/config/src/index.ts",
+          "role": "configured-policy",
+          "startLine": 26
+        },
+        {
+          "endLine": 205,
+          "path": "apps/api/src/app.ts",
+          "role": "unenforced-entry-point",
+          "startLine": 143
+        }
+      ],
+      "occurrenceId": "occ_7129c6e2fa3cd28399f7d04e",
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Enforce the existing limits transactionally at course creation and before every paid provider call; atomically update usage in the same operation.",
+      "ruleId": "resource-control.configured-limits-not-enforced",
+      "severity": {
+        "level": "high",
+        "rationale": "Any authenticated account can repeatedly create work and invoke paid generation or grading paths, creating denial-of-wallet risk.",
+        "score": 7.5,
+        "scoringSystem": "CVSS:3.1"
+      },
+      "summary": "Maximum LLM calls, LLM cost, active courses, and creation-rate settings are parsed but are not checked on course creation or LLM invocation paths.",
+      "taxonomy": {
+        "category": "resource-consumption",
+        "cwe": [
+          "CWE-770",
+          "CWE-799"
+        ]
+      },
+      "title": "Configured cost and user limits are not enforced",
+      "validation": null
+    },
+    {
+      "attackPath": null,
+      "confidence": {
+        "level": "medium",
+        "rationale": "The source gap is direct; practical impact depends on Crawl4AI redirect and network-isolation settings not present in this repository."
+      },
+      "extensions": {},
+      "findingId": "csf_386af1f5d37af1dbb52d9605",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:d7f5dafb54821a06efc1a5186a64b823d5f3d5c60e8bcbec8f56c1bc958320b6"
+      },
+      "identity": {
+        "anchor": "research-validates-before-separate-crawler-fetch"
+      },
+      "locations": [
+        {
+          "endLine": 125,
+          "path": "apps/worker/src/research.ts",
+          "role": "validation-fetch-gap",
+          "startLine": 98
+        }
+      ],
+      "occurrenceId": "occ_adbdac4243b7b9b4c1e15ea7",
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Perform the allowlist and IP checks in the component that opens the socket, revalidate every redirect/final URL, pin the resolved address, and cap redirects and discovered resources.",
+      "ruleId": "ssrf.research-redirect-dns-rebinding",
+      "severity": {
+        "level": "high",
+        "rationale": "Attacker-controlled search results or redirects can target internal services reachable from the crawler network.",
+        "score": 7.4,
+        "scoringSystem": "CVSS:3.1"
+      },
+      "summary": "The worker validates DNS for the initial search URL and then asks a separate crawler service to fetch it; redirect targets and the crawler's resolved address are not revalidated.",
+      "taxonomy": {
+        "category": "ssrf",
+        "cwe": [
+          "CWE-918"
+        ]
+      },
+      "title": "Research URL validation is not bound to the crawler request",
+      "validation": null
+    },
+    {
+      "attackPath": null,
+      "confidence": {
+        "level": "high",
+        "rationale": "Both the unused detection flag and raw system-prompt concatenation are directly visible in source."
+      },
+      "extensions": {},
+      "findingId": "csf_0dd1513bd68f20d55dc9fc68",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:5b1d5f75b618037ae89c8924f1de57270e98f10809315d4c8c068c7fde1f0359"
+      },
+      "identity": {
+        "anchor": "raw-research-in-system-prompt"
+      },
+      "locations": [
+        {
+          "endLine": 498,
+          "path": "apps/worker/src/research.ts",
+          "role": "detection-without-enforcement",
+          "startLine": 491
+        },
+        {
+          "endLine": 845,
+          "path": "apps/api/src/app.ts",
+          "role": "prompt-sink",
+          "startLine": 817
+        }
+      ],
+      "occurrenceId": "occ_e8733a8119831bfa2c32d181",
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Exclude or quarantine flagged chunks, keep retrieved text in a clearly delimited untrusted-data channel, and require citations to resolve only to retrieved source identifiers.",
+      "ruleId": "llm.prompt-injection-untrusted-research",
+      "severity": {
+        "level": "medium",
+        "rationale": "A malicious or compromised source can manipulate assistant behavior and source attribution for users of the affected course.",
+        "score": 6.4,
+        "scoringSystem": "CVSS:3.1"
+      },
+      "summary": "Research persistence records whether crawled text contains injection-like content but does not quarantine it; retrieved chunks are concatenated directly into the chat system message.",
+      "taxonomy": {
+        "category": "prompt-injection",
+        "cwe": [
+          "CWE-74"
+        ]
+      },
+      "title": "Detected prompt injection content is still elevated into the system prompt",
+      "validation": null
+    }
+  ],
+  "scanId": "scan_lumi_20260828",
+  "schemaVersion": "1.0"
+}

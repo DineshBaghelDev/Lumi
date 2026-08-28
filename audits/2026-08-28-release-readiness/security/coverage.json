@@ -1,0 +1,55 @@
+{
+  "completeness": "partial",
+  "deferred": [
+    {
+      "id": "deferred_non_security_files",
+      "paths": [
+        "."
+      ],
+      "reason": "Non-security business logic and generated output directories were not exhaustively line-reviewed.",
+      "surfaceIds": []
+    }
+  ],
+  "documentType": "codex-security.coverage",
+  "excludePaths": [],
+  "explicitExclusions": [],
+  "includePaths": [
+    "."
+  ],
+  "inventoryStrategy": "repository",
+  "mode": "repository",
+  "scanId": "scan_lumi_20260828",
+  "schemaVersion": "1.0",
+  "surfaces": [
+    {
+      "disposition": "reported",
+      "id": "surface_auth_and_api",
+      "label": "Authentication and API authorization",
+      "receiptRefs": []
+    },
+    {
+      "disposition": "reported",
+      "id": "surface_web_proxy",
+      "label": "Web API proxy",
+      "receiptRefs": []
+    },
+    {
+      "disposition": "reported",
+      "id": "surface_research_ingestion",
+      "label": "Research URL ingestion and prompt trust",
+      "receiptRefs": []
+    },
+    {
+      "disposition": "reported",
+      "id": "surface_generation_limits",
+      "label": "Generation and user quotas",
+      "receiptRefs": []
+    },
+    {
+      "disposition": "needs_follow_up",
+      "id": "surface_database",
+      "label": "Database access controls",
+      "receiptRefs": []
+    }
+  ]
+}
