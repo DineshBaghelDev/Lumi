@@ -9,6 +9,11 @@ psql --set=ON_ERROR_STOP=1 \
   --dbname "$POSTGRES_DB" <<'SQL'
 CREATE EXTENSION IF NOT EXISTS vector;
 
+-- Migrator role (superuser for drizzle migrations)
+SELECT format('CREATE ROLE lumi_migrator LOGIN SUPERUSER PASSWORD %L', '$POSTGRES_PASSWORD')
+WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'lumi_migrator')\gexec
+ALTER ROLE lumi_migrator PASSWORD '$POSTGRES_PASSWORD';
+
 SELECT format('CREATE ROLE lumi_auth LOGIN PASSWORD %L', :'auth_password')
 WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'lumi_auth')\gexec
 SELECT format('CREATE ROLE lumi_api LOGIN PASSWORD %L', :'api_password')

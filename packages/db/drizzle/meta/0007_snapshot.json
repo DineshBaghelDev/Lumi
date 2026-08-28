@@ -1,0 +1,12 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "id": "0007_rls",
+  "prevId": "0006_regular_ulik",
+  "tables": {},
+  "enums": {},
+  "schemas": {},
+  "extensions": {},
+  "_relations": {},
+  "views": {}
+}

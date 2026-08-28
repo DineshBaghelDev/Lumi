@@ -50,6 +50,13 @@
       "when": 1787925534762,
       "tag": "0006_regular_ulik",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787930000000,
+      "tag": "0007_rls",
+      "breakpoints": true
     }
   ]
 }
