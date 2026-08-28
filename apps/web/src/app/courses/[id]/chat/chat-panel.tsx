@@ -15,7 +15,7 @@ type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
-  citations?: Citation[];
+  citations?: (string | Citation)[];
   model?: string | null;
 };
 
@@ -46,13 +46,41 @@ export function ChatPanel({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const resolveCitations = useCallback(async (rawMessages: Message[]): Promise<Message[]> => {
+    const allChunkIds = rawMessages
+      .flatMap((msg) => msg.citations ?? [])
+      .filter((cit): cit is string => typeof cit === "string");
+    const uniqueChunkIds = [...new Set(allChunkIds)].filter((id) => typeof id === "string" && id.length > 0);
+    if (uniqueChunkIds.length === 0) return rawMessages;
+
+    try {
+      const citRes = await fetch(`/api/proxy/courses/${courseId}/citations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chunkIds: uniqueChunkIds }),
+      });
+      if (!citRes.ok) return rawMessages;
+      const { citations } = await citRes.json() as { citations: Citation[] };
+      const citationMap = new Map(citations.map((c) => [c.chunkId, c]));
+      return rawMessages.map((msg) => {
+        if (!msg.citations || msg.citations.length === 0) return msg;
+        const resolved = msg.citations
+          .map((cit) => (typeof cit === "string" ? citationMap.get(cit) : cit))
+          .filter((c): c is Citation => c != null);
+        return resolved.length > 0 ? { ...msg, citations: resolved } : msg;
+      });
+    } catch {
+      return rawMessages;
+    }
+  }, [courseId]);
+
   const loadThread = useCallback(async (tid: string) => {
     setThreadId(tid);
     const res = await fetch(`/api/proxy/courses/${courseId}/threads/${tid}/messages`);
     if (!res.ok) return;
     const data = await res.json() as { messages: Message[] };
-    setMessages(data.messages);
-  }, [courseId]);
+    setMessages(await resolveCitations(data.messages));
+  }, [courseId, resolveCitations]);
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
@@ -143,24 +171,7 @@ export function ChatPanel({
         }
       }
 
-      // Resolve citations if any
-      if (assistantContent) {
-        const citationMatch = assistantContent.match(/\[Source\s+(\d+)\]/g);
-        if (citationMatch) {
-          try {
-            const citRes = await fetch(`/api/proxy/courses/${courseId}/citations`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                chunkIds: [], // Server extracts from content
-              }),
-            });
-            // Citations are resolved server-side
-          } catch {
-            // non-critical
-          }
-        }
-      }
+
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -218,7 +229,7 @@ export function ChatPanel({
             <div className="chat-bubble-content">{msg.content}</div>
             {msg.citations && msg.citations.length > 0 ? (
               <div className="chat-citations">
-                {msg.citations.map((cit) => (
+                {msg.citations.map((cit) => (typeof cit === "string" ? null : (
                   <a
                     className="citation-chip"
                     href={cit.sourceUrl}
@@ -228,7 +239,7 @@ export function ChatPanel({
                   >
                     {cit.sourceTitle ?? cit.heading ?? "Source"}
                   </a>
-                ))}
+                )))}
               </div>
             ) : null}
           </div>

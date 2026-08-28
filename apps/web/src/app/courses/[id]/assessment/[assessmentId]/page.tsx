@@ -42,7 +42,7 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
         <div className="page-title">
           <h1>{assessment.title}</h1>
         </div>
-        <CourseTabs active="Assessments" courseId={id} />
+        <CourseTabs active="Lessons" courseId={id} />
         <EmptyNotice
           title={failed ? "Assessment failed" : "Assessment preparing"}
           body={failed
@@ -69,7 +69,7 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
         <h1>{assessment.title}</h1>
         <p>{questions.length} questions. Multiple choice checks are instant; everything else is graded at the end.</p>
       </div>
-      <CourseTabs active="Assessments" courseId={id} />
+      <CourseTabs active="Lessons" courseId={id} />
       <AssessmentRunner
         assessmentId={assessment.id}
         courseId={id}

@@ -326,10 +326,12 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
       : [];
     const lessons = curriculum
       ? (await db.execute(sql`
-        select l.*, m.order_index as module_order_index, a.id as assessment_id, a.status as assessment_status
+        select l.*, m.order_index as module_order_index, a.id as assessment_id, a.status as assessment_status,
+               lp.status as learner_status
         from lessons l
         join modules m on m.id = l.module_id
         left join assessments a on a.lesson_id = l.id
+        left join lesson_progress lp on lp.lesson_id = l.id and lp.user_id = ${user.id}
         where m.curriculum_id = ${(curriculum as { id: string }).id}
         order by m.order_index, l.order_index
       `)).rows

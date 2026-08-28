@@ -130,7 +130,10 @@ export async function submitAssessmentAnswers(
 ): Promise<{ attempt: { id: string | null; score: number }; results: SubmittedResult[] } | null> {
   const response = await apiFetch(`/assessments/${assessmentId}/submissions`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "idempotency-key": randomUUID(),
+    },
     body: JSON.stringify({ answers }),
   });
   if (!response.ok) return null;

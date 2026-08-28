@@ -78,25 +78,31 @@ async function proxyRequest(request: NextRequest, path: string) {
     const hasBody = request.method !== "GET" && request.method !== "HEAD";
     const body = hasBody ? await request.text() : null;
 
-    const signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+    // Use an AbortController so we can cancel the timeout after initial connection.
+    // This ensures the 15s timeout only covers the initial fetch handshake, not body streaming.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     const apiResponse = await fetch(apiUrl, {
       method: request.method,
       headers,
       body,
       // Don't follow redirects for streaming
       redirect: "manual",
-      signal,
+      signal: controller.signal,
     });
 
     // Check if this is a streaming response (SSE)
     const contentType = apiResponse.headers.get("content-type") ?? "";
     const declaredLength = Number(apiResponse.headers.get("content-length") ?? 0);
     if (declaredLength > MAX_RESPONSE_BYTES) {
+      clearTimeout(timeout);
       return NextResponse.json({ error: "API response too large" }, { status: 502 });
     }
 
     if (contentType.includes("text/event-stream")) {
-      // Stream the response directly
+      // Cancel the connection timeout now that headers are received;
+      // let the body stream run without a time limit.
+      clearTimeout(timeout);
       const readable = apiResponse.body;
       if (!readable) {
         return new NextResponse("No response body", { status: 500 });
@@ -110,6 +116,8 @@ async function proxyRequest(request: NextRequest, path: string) {
         },
       });
     }
+
+    clearTimeout(timeout);
 
     // Regular JSON response
     const responseBody = await readBoundedText(apiResponse);

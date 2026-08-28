@@ -30,7 +30,7 @@ export default async function CoursesPage() {
 
       if (curriculumResponse.ok) {
         const body = await curriculumResponse.json() as {
-          lessons?: Array<{ id: string; status: string; is_required?: boolean; assessment_id?: string | null; assessment_status?: string | null }>;
+          lessons?: Array<{ id: string; status: string; learner_status?: string | null; is_required?: boolean; assessment_id?: string | null; assessment_status?: string | null }>;
           projects?: Array<{ status: string }>;
         };
         lessons = body.lessons ?? [];
