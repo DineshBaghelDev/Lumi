@@ -9,14 +9,40 @@ Prisma, role, ownership, or RLS changes to it. Never use `docker compose down
 ## Rehearsal
 
 1. Start Docker Desktop and confirm `docker version` succeeds.
-2. Generate a read-only baseline with the T01 exporter.
-3. Build and start the local stack with health gates.
+2. Generate a read-only baseline with the T01 exporter:
+   ```bash
+   node scripts/migration/export-insforge.mjs
+   ```
+3. Build and start the local stack with disposable test volumes:
+   ```bash
+   docker compose -f compose.yaml -f compose.test.yml up -d --build
+   docker compose -f compose.yaml -f compose.test.yml ps
+   ```
 4. Apply local migrations with the migrator role.
-5. Import identities and allowlisted application rows.
+5. Import identities and allowlisted application rows:
+   ```bash
+   pnpm migration:identities -- <archive-directory>
+   pnpm migration:application -- <archive-directory>
+   ```
 6. Reconcile counts, hashes, FKs, owners, vectors, and retrieval samples.
-7. Run T17 and T18 gates.
-8. Restore PostgreSQL and MinIO backups into a separate Compose project and
-   repeat reconciliation.
+7. Run T17 integration gates:
+   ```bash
+   TEST_DATABASE_URL=postgresql://lumi_migrator:test-migrator-pw@127.0.0.1:5432/lumi \
+     node scripts/infra/health-gate.mjs
+   TEST_DATABASE_URL=postgresql://lumi_migrator:test-migrator-pw@127.0.0.1:5432/lumi \
+     node scripts/infra/pgvector-gate.mjs
+   ```
+8. Run T18 real authenticated E2E (requires web+api+postgres+minio running):
+   ```bash
+   npx playwright test apps/web/e2e/local-journey.spec.ts
+   ```
+9. Back up and restore into separate volumes, then reconcile:
+   ```bash
+   bash scripts/infra/backup.sh
+   bash scripts/infra/restore.sh backups/local-<timestamp>
+   TEST_DATABASE_URL=postgresql://lumi_migrator:test-migrator-pw@127.0.0.1:5432/lumi \
+     node scripts/infra/reconcile-gate.mjs
+   ```
 
 ## Final cutover
 

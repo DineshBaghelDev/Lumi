@@ -1,0 +1,43 @@
+# T17 — Compose overlay for integration gates.
+# Disposable volumes so working data is never touched.
+# Usage:
+#   docker compose -f compose.yaml -f compose.test.yml up -d --build
+#   docker compose -f compose.yaml -f compose.test.yml down -v
+
+services:
+  postgres:
+    volumes:
+      - test-db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: "test-migrator-pw"
+      LUMI_AUTH_DB_PASSWORD: "test-auth-pw"
+      LUMI_API_DB_PASSWORD: "test-api-pw"
+      LUMI_WORKER_DB_PASSWORD: "test-worker-pw"
+
+  minio:
+    volumes:
+      - test-minio-data:/data
+    environment:
+      MINIO_ROOT_PASSWORD: "test-minio-pw"
+
+  litellm:
+    volumes: []
+
+  litellm-db:
+    volumes:
+      - test-litellm-db-data:/var/lib/postgresql/data
+
+  searxng:
+    volumes: []
+
+  crawl4ai: {}
+  tei: {}
+  mc: {}
+  web: {}
+  api: {}
+  worker: {}
+
+volumes:
+  test-db-data:
+  test-minio-data:
+  test-litellm-db-data:

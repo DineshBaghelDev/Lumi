@@ -41,7 +41,9 @@ shared application package used by web and API, not a standalone container.
 | T14 | done | this ticket commit |
 | T15 | done | this ticket commit |
 | T16 | done | this ticket commit |
-| T17-T19 | ready | — |
+| T17 | done | this ticket commit |
+| T18 | done | this ticket commit |
+| T19 | done | this ticket commit |
 
 Use `tickets/README.md` for ordering and dependencies. Operational cutover and
 rollback commands belong in `RUNBOOK.md`; generated evidence belongs under the

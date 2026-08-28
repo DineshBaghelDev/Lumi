@@ -13,4 +13,4 @@ rollback boundary and retain source export/tag for 14 days.
 Acceptance: clean restore and all release gates pass; publish explicit GO/NO-GO.
 Commit: `ops: rehearse local infrastructure cutover`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=`bash scripts/infra/backup.sh`, `bash scripts/infra/restore.sh <dir>`, `node scripts/infra/reconcile-gate.mjs`; risks=Restore requires empty database; MinIO mirror depends on `mc` CLI or Docker.

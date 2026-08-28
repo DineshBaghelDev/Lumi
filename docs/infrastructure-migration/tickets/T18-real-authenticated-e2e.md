@@ -13,4 +13,4 @@ denial. Keep Google/live-provider smoke non-blocking and separately reported.
 Acceptance: deterministic full journey passes against Compose with real state
 assertions. Commit: `test(e2e): verify local authenticated journey`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=`npx playwright test apps/web/e2e/local-journey.spec.ts`; risks=Requires full local stack running; Google OAuth smoke is non-blocking.

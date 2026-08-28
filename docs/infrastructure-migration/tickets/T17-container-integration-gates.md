@@ -12,4 +12,4 @@ startup against disposable volumes.
 Acceptance: every gate is runnable by one documented command and leaves working
 volumes untouched. Commit: `test(infra): add local stack integration gates`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=`node scripts/infra/health-gate.mjs`, `node scripts/infra/pgvector-gate.mjs`; risks=Docker Desktop must be running for service checks.
