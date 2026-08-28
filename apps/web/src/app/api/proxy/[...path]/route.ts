@@ -1,6 +1,6 @@
 import { DEFAULT_ACCESS_TOKEN_COOKIE } from "@insforge/sdk/ssr";
-import { cookies } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers.js";
+import { type NextRequest, NextResponse } from "next/server.js";
 
 const getApiBaseUrl = () => {
   const value = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -8,7 +8,62 @@ const getApiBaseUrl = () => {
   return value;
 };
 
+const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
+const REQUEST_TIMEOUT_MS = 15_000;
+
+export const buildApiUrl = (path: string) => {
+  let decodedPath: string;
+  try {
+    decodedPath = decodeURIComponent(path);
+  } catch {
+    throw new Error("Invalid proxy path");
+  }
+
+  const segments = decodedPath.split("/");
+  if (
+    !decodedPath ||
+    decodedPath.includes("\\") ||
+    decodedPath.includes(":") ||
+    decodedPath.startsWith("//") ||
+    segments.some((segment) => segment === "." || segment === "..")
+  ) {
+    throw new Error("Invalid proxy path");
+  }
+
+  const base = new URL(getApiBaseUrl());
+  const url = new URL(`/${path.replace(/^\/+/, "")}`, base);
+  if (url.origin !== base.origin) throw new Error("Invalid proxy origin");
+  return url;
+};
+
+export const readBoundedText = async (response: Response, maxBytes = MAX_RESPONSE_BYTES) => {
+  const declaredLength = Number(response.headers.get("content-length") ?? 0);
+  if (declaredLength > maxBytes) throw new Error("API response too large");
+
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > maxBytes) throw new Error("API response too large");
+    chunks.push(value);
+  }
+
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(body);
+};
+
 async function proxyRequest(request: NextRequest, path: string) {
+  const apiUrl = buildApiUrl(path);
   const token = (await cookies()).get(DEFAULT_ACCESS_TOKEN_COOKIE)?.value;
   const headers = new Headers();
   if (token) headers.set("authorization", `Bearer ${token}`);
@@ -24,16 +79,23 @@ async function proxyRequest(request: NextRequest, path: string) {
     const hasBody = request.method !== "GET" && request.method !== "HEAD";
     const body = hasBody ? await request.text() : null;
 
-    const apiResponse = await fetch(new URL(path, getApiBaseUrl()), {
+    const signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+    const apiResponse = await fetch(apiUrl, {
       method: request.method,
       headers,
       body,
       // Don't follow redirects for streaming
       redirect: "manual",
+      signal,
     });
 
     // Check if this is a streaming response (SSE)
     const contentType = apiResponse.headers.get("content-type") ?? "";
+    const declaredLength = Number(apiResponse.headers.get("content-length") ?? 0);
+    if (declaredLength > MAX_RESPONSE_BYTES) {
+      return NextResponse.json({ error: "API response too large" }, { status: 502 });
+    }
+
     if (contentType.includes("text/event-stream")) {
       // Stream the response directly
       const readable = apiResponse.body;
@@ -51,7 +113,7 @@ async function proxyRequest(request: NextRequest, path: string) {
     }
 
     // Regular JSON response
-    const responseBody = await apiResponse.text();
+    const responseBody = await readBoundedText(apiResponse);
     return new NextResponse(responseBody, {
       status: apiResponse.status,
       headers: {

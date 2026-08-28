@@ -13,6 +13,8 @@ const requiredEnv = (name: string) => {
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
 
+  if (process.env.LUMI_E2E_SKIP_AUTH === "1") return response;
+
   await updateSession({
     requestCookies: request.cookies,
     responseCookies: response.cookies,
