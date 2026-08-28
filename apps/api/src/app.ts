@@ -431,7 +431,6 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     if (!user) throw new HttpError(401, "unauthorized", "Missing user");
     const { id } = parse(paramsWithId, request.params);
     const body = parse(submitAnswersBody, request.body);
-    const idempotencyKey = idempotencyKeyHeader(request.headers["idempotency-key"]);
 
     const questions = (await db.execute<{
       id: string;
@@ -455,6 +454,7 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     if (!(await canAccessCourse(db, user.id, questions[0]!.course_id))) {
       throw new HttpError(404, "not_found", "This assessment has no questions yet");
     }
+    const idempotencyKey = idempotencyKeyHeader(request.headers["idempotency-key"]);
 
     const contents = questions.map((question) => {
       const parsed = storedQuestionContentSchema.safeParse(question.content);
@@ -822,7 +822,6 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     if (!user) throw new HttpError(401, "unauthorized", "Missing user");
     const { id } = parse(paramsWithId, request.params);
     if (!(await canAccessCourse(db, user.id, id))) throw new HttpError(404, "not_found", "Course not found");
-    await assertCourseLlmBudget(db, id);
     const body = parse(z.object({
       message: z.string().trim().min(1).max(4_000),
       threadId: z.uuid().optional(),
@@ -855,6 +854,7 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
 
     // Embed query for RAG retrieval
     const chunks = await embedAndRetrieve(db, config, id, body.message, body.lessonId);
+    await assertCourseLlmBudget(db, id);
 
     const systemPrompt = buildChatSystemPrompt(chunks);
 
@@ -1131,7 +1131,7 @@ const assertCourseLlmBudget = async (db: LumiDb, courseId: string) => {
     from course_generation_usage
     where course_id = ${courseId}
   `)).rows[0];
-  if (!usage) return;
+  if (!usage || !usage.limits) return;
   if (usage.budget_exhausted_at) throw new HttpError(409, "budget_exhausted", "Course budget is exhausted");
   if (usage.llm_calls_count >= usage.limits.maxLlmCalls) {
     await markBudgetExhausted(db, courseId, "max_llm_calls");
