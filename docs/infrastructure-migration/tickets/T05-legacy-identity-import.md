@@ -14,4 +14,5 @@ Acceptance: fixtures prove stable mapping, token exclusion, duplicate rejection,
 orphan reporting, and guarded activation. Commit:
 `feat(migration): import legacy identities safely`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=identity import tests,
+auth typecheck/build; risks=requires a fresh local target and a T01 archive.

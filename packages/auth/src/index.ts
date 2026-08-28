@@ -22,6 +22,7 @@ export const createLumiAuth = (config: AuthConfig, db: LumiDb = createDbClient({
         clientSecret: config.google.clientSecret,
       },
     },
+    account: { accountLinking: { disableImplicitLinking: true } },
     session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
     advanced: {
       cookiePrefix: "lumi",

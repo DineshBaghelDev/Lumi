@@ -17,5 +17,5 @@ test("creates the shared Better Auth handler without runtime migration", async (
   }, db);
   assert.equal(typeof auth.handler, "function");
   assert.equal(typeof auth.api.getSession, "function");
-  await db.$client.end();
+  await (db as unknown as { $client: { end(): Promise<void> } }).$client.end();
 });
