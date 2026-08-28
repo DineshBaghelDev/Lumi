@@ -89,13 +89,13 @@ services:
     volumes:
       - litellm-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d litellm"]
+      test: ["CMD-SHELL", "pg_isready -U ${LITELLM_DB_USER} -d litellm"]
       interval: 5s
       timeout: 5s
       retries: 12
 
   minio:
-    image: docker.io/minio/minio:RELEASE.2025-07-18T22-57-05Z
+    image: docker.io/minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: "${MINIO_ROOT_USER:-lumi_minio_admin}"

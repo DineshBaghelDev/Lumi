@@ -1572,7 +1572,7 @@ figure figcaption {
 
 .auth-card {
   max-width: 620px;
-  padding: var(--space-16);
+  padding: var(--space-12);
   text-align: center;
   box-shadow: var(--shadow);
 }
@@ -1583,18 +1583,42 @@ figure figcaption {
 
 .auth-button {
   width: 100%;
-  margin-top: var(--space-8);
+  margin-top: var(--space-5);
 }
 
 .auth-form {
   display: grid;
   gap: var(--space-2);
-  margin-top: var(--space-8);
+  margin-top: var(--space-6);
   text-align: left;
 }
 
+.auth-form label {
+  margin-top: var(--space-2);
+  color: var(--ink);
+  font-size: var(--small-size);
+  font-weight: 700;
+  line-height: var(--small-line);
+}
+
+.auth-form input {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-3);
+  color: var(--ink);
+  background: var(--surface-raised);
+}
+
+.auth-form input:focus {
+  border-color: var(--brand);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(99 102 241 / 0.14);
+}
+
 .auth-sign-up {
-  margin-top: var(--space-8);
+  margin-top: var(--space-6);
   text-align: left;
 }
 
@@ -1744,7 +1768,8 @@ figure figcaption {
   }
 
   .auth-page {
-    padding: var(--space-8) 20px;
+    gap: var(--space-8);
+    padding: var(--space-6) 20px;
   }
 
   .home-hero {
@@ -1780,17 +1805,17 @@ figure figcaption {
   }
 
   .auth-card {
-    padding: var(--space-8) var(--space-6);
+    padding: var(--space-8) var(--space-5);
   }
 
   .auth-copy h1 {
-    margin-top: var(--space-12);
-    font-size: var(--display-size);
-    line-height: var(--display-line);
+    margin-top: var(--space-6);
+    font-size: var(--h1-size);
+    line-height: var(--h1-line);
   }
 
   .auth-copy img {
-    margin-left: 0;
+    display: none;
   }
 }
 

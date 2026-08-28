@@ -4,7 +4,7 @@ import { authenticatedHomePath, authErrorRedirect } from "../../../../lib/auth-r
 
 export async function GET(request: NextRequest) {
   try {
-    return await getLumiAuth().api.signInSocial({
+    const response = await getLumiAuth().api.signInSocial({
       headers: request.headers,
       body: {
         provider: "google",
@@ -13,7 +13,18 @@ export async function GET(request: NextRequest) {
       },
       asResponse: true,
     });
-  } catch {
+
+    const redirectUrl = response.headers.get("location") ?? (await response.clone().json().catch(() => null))?.url;
+    if (redirectUrl) {
+      const redirect = NextResponse.redirect(redirectUrl);
+      const cookie = response.headers.get("set-cookie");
+      if (cookie) redirect.headers.set("set-cookie", cookie);
+      return redirect;
+    }
+
+    return response;
+  } catch (error) {
+    console.error("OAuth start failed:", error instanceof Error ? error.message : error);
     return NextResponse.redirect(authErrorRedirect(request.nextUrl.origin, "oauth_start_failed"));
   }
 }
