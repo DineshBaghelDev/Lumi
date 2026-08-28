@@ -177,7 +177,7 @@ No intent classifier or LLM reranker in V1.
 
 ## Realtime
 
-Web subscribes to relevant InsForge Realtime job/course changes and also polls every 5 seconds. Either mechanism may update the same TanStack Query cache.
+The web app refreshes server-rendered course state on a 5-second fallback while generation is active. InsForge Realtime and TanStack Query are available integration targets, but are not part of the current effective implementation.
 
 ## Observability
 

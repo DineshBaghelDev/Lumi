@@ -2,7 +2,7 @@
 
 Lumi is a source-grounded technical learning app. A learner gives it a topic and goal; Lumi researches trusted sources, builds a fixed curriculum, generates lessons, assessments, and guided projects in the background, then keeps progress, notes, bookmarks, and course-aware chat tied to that course.
 
-Current state: Milestone 2 is complete. The web app has Google OAuth, the API can create/read/cancel courses, the worker can claim jobs, and the research job persists source-backed concepts/chunks/assets before queuing curriculum generation.
+Current state as of 2026-08-28: V1 implementation is complete in-repo. The API, web app, and worker cover course creation, background generation, assessments, projects, progress, notes, bookmarks, and course chat. The worker now uses `WORKER_CONCURRENCY` by running that many polling slots in one process while still honoring the existing global and per-course claim limits. Release blockers remain operational rather than feature-completeness issues; see `context/progress-tracker.md` for the current verification caveats.
 
 ## Stack
 
@@ -82,4 +82,4 @@ Run the smallest relevant check while developing, then run the broader checks be
 
 ## Development Rules
 
-Use `context/progress-tracker.md` to see the current spec and completed work. Implement specs in numeric order unless an approved dependency change says otherwise. Product source of truth is `specs/`, then `docs/`, then `context/`, then existing code.
+Use `context/progress-tracker.md` to see the current release state, verification caveats, and completed work. Product source of truth is `specs/`, then `docs/`, then `context/`, then existing code.

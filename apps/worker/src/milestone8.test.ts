@@ -1,6 +1,14 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { claimOneJob, isRetryableError, PermanentJobError, retryDelaySeconds, RetryableJobError, runClaimedJob } from "./worker.ts";
+import {
+  claimOneJob,
+  isRetryableError,
+  PermanentJobError,
+  retryDelaySeconds,
+  RetryableJobError,
+  runClaimedJob,
+  runWorkerLoop,
+} from "./worker.ts";
 
 // ===== 082: Worker pipeline and job orchestration tests =====
 
@@ -231,6 +239,75 @@ test("claimOneJob returns null when no jobs available", async () => {
   }, "worker-1");
 
   assert.equal(result, null);
+});
+
+test("runWorkerLoop keeps claiming work until stopped", async () => {
+  const claimedIds = ["job-1", "job-2"];
+  const ranIds: string[] = [];
+  let stopLoop!: () => void;
+  const stop = new Promise<void>((resolve) => {
+    stopLoop = resolve;
+  });
+
+  await runWorkerLoop({
+    claimJob: async () => {
+      const id = claimedIds.shift();
+      return id
+        ? {
+            id,
+            course_id: "course-1",
+            type: "research" as const,
+            status: "running" as const,
+            progress: 0,
+            attempts: 1,
+            available_at: new Date(),
+            error: null,
+            locked_at: null,
+            locked_by: null,
+            created_at: new Date(),
+            updated_at: new Date(),
+            metadata: {},
+            lesson_id: null,
+            project_id: null,
+            assessment_id: null,
+          }
+        : null;
+    },
+    runJob: async (job) => {
+      ranIds.push(job.id);
+      if (ranIds.length === 2) stopLoop();
+    },
+    pollingIntervalMs: 1_000,
+    stop,
+  });
+
+  assert.deepEqual(ranIds, ["job-1", "job-2"]);
+});
+
+test("runWorkerLoop exits promptly while idle after stop", async () => {
+  let stopLoop!: () => void;
+  const stop = new Promise<void>((resolve) => {
+    stopLoop = resolve;
+  });
+  let claims = 0;
+
+  const loop = runWorkerLoop({
+    claimJob: async () => {
+      claims++;
+      return null;
+    },
+    runJob: async () => {
+      throw new Error("should not run");
+    },
+    pollingIntervalMs: 60_000,
+    stop,
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  stopLoop();
+  await loop;
+
+  assert.equal(claims, 1);
 });
 
 // ===== 083: Asset lifecycle tests =====

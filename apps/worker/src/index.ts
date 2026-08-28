@@ -7,7 +7,7 @@ import { createLessonHandler } from "./lesson.ts";
 import { createProjectHandler } from "./project.ts";
 import { createQuestionHandler } from "./question.ts";
 import { createResearchHandler } from "./research.ts";
-import { claimOneJob, runClaimedJob } from "./worker.ts";
+import { claimOneJob, runClaimedJob, runWorkerLoop } from "./worker.ts";
 
 try {
   loadEnvFile("../../.env");
@@ -26,12 +26,18 @@ const handlers = {
 };
 const workerId = `worker-${randomUUID()}`;
 let stopping = false;
+let resolveStop: (() => void) | null = null;
+const stop = new Promise<void>((resolve) => {
+  resolveStop = resolve;
+});
 
 process.once("SIGTERM", () => {
   stopping = true;
+  resolveStop?.();
 });
 process.once("SIGINT", () => {
   stopping = true;
+  resolveStop?.();
 });
 
 const serviceChecks = [
@@ -56,22 +62,20 @@ while (!stopping) {
   await new Promise((resolve) => setTimeout(resolve, 5_000));
 }
 
-while (!stopping) {
-  try {
-    const job = await claimOneJob(db, config, workerId);
-    if (job) {
-      await runClaimedJob(db, job, handlers, {
-        heartbeatIntervalMs: config.worker.heartbeatIntervalMs,
-        workerId,
+if (!stopping) {
+  await Promise.all(
+    Array.from({ length: config.worker.concurrency }, (_, index) => {
+      const slotWorkerId = `${workerId}-${index + 1}`;
+      return runWorkerLoop({
+        claimJob: () => claimOneJob(db, config, slotWorkerId),
+        runJob: (job) =>
+          runClaimedJob(db, job, handlers, {
+            heartbeatIntervalMs: config.worker.heartbeatIntervalMs,
+            workerId: slotWorkerId,
+          }),
+        pollingIntervalMs: config.worker.pollingIntervalMs,
+        stop,
       });
-      continue;
-    }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`[worker] polling cycle failed: ${message}`);
-  }
-
-  if (!stopping) {
-    await new Promise((resolve) => setTimeout(resolve, config.worker.pollingIntervalMs));
-  }
+    }),
+  );
 }

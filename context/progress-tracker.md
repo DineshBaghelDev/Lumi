@@ -8,6 +8,7 @@ Next spec: none (V1 complete)
 
 ## Current handoff
 
+- Release-readiness fix (2026-08-28): `apps/worker` now uses the configured `WORKER_CONCURRENCY` by running that many independent polling slots in one process, each with a stable worker-id suffix. DB-backed global limits and per-course lesson limits are unchanged; this only removes the single-await bottleneck in the process entrypoint.
 - Live end-to-end test (2026-08-26): course "PostgreSQL indexing" completed research → curriculum → 3/3 lessons `ready` with valid structured content. LiteLLM now routes `gpt-5.5` to Groq (`openai/gpt-oss-120b`) with OpenRouter as a named fallback deployment; OpenRouter balance cannot cover curriculum-sized requests (402).
 - LLM prompts must pin the exact JSON output shape. gpt-oss-120b guesses wrong shapes from prose-only prompts: curriculum returned a string `generationSummary`, lessons omitted `blocks`. Both prompts now embed exact skeletons, plus explicit citation rules because `sourceRefs` defaults to `[]` and omissions only fail later in QC.
 - Deterministic gates must be taught to the model: prerequisite QC requires the concept name verbatim or the phrase "previously covered"; the lesson prompt states this.
@@ -82,7 +83,7 @@ Next spec: none (V1 complete)
   - Handoff: progress, notes/bookmarks, chat, and `llm_calls` schema live in `@lumi/db`. `@lumi/llm` now exports `recordLlmCall`, a small SQL-hiding logging helper that fails loudly if observability persistence fails.
 - `013-fastify-foundation.md` through `023-worker-concurrency.md` — complete
   - Gate: DB-backed `milestone 1 gate` passes: `POST /courses` creates durable course, usage snapshot, owner enrollment, and queued research job; worker claim SQL locks that exact research job.
-  - Handoff: `apps/api` is a Fastify app with health, auth, course create/read/cancel/read-content stubs, safe error envelopes, and graceful close. `apps/worker` can claim queued/stale jobs, heartbeat, classify retryable errors, and enforce global/lesson-per-course claim limits. Research execution remains intentionally unimplemented for Milestone 2.
+  - Handoff: `apps/api` is a Fastify app with health, auth, course create/read/cancel/read-content stubs, safe error envelopes, and graceful close. `apps/worker` can claim queued/stale jobs, heartbeat, classify retryable errors, honor global/lesson-per-course claim limits, and as of 2026-08-28 actually fan out to the configured in-process concurrency instead of awaiting one job at a time.
 - `024-litellm-client.md` through `041-research-job-integration.md` — complete
   - Gate: DB-backed `milestone 2 gate` passes with the Redis-topic fixture: claimed research job persists concepts, source, chunks, source pack mappings, research asset metadata, and exactly one curriculum job. Blocked-source and budget-stop fixtures pass.
   - Handoff: `@lumi/llm` exports a typed LiteLLM chat client for normal, structured, and stream-shaped calls plus existing call tracking. `apps/worker` now owns SearXNG, Crawl4AI, and TEI clients, centralized research URL/SSRF guards, sanitization/chunking, deterministic source ranking/protection, Redis-topic concept planning, idempotent research persistence, and the registered `research` job handler. Storage writes are represented by deterministic storage paths/asset rows; real InsForge object upload remains the next hardening point when asset byte tests are expanded.
@@ -135,13 +136,13 @@ Next spec: none (V1 complete)
   - Handoff: Asset lifecycle tests for source_image and generated_image types with correct provenance fields.
 - `084-rag-chat-tests.md` — complete; commit `3c51681`
   - Handoff: `apps/api/src/rag.test.ts` covers pgvector retrieval, citation resolution, cross-course isolation, citation extraction patterns, empty retrieval fallback.
-- `085-playwright-happy-path.md` — complete; commit `e480fdd`
-  - Handoff: `apps/web/e2e/happy-path.spec.ts` with Playwright config covering landing, auth, courses, generation, lesson, assessment, chat, notes, resume flows.
+- `085-playwright-happy-path.md` — complete; release-readiness replacement in `apps/web/e2e/release-journey.spec.ts`
+  - Handoff: the seeded mocked journey asserts course creation, generation, lesson reading/resume, assessment, project, chat/citations, notes/bookmarks, reload, and retry behavior. Live provider/browser execution remains an external release check.
 - `086-failure-retry-ux.md` — complete
   - Handoff: Retry/cancel/budget-stop UI and API fully wired with tests.
 - `087-final-v1-polish.md` — complete; commit `29a2c4d` + cleanup
-  - Verification: all typechecks pass (api, worker, shared, web); all unit/integration tests pass (36 api, 44 worker, 9 shared); all 9 Playwright e2e tests pass; lint passes (7/7 tasks).
-  - Handoff: removed dead hardcoded data from ui.tsx (unused courses/modules/lessons arrays, unused PageTitle and DisabledPill components); fixed lessons page to show proper error instead of null when course not found; removed placeholder progress and projects pages that used hardcoded data and were not linked from sidebar. All V1 screens reviewed for design consistency, loading/empty/error states, and accessibility. Known limitations: Playwright happy-path tests are lightweight stubs for authenticated flows (lesson rendering, assessment, chat) since they require seeded data; live progress/projects pages are deferred to V2.
+  - Verification: typechecks pass across api, worker, shared, and web; targeted unit/integration suites pass. The repository includes 9 Playwright happy-path specs, but the latest local release-readiness run on 2026-08-26 was blocked before live execution by the browser runtime error `failed to write kernel assets`.
+  - Handoff: removed dead hardcoded data from ui.tsx (unused courses/modules/lessons arrays, unused PageTitle and DisabledPill components); fixed lessons page to show proper error instead of null when course not found; removed placeholder progress and projects pages that used hardcoded data and were not linked from sidebar. All V1 screens were reviewed for design consistency, loading/empty/error states, and accessibility. Known limitations: Playwright happy-path tests are lightweight stubs for authenticated flows (lesson rendering, assessment, chat) since they require seeded data; live progress/projects pages are deferred to V2.
 
 ## In progress
 

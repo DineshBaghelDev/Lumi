@@ -48,6 +48,7 @@
 - TEI rejects requests containing any input beyond its token limit with HTTP 413 regardless of batch composition; embedding clients must size-bound batches, split on 413, and truncate single oversized inputs rather than failing the job permanently.
 - Postgres polling queue instead of Redis.
 - API writes jobs; worker polls. No direct API→worker call.
+- One worker process must fan out into `WORKER_CONCURRENCY` independent polling slots; DB claim rules remain the source of truth for global and per-course limits.
 - Realtime generation updates plus 5-second polling fallback.
 
 ## Jobs
@@ -94,6 +95,7 @@ Issues hit during end-to-end testing that will recur; documented so they are rec
 - Docker Desktop on this machine intermittently fails E: drive bind mounts (`mkdir /run/desktop/mnt/host/e: file exists`); a full Docker Desktop restart fixes it. Recreate compose services after any engine restart.
 - The API masked framework errors as 500: non-HttpError Fastify errors (e.g., FST_ERR_CTP_INVALID_MEDIA_TYPE) were rendered as `internal_error` regardless of their real status. Fixed in `apps/api/src/app.ts`, but new error paths must keep honoring 4xx `statusCode`.
 - Worker job outcomes were invisible outside the database; console logging now exists in `runClaimedJob`. Any new handler must run through it to stay observable.
+- Before 2026-08-28, the worker process only awaited one claimed job at a time despite the configured concurrency value. The process now starts one polling loop per configured slot, each with a stable worker-id suffix for bounded ownership and shutdown draining.
 - Failed LLM calls are not recorded in `llm_calls` — tracking only captures successes, so spend/failure observability has a blind spot. Changing this alters spec 012 behavior and needs an explicit spec decision first.
 - Course status can remain `ready_with_gaps` after a late lesson retry succeeds: `updateCourseStatus` sees its own still-running job and never re-evaluates to `ready`. Late retries may need a status re-check or the final job should update course state after terminal transition.
 - Manual retry reuses the same job row, so retry history is not preserved per attempt beyond the `attempts` counter.
