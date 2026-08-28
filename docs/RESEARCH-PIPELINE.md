@@ -66,7 +66,7 @@ Avoid expensive full-page LLM reads unless required by an edge case.
 
 ## Crawling/storage
 
-Crawl4AI produces Markdown, metadata, links, and discovered images. Sanitized retained Markdown and approved images go to InsForge Storage. Postgres stores source/asset records and storage paths.
+Crawl4AI produces Markdown, metadata, links, and discovered images. The current worker sanitizes retained Markdown and records source/asset metadata plus deterministic storage paths; InsForge object upload and returned URLs/keys remain a deployment prerequisite.
 
 Before retrying/re-crawling, check normalized `sources.url` to preserve idempotency.
 

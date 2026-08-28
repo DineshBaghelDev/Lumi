@@ -1,6 +1,6 @@
 # Lumi
 
-Lumi is a source-grounded technical learning app. A learner gives it a topic and goal; Lumi researches trusted sources, builds a fixed curriculum, generates lessons, assessments, and guided projects in the background, then keeps progress, notes, bookmarks, and course-aware chat tied to that course.
+Lumi is a source-grounded technical learning app. A learner gives it a topic and goal; Lumi researches trusted sources, builds a fixed curriculum, generates lessons, assessments, and guided projects in the background, then keeps progress, notes, bookmarks, and course-aware chat tied to that course. Research asset metadata is persisted; production object-upload wiring is still an explicit deployment prerequisite.
 
 Current state as of 2026-08-28: V1 implementation is complete in-repo. The API, web app, and worker cover course creation, background generation, assessments, projects, progress, notes, bookmarks, and course chat. The worker now uses `WORKER_CONCURRENCY` by running that many polling slots in one process while still honoring the existing global and per-course claim limits. Release blockers remain operational rather than feature-completeness issues; see `context/progress-tracker.md` for the current verification caveats.
 
