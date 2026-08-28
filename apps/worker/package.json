@@ -16,6 +16,7 @@
     "@lumi/db": "workspace:*",
     "@lumi/llm": "workspace:*",
     "@lumi/shared": "workspace:*",
+    "@lumi/storage": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "pg": "^8.23.0"
   },
