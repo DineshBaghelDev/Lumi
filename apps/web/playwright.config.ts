@@ -34,9 +34,7 @@ export default defineConfig({
           reuseExistingServer: !process.env.CI,
           timeout: 120_000,
           env: {
-            NEXT_PUBLIC_API_BASE_URL: mockApiUrl,
-            NEXT_PUBLIC_INSFORGE_URL: "http://127.0.0.1:3999",
-            NEXT_PUBLIC_INSFORGE_ANON_KEY: "e2e-anon-key",
+            INTERNAL_API_BASE_URL: mockApiUrl,
             LUMI_E2E_SKIP_AUTH: "1",
           },
         },

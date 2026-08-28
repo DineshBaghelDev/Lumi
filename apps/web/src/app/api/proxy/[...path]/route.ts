@@ -1,10 +1,9 @@
-import { DEFAULT_ACCESS_TOKEN_COOKIE } from "@insforge/sdk/ssr";
-import { cookies } from "next/headers.js";
 import { type NextRequest, NextResponse } from "next/server.js";
+import { forwardedAuthHeaders } from "../../../../lib/forward-auth.ts";
 
 const getApiBaseUrl = () => {
-  const value = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!value) throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
+  const value = process.env.INTERNAL_API_BASE_URL;
+  if (!value) throw new Error("Missing INTERNAL_API_BASE_URL");
   return value;
 };
 
@@ -64,9 +63,7 @@ export const readBoundedText = async (response: Response, maxBytes = MAX_RESPONS
 
 async function proxyRequest(request: NextRequest, path: string) {
   const apiUrl = buildApiUrl(path);
-  const token = (await cookies()).get(DEFAULT_ACCESS_TOKEN_COOKIE)?.value;
-  const headers = new Headers();
-  if (token) headers.set("authorization", `Bearer ${token}`);
+  const headers = forwardedAuthHeaders(request.headers.get("authorization"), request.cookies);
 
   // Forward content-type and other relevant headers
   const contentType = request.headers.get("content-type");

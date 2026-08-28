@@ -1,6 +1,5 @@
 import { createLumiAuthFromEnv, type LumiAuth } from "@lumi/auth";
 import { loadEnvConfig } from "@next/env";
-import { parseWebPublicEnv } from "@lumi/config";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { resolve } from "node:path";
@@ -13,11 +12,6 @@ const loadWorkspaceEnv = () => {
     loadEnvConfig(resolve(process.cwd(), "../.."));
     loadedWorkspaceEnv = true;
   }
-};
-
-export const getWebConfig = () => {
-  loadWorkspaceEnv();
-  return parseWebPublicEnv(process.env);
 };
 
 let auth: LumiAuth | undefined;

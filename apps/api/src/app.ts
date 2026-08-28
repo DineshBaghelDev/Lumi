@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { createLumiAuthFromEnv } from "@lumi/auth";
 import { parseApiEnv, type ApiConfig } from "@lumi/config";
 import {
   canAccessCourse,
@@ -28,14 +29,14 @@ import {
 import { sql } from "drizzle-orm";
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
-import { createInsforgeTokenVerifier, HttpError, registerAuth, type TokenVerifier } from "./auth.ts";
+import { createBetterAuthSessionResolver, HttpError, registerAuth, type SessionResolver } from "./auth.ts";
 
 type GraderLlm = { complete(input: { messages: { role: "system" | "user"; content: string }[]; temperature?: number; maxTokens?: number }): Promise<CompleteResult> };
 
 type AppDeps = {
   config?: ApiConfig;
   db?: LumiDb;
-  verifyToken?: TokenVerifier;
+  resolveSession?: SessionResolver;
   grader?: GraderLlm;
 };
 
@@ -126,7 +127,7 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
   const grader = deps.grader ?? new LiteLlmClient(config.services.liteLlm);
   const app = Fastify({ logger: true });
 
-  registerAuth(app, db, deps.verifyToken ?? createInsforgeTokenVerifier(config));
+  registerAuth(app, db, deps.resolveSession ?? createBetterAuthSessionResolver(createLumiAuthFromEnv()));
 
   app.setErrorHandler((error, request, reply) => {
     const rawStatus = error instanceof HttpError ? error.statusCode : (error as { statusCode?: unknown }).statusCode;

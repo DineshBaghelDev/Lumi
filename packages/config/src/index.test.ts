@@ -8,15 +8,11 @@ import {
   parseApiEnv,
   parseAuthEnv,
   parseSharedServicesEnv,
-  parseWebPublicEnv,
   parseWorkerEnv,
   type Env,
 } from "./index.ts";
 
 const validServerEnv: Env = {
-  INSFORGE_PROJECT_URL: "https://project.example.insforge.app",
-  INSFORGE_ANON_KEY: "public-anon-key",
-  INSFORGE_API_KEY: "server-api-key",
   DATABASE_URL: "postgresql://lumi_api:password@localhost:5432/lumi",
   WORKER_DATABASE_URL: "postgresql://lumi_worker:password@localhost:5432/lumi",
   LITELLM_API_KEY: "litellm-api-key",
@@ -48,11 +44,11 @@ test("shared service URLs load without server credentials", () => {
 
 test("missing and invalid required values name the offending variables", () => {
   assert.throws(
-    () => parseApiEnv({ ...validServerEnv, INSFORGE_API_KEY: undefined }),
+    () => parseApiEnv({ ...validServerEnv, DATABASE_URL: undefined }),
     (error: unknown) =>
       error instanceof ConfigValidationError &&
       error.message.startsWith("Invalid API environment:") &&
-      error.message.includes("INSFORGE_API_KEY"),
+      error.message.includes("DATABASE_URL"),
   );
 
   assert.throws(
@@ -136,25 +132,6 @@ test("locked architecture values reject incompatible overrides", () => {
     () => parseWorkerEnv({ ...validServerEnv, WORKER_MAX_LESSON_JOBS_PER_COURSE: "4" }),
     /WORKER_MAX_LESSON_JOBS_PER_COURSE/,
   );
-});
-
-test("public parsing returns only the explicit public allowlist", () => {
-  const publicConfig = parseWebPublicEnv({
-    ...validServerEnv,
-    OPENROUTER_API_KEY: "openrouter-server-secret",
-    NEXT_PUBLIC_INSFORGE_URL: "https://public.example.insforge.app",
-    NEXT_PUBLIC_INSFORGE_ANON_KEY: "browser-anon-key",
-    NEXT_PUBLIC_API_BASE_URL: "http://localhost:3001",
-  });
-  const serialized = JSON.stringify(publicConfig);
-
-  assert.equal(publicConfig.apiBaseUrl, "http://localhost:3001");
-  assert.equal(publicConfig.realtime.pollingFallbackMs, 5_000);
-  assert.equal(serialized.includes("server-api-key"), false);
-  assert.equal(serialized.includes("openrouter-server-secret"), false);
-  assert.equal(serialized.includes("litellm-api-key"), false);
-  assert.equal("apiKey" in publicConfig.insforge, false);
-  assert.equal("database" in publicConfig, false);
 });
 
 test("auth parsing locks production to verified email", () => {

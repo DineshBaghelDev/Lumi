@@ -1,5 +1,4 @@
-import { createClient } from "@insforge/sdk";
-import type { ApiConfig } from "@lumi/config";
+import type { LumiAuth } from "@lumi/auth";
 import { ensureUser, type AuthenticatedUser, type LumiDb } from "@lumi/db";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
@@ -9,7 +8,7 @@ declare module "fastify" {
   }
 }
 
-export type TokenVerifier = (token: string) => Promise<{ authUserId: string; email?: string | null } | null>;
+export type SessionResolver = (headers: Headers) => Promise<{ authUserId: string; email?: string | null } | null>;
 
 export class HttpError extends Error {
   statusCode: number;
@@ -22,32 +21,29 @@ export class HttpError extends Error {
   }
 }
 
-export const createInsforgeTokenVerifier = (config: Pick<ApiConfig, "insforge">): TokenVerifier => async (token) => {
-  const client = createClient({
-    baseUrl: config.insforge.projectUrl,
-    anonKey: config.insforge.anonKey,
-    accessToken: token,
-    isServerMode: true,
-  });
-  const { data, error } = await client.auth.getCurrentUser();
-  const user = data?.user as { id?: string; email?: string } | undefined;
-  if (error || !user?.id) return null;
-  return { authUserId: user.id, email: user.email ?? null };
+export const credentialHeaders = (request: Pick<FastifyRequest, "headers">) => {
+  const headers = new Headers();
+  const authorization = request.headers.authorization;
+  const cookie = request.headers.cookie;
+  if (typeof authorization === "string" && /^Bearer\s+\S+$/i.test(authorization)) headers.set("authorization", authorization);
+  if (typeof cookie === "string" && cookie) headers.set("cookie", cookie);
+  return headers;
 };
 
-const bearerToken = (request: FastifyRequest) => {
-  const value = request.headers.authorization;
-  const match = typeof value === "string" ? /^Bearer\s+(.+)$/i.exec(value) : null;
-  return match?.[1] ?? null;
+export const createBetterAuthSessionResolver = (auth: LumiAuth): SessionResolver => async (headers) => {
+  const session = await auth.api.getSession({ headers });
+  return session ? { authUserId: session.user.id, email: session.user.email } : null;
 };
 
-export const registerAuth = (app: FastifyInstance, db: LumiDb, verifyToken: TokenVerifier) => {
+export const registerAuth = (app: FastifyInstance, db: LumiDb, resolveSession: SessionResolver) => {
   app.decorate("requireAuth", async (request: FastifyRequest, _reply: FastifyReply) => {
-    const token = bearerToken(request);
-    if (!token) throw new HttpError(401, "unauthorized", "Missing bearer token");
+    const headers = credentialHeaders(request);
+    if (!headers.has("authorization") && !headers.has("cookie")) {
+      throw new HttpError(401, "unauthorized", "Missing auth credential");
+    }
 
-    const authUser = await verifyToken(token);
-    if (!authUser) throw new HttpError(401, "unauthorized", "Invalid bearer token");
+    const authUser = await resolveSession(headers);
+    if (!authUser) throw new HttpError(401, "unauthorized", "Invalid auth session");
 
     request.user = await ensureUser(db, authUser);
   });

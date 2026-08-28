@@ -10,9 +10,7 @@
     "typecheck": "next typegen && tsc -p tsconfig.json --noEmit --allowImportingTsExtensions"
   },
   "dependencies": {
-    "@insforge/sdk": "^1.5.2",
     "@lumi/auth": "workspace:*",
-    "@lumi/config": "workspace:*",
     "@next/env": "16.2.9",
     "better-auth": "1.6.23",
     "mermaid": "^11.12.1",

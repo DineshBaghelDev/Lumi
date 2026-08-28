@@ -4,16 +4,13 @@ import { parseApiEnv } from "@lumi/config";
 import { createApp } from "./app.ts";
 
 const config = parseApiEnv({
-  INSFORGE_PROJECT_URL: "http://localhost:7130",
-  INSFORGE_ANON_KEY: "anon",
-  INSFORGE_API_KEY: "api",
   DATABASE_URL: "postgres://u:p@localhost/db",
   LITELLM_API_KEY: "litellm",
 });
 
 test("health returns success", async () => {
   const db = { execute: async () => ({ rows: [{ "?column?": 1 }] }) };
-  const app = createApp({ config, db: db as never, verifyToken: async () => null });
+  const app = createApp({ config, db: db as never, resolveSession: async () => null });
 
   const response = await app.inject("/health");
 
@@ -24,14 +21,45 @@ test("health returns success", async () => {
 
 test("errors use the shared envelope", async () => {
   const db = { execute: async () => ({ rows: [] }) };
-  const app = createApp({ config, db: db as never, verifyToken: async () => null });
+  const app = createApp({ config, db: db as never, resolveSession: async () => null });
 
   const response = await app.inject({ method: "POST", url: "/courses", payload: {} });
 
   assert.equal(response.statusCode, 401);
   assert.deepEqual(response.json(), {
-    error: { code: "unauthorized", message: "Missing bearer token" },
+    error: { code: "unauthorized", message: "Missing auth credential" },
   });
+  await app.close();
+});
+
+test("invalid bearer sessions return 401", async () => {
+  const db = { execute: async () => ({ rows: [] }) };
+  const app = createApp({ config, db: db as never, resolveSession: async () => null });
+  const response = await app.inject({ url: "/courses", headers: { authorization: "Bearer invalid" } });
+  assert.equal(response.statusCode, 401);
+  assert.equal(response.json().error.message, "Invalid auth session");
+  await app.close();
+});
+
+test("cookie sessions map through ensureUser", async () => {
+  const rows = [
+    [{ id: "user-1", authUserId: "auth-1", email: "a@example.test" }],
+    [{ id: "course-1", title: "Course" }],
+  ];
+  let received: Headers | undefined;
+  const db = { execute: async () => ({ rows: rows.shift() ?? [] }) };
+  const app = createApp({
+    config,
+    db: db as never,
+    resolveSession: async (headers) => {
+      received = headers;
+      return { authUserId: "auth-1", email: "a@example.test" };
+    },
+  });
+  const response = await app.inject({ url: "/courses", headers: { cookie: "lumi.session_token=valid" } });
+  assert.equal(response.statusCode, 200);
+  assert.equal(received?.get("cookie"), "lumi.session_token=valid");
+  assert.deepEqual(response.json(), { courses: [{ id: "course-1", title: "Course" }] });
   await app.close();
 });
 
@@ -50,7 +78,7 @@ test("manual retry reuses a failed generation job", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@example.test" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@example.test" }),
   });
 
   const response = await app.inject({
@@ -82,7 +110,7 @@ test("framework 4xx errors keep their status code", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1" }),
+    resolveSession: async () => ({ authUserId: "auth-1" }),
   });
 
   const response = await app.inject({
@@ -109,7 +137,7 @@ test("manual retry rejects active jobs", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1" }),
+    resolveSession: async () => ({ authUserId: "auth-1" }),
   });
 
   const response = await app.inject({
@@ -150,7 +178,7 @@ test("objective scoring hides assessments from unenrolled users", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1" }),
+    resolveSession: async () => ({ authUserId: "auth-1" }),
   });
 
   const response = await app.inject({
@@ -193,7 +221,7 @@ test("assessment submissions hide assessments from unenrolled users", async () =
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1" }),
+    resolveSession: async () => ({ authUserId: "auth-1" }),
   });
 
   const response = await app.inject({

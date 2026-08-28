@@ -137,10 +137,7 @@ const sharedServicesEnvSchema = z.object({
     .default(V1_CONFIG_DEFAULTS.services.teiEmbeddingDimension),
 });
 
-const legacyInsforgeAuthEnvSchema = z.object({
-  INSFORGE_PROJECT_URL: httpUrl,
-  INSFORGE_ANON_KEY: requiredSecret,
-  INSFORGE_API_KEY: requiredSecret,
+const serverSecretsEnvSchema = z.object({
   LITELLM_API_KEY: requiredSecret,
 });
 
@@ -232,7 +229,7 @@ const researchSecurityEnvSchema = z.object({
   ),
 });
 
-const commonServerEnvSchema = legacyInsforgeAuthEnvSchema
+const commonServerEnvSchema = serverSecretsEnvSchema
   .extend(sharedServicesEnvSchema.shape)
   .extend(generationBudgetEnvSchema.shape)
   .extend(researchSecurityEnvSchema.shape)
@@ -290,12 +287,6 @@ const workerEnvSchema = commonServerEnvSchema
       });
     }
   });
-
-const webPublicEnvSchema = z.object({
-  NEXT_PUBLIC_INSFORGE_URL: httpUrl,
-  NEXT_PUBLIC_INSFORGE_ANON_KEY: requiredSecret,
-  NEXT_PUBLIC_API_BASE_URL: httpUrl,
-});
 
 const authEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -362,24 +353,6 @@ const mapSharedServices = (env: SharedServicesEnv) => ({
 type CommonServerEnv = z.output<typeof commonServerEnvSchema>;
 
 const mapCommonServerConfig = (env: CommonServerEnv) => ({
-  insforge: {
-    projectUrl: env.INSFORGE_PROJECT_URL,
-    anonKey: env.INSFORGE_ANON_KEY,
-    apiKey: env.INSFORGE_API_KEY,
-  },
-  auth: {
-    baseUrl: env.INSFORGE_PROJECT_URL,
-    anonKey: env.INSFORGE_ANON_KEY,
-  },
-  storage: {
-    baseUrl: env.INSFORGE_PROJECT_URL,
-    anonKey: env.INSFORGE_ANON_KEY,
-  },
-  realtime: {
-    baseUrl: env.INSFORGE_PROJECT_URL,
-    anonKey: env.INSFORGE_ANON_KEY,
-    pollingFallbackMs: V1_CONFIG_DEFAULTS.realtime.pollingFallbackMs,
-  },
   services: {
     ...mapSharedServices(env),
     liteLlm: {
@@ -436,31 +409,6 @@ export const parseWorkerEnv = (env: Env) => {
   };
 };
 
-export const parseWebPublicEnv = (env: Env) => {
-  const parsed = parseSchema(webPublicEnvSchema, env, "web public");
-
-  return {
-    apiBaseUrl: parsed.NEXT_PUBLIC_API_BASE_URL,
-    insforge: {
-      projectUrl: parsed.NEXT_PUBLIC_INSFORGE_URL,
-      anonKey: parsed.NEXT_PUBLIC_INSFORGE_ANON_KEY,
-    },
-    auth: {
-      baseUrl: parsed.NEXT_PUBLIC_INSFORGE_URL,
-      anonKey: parsed.NEXT_PUBLIC_INSFORGE_ANON_KEY,
-    },
-    storage: {
-      baseUrl: parsed.NEXT_PUBLIC_INSFORGE_URL,
-      anonKey: parsed.NEXT_PUBLIC_INSFORGE_ANON_KEY,
-    },
-    realtime: {
-      baseUrl: parsed.NEXT_PUBLIC_INSFORGE_URL,
-      anonKey: parsed.NEXT_PUBLIC_INSFORGE_ANON_KEY,
-      pollingFallbackMs: V1_CONFIG_DEFAULTS.realtime.pollingFallbackMs,
-    },
-  };
-};
-
 export const parseAuthEnv = (env: Env) => {
   const parsed = parseSchema(authEnvSchema, env, "auth");
   return {
@@ -477,5 +425,4 @@ export const parseAuthEnv = (env: Env) => {
 export type SharedServicesConfig = ReturnType<typeof parseSharedServicesEnv>;
 export type ApiConfig = ReturnType<typeof parseApiEnv>;
 export type WorkerConfig = ReturnType<typeof parseWorkerEnv>;
-export type WebPublicConfig = ReturnType<typeof parseWebPublicEnv>;
 export type AuthConfig = ReturnType<typeof parseAuthEnv>;

@@ -2,18 +2,18 @@ import { strict as assert } from "node:assert";
 import test from "node:test";
 import { buildApiUrl, readBoundedText } from "./route.ts";
 
-const previousApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+const previousApiBaseUrl = process.env.INTERNAL_API_BASE_URL;
 
 test.afterEach(() => {
   if (previousApiBaseUrl === undefined) {
-    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    delete process.env.INTERNAL_API_BASE_URL;
   } else {
-    process.env.NEXT_PUBLIC_API_BASE_URL = previousApiBaseUrl;
+    process.env.INTERNAL_API_BASE_URL = previousApiBaseUrl;
   }
 });
 
 test("proxy URL builder keeps happy paths under the configured API origin", () => {
-  process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test/v1";
+  process.env.INTERNAL_API_BASE_URL = "https://api.example.test/v1";
 
   const url = buildApiUrl("courses/123?include=lessons");
 
@@ -23,7 +23,7 @@ test("proxy URL builder keeps happy paths under the configured API origin", () =
 });
 
 test("proxy URL builder rejects hostile URL forms", () => {
-  process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test";
+  process.env.INTERNAL_API_BASE_URL = "https://api.example.test";
 
   for (const path of [
     "https://evil.example/courses",

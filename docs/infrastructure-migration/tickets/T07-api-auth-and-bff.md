@@ -13,4 +13,5 @@ Acceptance: missing/invalid cookie and bearer return 401; valid sessions map to
 the same app user; proxy security regression tests pass. Commit:
 `feat(api): authenticate better auth sessions`.
 
-Handoff: state=ready; commit=—; checks=—; risks=—.
+Handoff: state=done; commit=this ticket commit; checks=API/web tests,
+typechecks, builds; risks=live cookie/bearer resolution requires Compose.

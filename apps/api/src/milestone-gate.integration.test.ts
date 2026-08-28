@@ -27,7 +27,7 @@ test(
     const app = createApp({
       config,
       db,
-      verifyToken: async () => ({ authUserId, email: `${authUserId}@example.test` }),
+      resolveSession: async () => ({ authUserId, email: `${authUserId}@example.test` }),
     });
 
     try {

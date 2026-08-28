@@ -1,15 +1,15 @@
-import { DEFAULT_ACCESS_TOKEN_COOKIE } from "@insforge/sdk/ssr";
-import { cookies } from "next/headers";
-import { getWebConfig } from "./auth";
+import { cookies, headers as requestHeaders } from "next/headers";
+import { forwardedAuthHeaders } from "./forward-auth";
 
 export const apiFetch = async (path: string, init: RequestInit = {}) => {
-  const token = (await cookies()).get(DEFAULT_ACCESS_TOKEN_COOKIE)?.value;
   const headers = new Headers(init.headers);
-  if (token) headers.set("authorization", `Bearer ${token}`);
+  headers.delete("authorization");
+  headers.delete("cookie");
+  const auth = forwardedAuthHeaders((await requestHeaders()).get("authorization"), await cookies());
+  for (const [name, value] of auth) headers.set(name, value);
 
-  const config = getWebConfig();
   try {
-    return await fetch(new URL(path, config.apiBaseUrl), {
+    return await fetch(new URL(path, getInternalApiBaseUrl()), {
       ...init,
       headers,
       cache: "no-store",
@@ -17,4 +17,10 @@ export const apiFetch = async (path: string, init: RequestInit = {}) => {
   } catch {
     return Response.json({ error: "API unavailable" }, { status: 503 });
   }
+};
+
+const getInternalApiBaseUrl = () => {
+  const value = process.env.INTERNAL_API_BASE_URL;
+  if (!value) throw new Error("Missing INTERNAL_API_BASE_URL");
+  return value;
 };

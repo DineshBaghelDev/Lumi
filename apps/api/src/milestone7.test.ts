@@ -4,9 +4,6 @@ import { parseApiEnv } from "@lumi/config";
 import { createApp } from "./app.ts";
 
 const config = parseApiEnv({
-  INSFORGE_PROJECT_URL: "http://localhost:7130",
-  INSFORGE_ANON_KEY: "anon",
-  INSFORGE_API_KEY: "api",
   DATABASE_URL: "postgres://u:p@localhost/db",
   LITELLM_API_KEY: "litellm",
 });
@@ -57,7 +54,7 @@ test("progress: update lesson progress", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -83,7 +80,7 @@ test("progress: skip lesson", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -107,7 +104,7 @@ test("progress: resume returns lesson for in-progress course", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -135,7 +132,7 @@ test("progress: resume returns course_complete when all done", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -158,7 +155,7 @@ test("progress: unauthorized user cannot update progress", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -187,7 +184,7 @@ test("notes: create and list notes", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   // Create
@@ -221,7 +218,7 @@ test("notes: create bookmark", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -246,7 +243,7 @@ test("notes: update note content", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -270,7 +267,7 @@ test("notes: delete note", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -292,7 +289,7 @@ test("notes: cannot update another user's note", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -311,7 +308,7 @@ test("notes: unauthorized access is denied", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => null,
+    resolveSession: async () => null,
   });
 
   const response = await app.inject({
@@ -342,7 +339,7 @@ test("chat: create thread and persist messages", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   // Chat requires TEI and LLM to be available, so it will fail at embedding
@@ -369,7 +366,7 @@ test("chat: list threads", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -393,7 +390,7 @@ test("chat: thread messages require thread ownership", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -416,7 +413,7 @@ test("citations: resolve chunk IDs to source metadata", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -437,7 +434,7 @@ test("citations: unauthorized access is denied", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => null,
+    resolveSession: async () => null,
   });
 
   const response = await app.inject({
@@ -464,7 +461,7 @@ test("retry: only failed jobs can be retried", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
@@ -490,7 +487,7 @@ test("cancel: course generation can be cancelled", async () => {
   const app = createApp({
     config,
     db: db as never,
-    verifyToken: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
+    resolveSession: async () => ({ authUserId: "auth-1", email: "a@test.com" }),
   });
 
   const response = await app.inject({
