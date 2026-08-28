@@ -94,6 +94,40 @@ services:
       timeout: 5s
       retries: 12
 
+  minio:
+    image: docker.io/minio/minio:RELEASE.2025-07-18T22-57-05Z@sha256:a]placeholder_for_now
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-lumi_minio_admin}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - lumi-minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  mc:
+    image: docker.io/minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mc alias set lumi http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+        mc mb --ignore-existing lumi/lumi-assets
+        mc anonymous set download lumi/lumi-assets
+        echo 'MinIO bucket setup complete'
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-lumi_minio_admin}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}"
+
   tei:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8.3@sha256:8de25e75ce39617f17f2f6c77d60a4f75b65e779ed5005420eb1400072a15c1c
     command: ["--model-id", "BAAI/bge-small-en-v1.5"]
@@ -108,8 +142,109 @@ services:
       retries: 30
       start_period: 120s
 
+  web:
+    build:
+      context: .
+      target: web
+    environment:
+      INTERNAL_API_BASE_URL: "http://api:3001"
+      BETTER_AUTH_URL: "${BETTER_AUTH_URL:-http://localhost:3000}"
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}"
+      BETTER_AUTH_TRUSTED_ORIGINS: "${BETTER_AUTH_TRUSTED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:?Set GOOGLE_CLIENT_ID in .env}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:?Set GOOGLE_CLIENT_SECRET in .env}"
+      AUTH_DATABASE_URL: "postgresql://lumi_auth:${AUTH_DB_PASSWORD}@postgres:5432/lumi"
+      AUTH_REQUIRE_EMAIL_VERIFICATION: "${AUTH_REQUIRE_EMAIL_VERIFICATION:-false}"
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      DATABASE_URL: "postgresql://lumi_api:${API_DB_PASSWORD}@postgres:5432/lumi"
+      LITELLM_BASE_URL: "http://litellm:4000"
+      LITELLM_API_KEY: "${LITELLM_API_KEY:-changeme}"
+      LITELLM_MODEL: "${LITELLM_MODEL:-gpt-5.5}"
+      SEARXNG_BASE_URL: "http://searxng:8080"
+      CRAWL4AI_BASE_URL: "http://crawl4ai:11235"
+      TEI_BASE_URL: "http://tei:80"
+      TEI_MODEL_ID: "BAAI/bge-small-en-v1.5"
+      TEI_EMBEDDING_DIMENSION: "384"
+      MINIO_ENDPOINT: "http://minio:9000"
+      MINIO_BUCKET: "lumi-assets"
+      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY:-lumi_reader_key}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:-changeme}"
+      MINIO_ASSET_MAX_BYTES: "${MINIO_ASSET_MAX_BYTES:-5242880}"
+      BETTER_AUTH_URL: "${BETTER_AUTH_URL:-http://localhost:3000}"
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}"
+      BETTER_AUTH_TRUSTED_ORIGINS: "${BETTER_AUTH_TRUSTED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}"
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      litellm:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  worker:
+    build:
+      context: .
+      target: worker
+    environment:
+      WORKER_DATABASE_URL: "postgresql://lumi_worker:${WORKER_DB_PASSWORD}@postgres:5432/lumi"
+      LITELLM_BASE_URL: "http://litellm:4000"
+      LITELLM_API_KEY: "${LITELLM_API_KEY:-changeme}"
+      LITELLM_MODEL: "${LITELLM_MODEL:-gpt-5.5}"
+      SEARXNG_BASE_URL: "http://searxng:8080"
+      CRAWL4AI_BASE_URL: "http://crawl4ai:11235"
+      TEI_BASE_URL: "http://tei:80"
+      TEI_MODEL_ID: "BAAI/bge-small-en-v1.5"
+      TEI_EMBEDDING_DIMENSION: "384"
+      MINIO_ENDPOINT: "http://minio:9000"
+      MINIO_BUCKET: "lumi-assets"
+      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY:-lumi_worker_key}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:-changeme}"
+      MINIO_READER_ACCESS_KEY: "${MINIO_READER_ACCESS_KEY:-lumi_reader_key}"
+      MINIO_READER_SECRET_KEY: "${MINIO_READER_SECRET_KEY:-changeme}"
+      MINIO_ASSET_MAX_BYTES: "${MINIO_ASSET_MAX_BYTES:-5242880}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      litellm:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+      crawl4ai:
+        condition: service_healthy
+      tei:
+        condition: service_healthy
+
 volumes:
   lumi-db-data:
   litellm-db-data:
+  lumi-minio-data:
   searxng-cache:
   tei-model-cache:
