@@ -61,7 +61,7 @@ services:
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     environment:
       LITELLM_MASTER_KEY: "${LITELLM_API_KEY:?Set LITELLM_API_KEY in .env to a strong local value}"
-      DATABASE_URL: "postgresql://litellm:litellm@litellm-db:5432/litellm"
+      DATABASE_URL: "postgresql://${LITELLM_DB_USER:?}:${LITELLM_DB_PASSWORD:?}@litellm-db:5432/litellm"
       UI_USERNAME: "${UI_USERNAME:-admin}"
       UI_PASSWORD: "${UI_PASSWORD:-admin}"
       OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:?Set OPENROUTER_API_KEY in .env}"
@@ -84,18 +84,18 @@ services:
     image: docker.io/postgres:16-alpine
     environment:
       POSTGRES_DB: litellm
-      POSTGRES_USER: litellm
-      POSTGRES_PASSWORD: litellm
+      POSTGRES_USER: "${LITELLM_DB_USER:?Set LITELLM_DB_USER in .env}"
+      POSTGRES_PASSWORD: "${LITELLM_DB_PASSWORD:?Set LITELLM_DB_PASSWORD in .env}"
     volumes:
       - litellm-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d litellm"]
       interval: 5s
       timeout: 5s
       retries: 12
 
   minio:
-    image: docker.io/minio/minio:RELEASE.2025-07-18T22-57-05Z@sha256:a]placeholder_for_now
+    image: docker.io/minio/minio:RELEASE.2025-07-18T22-57-05Z
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: "${MINIO_ROOT_USER:-lumi_minio_admin}"
@@ -122,7 +122,7 @@ services:
       - |
         mc alias set lumi http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
         mc mb --ignore-existing lumi/lumi-assets
-        mc anonymous set download lumi/lumi-assets
+        mc anonymous set none lumi/lumi-assets
         echo 'MinIO bucket setup complete'
     environment:
       MINIO_ROOT_USER: "${MINIO_ROOT_USER:-lumi_minio_admin}"
@@ -176,7 +176,7 @@ services:
     environment:
       DATABASE_URL: "postgresql://lumi_api:${API_DB_PASSWORD}@postgres:5432/lumi"
       LITELLM_BASE_URL: "http://litellm:4000"
-      LITELLM_API_KEY: "${LITELLM_API_KEY:-changeme}"
+      LITELLM_API_KEY: "${LITELLM_API_KEY:?Set LITELLM_API_KEY in .env}"
       LITELLM_MODEL: "${LITELLM_MODEL:-gpt-5.5}"
       SEARXNG_BASE_URL: "http://searxng:8080"
       CRAWL4AI_BASE_URL: "http://crawl4ai:11235"
@@ -186,7 +186,7 @@ services:
       MINIO_ENDPOINT: "http://minio:9000"
       MINIO_BUCKET: "lumi-assets"
       MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY:-lumi_reader_key}"
-      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:-changeme}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}"
       MINIO_ASSET_MAX_BYTES: "${MINIO_ASSET_MAX_BYTES:-5242880}"
       BETTER_AUTH_URL: "${BETTER_AUTH_URL:-http://localhost:3000}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}"
@@ -211,10 +211,16 @@ services:
     build:
       context: .
       target: worker
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'apps/worker' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     environment:
       WORKER_DATABASE_URL: "postgresql://lumi_worker:${WORKER_DB_PASSWORD}@postgres:5432/lumi"
       LITELLM_BASE_URL: "http://litellm:4000"
-      LITELLM_API_KEY: "${LITELLM_API_KEY:-changeme}"
+      LITELLM_API_KEY: "${LITELLM_API_KEY:?Set LITELLM_API_KEY in .env}"
       LITELLM_MODEL: "${LITELLM_MODEL:-gpt-5.5}"
       SEARXNG_BASE_URL: "http://searxng:8080"
       CRAWL4AI_BASE_URL: "http://crawl4ai:11235"
@@ -224,9 +230,9 @@ services:
       MINIO_ENDPOINT: "http://minio:9000"
       MINIO_BUCKET: "lumi-assets"
       MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY:-lumi_worker_key}"
-      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:-changeme}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}"
       MINIO_READER_ACCESS_KEY: "${MINIO_READER_ACCESS_KEY:-lumi_reader_key}"
-      MINIO_READER_SECRET_KEY: "${MINIO_READER_SECRET_KEY:-changeme}"
+      MINIO_READER_SECRET_KEY: "${MINIO_READER_SECRET_KEY:?Set MINIO_READER_SECRET_KEY in .env}"
       MINIO_ASSET_MAX_BYTES: "${MINIO_ASSET_MAX_BYTES:-5242880}"
     depends_on:
       postgres:

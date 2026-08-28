@@ -1,6 +1,7 @@
 import { apiFetch } from "../../../lib/api";
 import { deriveCourseProgress, type ResumePoint } from "../../../lib/course-progress";
-import { cancelGenerationAction, retryGenerationJobAction } from "../../actions";
+import { retryGenerationJobAction } from "../../actions";
+import { CancelGenerationButton } from "./cancel-generation-button";
 import { AppShell, CourseIcon, CourseTabs, ProgressBar, Status } from "../../ui";
 import { AutoRefresh } from "./auto-refresh";
 
@@ -58,10 +59,7 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
           <p className="lead">{course.description ?? course.topic}</p>
         </div>
         {active ? (
-          <form action={cancelGenerationAction}>
-            <input type="hidden" name="courseId" value={id} />
-            <button className="button ghost" type="submit">Cancel generation</button>
-          </form>
+          <CancelGenerationButton courseId={id} />
         ) : null}
       </div>
       {notice.error ? <p className="form-message error" role="alert">{notice.error}</p> : null}

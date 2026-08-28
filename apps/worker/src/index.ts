@@ -47,6 +47,10 @@ const serviceChecks = [
   ["TEI", `${config.services.tei.baseUrl}/health`],
 ] as const;
 
+const MAX_SERVICE_WAIT_MS = 5 * 60_000; // 5 minutes
+const SERVICE_CHECK_INTERVAL_MS = 5_000;
+const serviceWaitStart = Date.now();
+
 while (!stopping) {
   const failed = [];
   for (const [name, url] of serviceChecks) {
@@ -58,8 +62,15 @@ while (!stopping) {
     }
   }
   if (failed.length === 0) break;
-  console.error(`Worker waiting for local generation services: ${failed.join(", ")}. Start them with docker compose up -d.`);
-  await new Promise((resolve) => setTimeout(resolve, 5_000));
+
+  const elapsed = Date.now() - serviceWaitStart;
+  if (elapsed >= MAX_SERVICE_WAIT_MS) {
+    console.error(`Worker giving up after ${MAX_SERVICE_WAIT_MS / 60_000} minutes waiting for: ${failed.join(", ")}. Start them with docker compose up -d.`);
+    process.exit(1);
+  }
+
+  console.error(`Worker waiting for local generation services: ${failed.join(", ")}. Start them with docker compose up -d. (elapsed: ${Math.round(elapsed / 1000)}s)`);
+  await new Promise((resolve) => setTimeout(resolve, SERVICE_CHECK_INTERVAL_MS));
 }
 
 if (!stopping) {

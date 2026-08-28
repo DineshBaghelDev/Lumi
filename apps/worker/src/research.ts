@@ -40,37 +40,6 @@ type RankedSource = SearchResult & {
   protection: string | null;
 };
 
-const redisConcepts: ConceptPlan[] = [
-  {
-    name: "Redis data structures",
-    description: "Core Redis value types and the command patterns learners need before streams.",
-    importance: 5,
-    depthRequired: 3,
-    prerequisites: [],
-  },
-  {
-    name: "Redis Streams",
-    description: "Append-only stream entries, IDs, reads, and trimming.",
-    importance: 5,
-    depthRequired: 4,
-    prerequisites: ["Redis data structures"],
-  },
-  {
-    name: "Consumer groups",
-    description: "Group reads, pending entries, acknowledgements, and recovery workflows.",
-    importance: 5,
-    depthRequired: 4,
-    prerequisites: ["Redis Streams"],
-  },
-  {
-    name: "Stream reliability patterns",
-    description: "At-least-once processing, retry, dead-letter, and monitoring concerns.",
-    importance: 4,
-    depthRequired: 3,
-    prerequisites: ["Consumer groups"],
-  },
-];
-
 export const createResearchHandler = (
   db: LumiDb,
   config: ResearchConfig,
@@ -303,7 +272,6 @@ const discoverConceptPlan = async (
   llm: ResearchLlm,
   config: ResearchConfig,
 ): Promise<ConceptPlan[]> => {
-  if (/redis/i.test(course.topic)) return redisConcepts;
   await ensureLlmCallBudget(db, course.id);
   const result = await llm.complete({
     temperature: 0,

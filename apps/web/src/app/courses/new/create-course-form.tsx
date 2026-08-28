@@ -49,7 +49,14 @@ export function CreateCourseForm({ idempotencyKey }: { idempotencyKey: string })
         <option>Prepare for interviews</option>
       </select>
       <button className="button wide-button" type="submit" disabled={pending}>
-        {pending ? "Creating..." : "Create course"}
+        {pending ? (
+          <span className="spinner-row">
+            <span className="spinner" aria-hidden="true" />
+            Creating…
+          </span>
+        ) : (
+          "Create course"
+        )}
       </button>
       {!state.ok ? <p className="center-note" role="alert">{state.message}</p> : null}
     </form>

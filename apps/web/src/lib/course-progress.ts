@@ -83,7 +83,9 @@ export const deriveCourseProgress = ({
 
   const resumeLessonId = resumePoint?.type === "lesson" ? resumePoint.lessonId : null;
   const resumeLessonIndex = requiredLessons.findIndex((lesson) => lesson.id === resumeLessonId);
-  const completedRequiredLessons = resumeLessonIndex > 0 ? resumeLessonIndex : 0;
+  // Count skipped lessons as completed for progress calculation
+  const skippedLessons = lessons.filter((lesson) => lesson.status === "skipped" && lesson.is_required !== false);
+  const completedRequiredLessons = (resumeLessonIndex > 0 ? resumeLessonIndex : 0) + skippedLessons.length;
   const progressPercent = requiredLessons.length
     ? Math.round((completedRequiredLessons / requiredLessons.length) * 100)
     : 0;

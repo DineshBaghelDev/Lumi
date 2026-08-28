@@ -119,6 +119,33 @@ const toGenerationJobDto = (job: {
   message: safeJobMessage(job),
 });
 
+// Simple in-memory rate limiter
+type RateLimitEntry = { count: number; resetAt: number };
+const rateLimitStore = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const CHAT_RATE_LIMIT_MAX = 10;
+const COURSE_CREATION_RATE_LIMIT_MAX = 5;
+
+const checkRateLimit = (key: string, max: number, windowMs: number): boolean => {
+  const now = Date.now();
+  const entry = rateLimitStore.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (entry.count >= max) return false;
+  entry.count++;
+  return true;
+};
+
+// Periodically clean up expired entries
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore) {
+    if (now > entry.resetAt) rateLimitStore.delete(key);
+  }
+}, 60_000).unref?.();
+
 const parse = <T>(schema: z.ZodType<T>, value: unknown) => {
   const result = schema.safeParse(value);
   if (!result.success) throw new HttpError(400, "bad_request", result.error.issues[0]?.message ?? "Invalid request");
@@ -131,6 +158,22 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
   const db = createRequestDbProxy(rootDb);
   const grader = deps.grader ?? new LiteLlmClient(config.services.liteLlm);
   const app = Fastify({ logger: true });
+
+  // CORS for development mode
+  app.addHook("onRequest", (request, reply, done) => {
+    if (request.method === "OPTIONS") {
+      reply.header("Access-Control-Allow-Origin", request.headers.origin ?? "*");
+      reply.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+      reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key");
+      reply.header("Access-Control-Allow-Credentials", "true");
+      reply.header("Access-Control-Max-Age", "86400");
+      reply.status(204).send();
+      return;
+    }
+    reply.header("Access-Control-Allow-Origin", request.headers.origin ?? "*");
+    reply.header("Access-Control-Allow-Credentials", "true");
+    done();
+  });
 
   app.addHook("onRequest", (request, _reply, done) => runWithRequestDb(rootDb, done));
   registerAuth(app, rootDb, deps.resolveSession ?? createBetterAuthSessionResolver(createLumiAuthFromEnv()));
@@ -860,6 +903,12 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     if (!user) throw new HttpError(401, "unauthorized", "Missing user");
     const { id } = parse(paramsWithId, request.params);
     if (!(await canAccessCourse(db, user.id, id))) throw new HttpError(404, "not_found", "Course not found");
+
+    // Rate limit: max 10 messages per minute per user per course
+    const rateLimitKey = `chat:${user.id}:${id}`;
+    if (!checkRateLimit(rateLimitKey, CHAT_RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
+      throw new HttpError(429, "rate_limited", "Too many chat messages. Please wait before sending another.");
+    }
     const body = parse(z.object({
       message: z.string().trim().min(1).max(4_000),
       threadId: z.uuid().optional(),
@@ -959,9 +1008,10 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
           values (${threadId}, 'assistant', ${fullContent}, ${JSON.stringify(citationChunkIds)}::jsonb, ${model}, ${llmCallId})
         `);
       });
-    } catch {
-      // Log but don't fail the response
-      console.error("[chat] failed to persist assistant message");
+    } catch (persistError) {
+      // Log with thread context for debugging; don't fail the streamed response
+      const message = persistError instanceof Error ? persistError.message : String(persistError);
+      console.error(`[chat] failed to persist assistant message for thread ${threadId}: ${message}`);
     }
 
     return reply;

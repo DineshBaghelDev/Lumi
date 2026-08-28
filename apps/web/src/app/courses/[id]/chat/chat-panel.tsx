@@ -123,6 +123,7 @@ export function ChatPanel({
             if (parsed.threadId) setThreadId(parsed.threadId);
             if (parsed.error) {
               setError(parsed.error);
+              setStreaming(false);
               break;
             }
             if (parsed.content) {

@@ -18,13 +18,15 @@ export const buildApiUrl = (path: string) => {
     throw new Error("Invalid proxy path");
   }
 
-  const segments = decodedPath.split("/");
+  // Normalize path to prevent double-encoded traversal
+  const normalized = decodeURIComponent(decodedPath);
+  const segments = normalized.split("/").filter(Boolean);
   if (
-    !decodedPath ||
-    decodedPath.includes("\\") ||
-    decodedPath.includes(":") ||
-    decodedPath.startsWith("//") ||
-    segments.some((segment) => segment === "." || segment === "..")
+    !normalized ||
+    normalized.includes("\\") ||
+    normalized.includes(":") ||
+    normalized.startsWith("//") ||
+    segments.some((segment) => segment === "." || segment === ".." || segment.includes("%"))
   ) {
     throw new Error("Invalid proxy path");
   }

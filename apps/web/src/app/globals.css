@@ -1793,3 +1793,24 @@ figure figcaption {
     margin-left: 0;
   }
 }
+
+/* Spinner */
+.spinner-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--slate-300);
+  border-top-color: var(--surface-raised);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

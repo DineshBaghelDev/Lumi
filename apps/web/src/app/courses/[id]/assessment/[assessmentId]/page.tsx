@@ -58,7 +58,13 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
 
   return (
     <AppShell active="Courses">
-      <a className="back-link" href={`/courses/${id}/lesson/${assessment.lessonId}`}>Back to lesson</a>
+      <div className="topline compact">
+        <div className="back-link" style={{ display: "flex", gap: "var(--space-4)" }}>
+          <a href={`/courses/${id}/lesson/${assessment.lessonId}`}>Back to lesson</a>
+          <span style={{ color: "var(--slate-300)" }}>|</span>
+          <a href={`/courses/${id}`}>Roadmap</a>
+        </div>
+      </div>
       <div className="page-title">
         <h1>{assessment.title}</h1>
         <p>{questions.length} questions. Multiple choice checks are instant; everything else is graded at the end.</p>

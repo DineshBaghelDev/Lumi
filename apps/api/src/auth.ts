@@ -35,6 +35,9 @@ export const credentialHeaders = (request: Pick<FastifyRequest, "headers">) => {
   const cookie = request.headers.cookie;
   if (typeof authorization === "string" && /^Bearer\s+\S+$/i.test(authorization)) headers.set("authorization", authorization);
   if (typeof cookie === "string" && cookie) headers.set("cookie", cookie);
+  // Note: Only Bearer auth and cookies are forwarded.
+  // All other headers (x-forwarded-host, x-forwarded-for, etc.) are intentionally stripped
+  // to prevent header injection when proxying through the web app.
   return headers;
 };
 

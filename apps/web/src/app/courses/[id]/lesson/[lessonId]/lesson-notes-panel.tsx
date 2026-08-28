@@ -180,6 +180,10 @@ export function LessonNotesPanel({
     <div className="lesson-notes-panel">
       {error ? <p className="helper-text" role="alert">{error}</p> : null}
 
+      {notes.length === 0 && !loading ? (
+        <p className="helper-text">No notes or bookmarks yet. Add a note below or bookmark a section.</p>
+      ) : null}
+
       {blocks.filter((block) => block.type === "heading").length > 0 ? (
         <div className="notes-section">
           <p className="helper-text">Bookmark a section</p>
@@ -318,9 +322,7 @@ export function LessonNotesPanel({
         </div>
       ) : null}
 
-      {notes.length === 0 ? (
-        <p className="helper-text">No notes or bookmarks yet. Add a note above or bookmark a section.</p>
-      ) : null}
+
     </div>
   );
 }
