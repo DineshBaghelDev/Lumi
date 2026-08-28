@@ -18,6 +18,7 @@ export function LessonChatPanel({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const sendMessage = useCallback(async () => {
@@ -34,7 +35,7 @@ export function LessonChatPanel({
       const response = await fetch(`/api/proxy/courses/${courseId}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, lessonId }),
+        body: JSON.stringify({ message: text, lessonId, threadId: threadId ?? undefined }),
       });
 
       if (!response.ok) {
@@ -63,7 +64,8 @@ export function LessonChatPanel({
           const data = trimmed.slice(6);
           if (data === "[DONE]") continue;
           try {
-            const parsed = JSON.parse(data) as { content?: string };
+            const parsed = JSON.parse(data) as { content?: string; threadId?: string };
+            if (parsed.threadId) setThreadId(parsed.threadId);
             if (parsed.content) {
               content += parsed.content;
               setMessages((prev) => {
@@ -80,7 +82,7 @@ export function LessonChatPanel({
       }
     } catch { /* network error */ }
     finally { setStreaming(false); }
-  }, [courseId, input, lessonId, streaming]);
+  }, [courseId, input, lessonId, streaming, threadId]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {

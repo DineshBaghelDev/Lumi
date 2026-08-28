@@ -119,7 +119,8 @@ export function ChatPanel({
           if (data === "[DONE]") continue;
 
           try {
-            const parsed = JSON.parse(data) as { content?: string; error?: string };
+            const parsed = JSON.parse(data) as { content?: string; error?: string; threadId?: string };
+            if (parsed.threadId) setThreadId(parsed.threadId);
             if (parsed.error) {
               setError(parsed.error);
               break;
