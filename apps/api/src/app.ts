@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { createLumiAuthFromEnv } from "@lumi/auth";
-import { parseApiEnv, parseProvidersEnv, type ApiConfig } from "@lumi/config";
+import { parseApiEnv, parseProvidersEnv, resolveModelProvider, type ApiConfig } from "@lumi/config";
 import { createReaderClient, parseStorageConfig, statObject, getObject } from "@lumi/storage";
 import {
   canAccessCourse,
@@ -1018,9 +1018,40 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
 
     const systemPrompt = buildChatSystemPrompt(chunks);
 
+    // Resolve course model and provider key for chat
+    const courseModel = (await db.execute<{ model: string | null }>(sql`
+      select limits->>'model' as model
+      from course_generation_usage
+      where course_id = ${id}
+    `)).rows[0]?.model ?? null;
+    let chatLlmConfig = config.services.liteLlm;
+    let model = config.services.liteLlm.model;
+    if (courseModel) {
+      const provider = resolveModelProvider(courseModel);
+      if (provider) {
+        const encrypted = (await db.execute<{ encrypted_key: string }>(sql`
+          select pk.encrypted_key
+          from provider_keys pk
+          join courses c on c.owner_user_id = pk.user_id
+          where c.id = ${id} and pk.provider = ${provider}
+          limit 1
+        `)).rows[0]?.encrypted_key;
+        if (encrypted) {
+          try {
+            const apiKey = decryptKey(encrypted, config.services.providerEncryptionKey);
+            chatLlmConfig = { ...chatLlmConfig, apiKey };
+            model = courseModel;
+          } catch { /* fall back to env config */ }
+        } else {
+          model = courseModel;
+        }
+      } else {
+        model = courseModel;
+      }
+    }
+
     // Stream response
-    const llm = new LiteLlmClient(config.services.liteLlm);
-    const model = config.services.liteLlm.model;
+    const llm = new LiteLlmClient(chatLlmConfig);
 
     reply.raw.setHeader("Content-Type", "text/event-stream");
     reply.raw.setHeader("Cache-Control", "no-cache");
