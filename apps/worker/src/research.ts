@@ -3,7 +3,7 @@ import net from "node:net";
 import type { WorkerConfig } from "@lumi/config";
 import { enqueueGenerationJob, type GenerationJobRow, type LumiDb } from "@lumi/db";
 import { LiteLlmClient, recordLlmCall, type CompleteResult } from "@lumi/llm";
-import { getCourseModel } from "./provider.ts";
+import { getCourseLlmConfig } from "./provider.ts";
 import { sql } from "drizzle-orm";
 import { PermanentJobError, RetryableJobError } from "./worker.ts";
 import { Crawl4aiClient, type CrawledPage, type SearchResult, SearxngClient, TeiClient } from "./research-clients.ts";
@@ -61,9 +61,10 @@ export const createResearchHandler = (
     const course = await getCourse(db, job.course_id);
     await ensureCanContinue(db, job.course_id, "research start");
     await setProgress(db, job.id, 10, { stage: "concepts" });
-    const model = await getCourseModel(db, job.course_id);
+    const { config: llmConfig, model } = await getCourseLlmConfig(db, job.course_id, config.services.liteLlm);
+    const courseLlm = new LiteLlmClient(llmConfig);
 
-    const concepts = await discoverConceptPlan(db, job, course, llm, config, model);
+    const concepts = await discoverConceptPlan(db, job, course, courseLlm, config, model);
     await ensureConceptBudget(db, job.course_id, concepts.length);
 
     const queries = buildQueries(course, concepts).slice(0, config.generationBudgets.maxSearchQueries);

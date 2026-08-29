@@ -1,7 +1,7 @@
 import type { WorkerConfig } from "@lumi/config";
 import { enqueueGenerationJob, type GenerationJobRow, type LumiDb } from "@lumi/db";
 import { LiteLlmClient, recordLlmCall, type CompleteResult } from "@lumi/llm";
-import { getCourseModel } from "./provider.ts";
+import { getCourseLlmConfig } from "./provider.ts";
 import { lessonContentSchema, type LessonBlock, type LessonContent } from "@lumi/shared";
 import { sql } from "drizzle-orm";
 import { PermanentJobError, RetryableJobError } from "./worker.ts";
@@ -71,16 +71,17 @@ export const createLessonHandler = (
     await setProgress(db, job.id, 10, { stage: "load_context" });
     await setLessonStatus(db, lesson.id, "generating");
     const context = await getLessonContext(db, lesson);
-    const model = await getCourseModel(db, lesson.course_id);
+    const { config: llmConfig, model } = await getCourseLlmConfig(db, lesson.course_id, config.services.liteLlm);
+    const courseLlm = new LiteLlmClient(llmConfig);
 
     let feedback: string[] = [];
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       await setProgress(db, job.id, attempt === 1 ? 30 : 55, { stage: "generate", attempt });
-      const generated = await generateLesson(llm, lesson, context, feedback, model);
+      const generated = await generateLesson(courseLlm, lesson, context, feedback, model);
       await recordLlmCall(db, toLlmCall(job.id, generated.result, "lesson-v1", { lessonId: lesson.id, attempt }));
 
       const deterministic = validateLessonQuality(generated.content, lesson, context);
-      const semantic = deterministic.passed ? await reviewLesson(reviewer, lesson, generated.content, model) : null;
+      const semantic = deterministic.passed ? await reviewLesson(courseLlm, lesson, generated.content, model) : null;
       if (semantic) {
         await recordLlmCall(db, toLlmCall(job.id, semantic.result, "lesson-review-v1", { lessonId: lesson.id, attempt }));
       }

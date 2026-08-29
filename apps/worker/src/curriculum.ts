@@ -1,7 +1,7 @@
 import type { WorkerConfig } from "@lumi/config";
 import { enqueueGenerationJob, type GenerationJobRow, type LumiDb } from "@lumi/db";
 import { LiteLlmClient, recordLlmCall, type CompleteResult } from "@lumi/llm";
-import { getCourseModel } from "./provider.ts";
+import { getCourseLlmConfig } from "./provider.ts";
 import { curriculumStructuredOutputSchema, type CurriculumStructuredOutput } from "@lumi/shared";
 import { sql } from "drizzle-orm";
 import { PermanentJobError, RetryableJobError } from "./worker.ts";
@@ -41,11 +41,12 @@ export const createCurriculumHandler = (
     await setProgress(db, job.id, 10, { stage: "load_research" });
     const course = await getCourse(db, job.course_id);
     const concepts = await getConcepts(db, job.course_id);
-    const model = await getCourseModel(db, job.course_id);
+    const { config: llmConfig, model } = await getCourseLlmConfig(db, job.course_id, config.services.liteLlm);
+    const courseLlm = new LiteLlmClient(llmConfig);
     if (concepts.length === 0) throw new PermanentJobError("Curriculum requires completed research concepts");
 
     await ensureLessonBudget(db, job.course_id, Math.min(concepts.length, config.generationBudgets.maxLessons));
-    const result = await llm.complete({
+    const result = await courseLlm.complete({
       temperature: 0,
       maxTokens: 6_000,
       ...(model ? { model } : {}),

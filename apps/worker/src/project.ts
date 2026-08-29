@@ -1,7 +1,7 @@
 import type { WorkerConfig } from "@lumi/config";
 import { type GenerationJobRow, type LumiDb } from "@lumi/db";
 import { LiteLlmClient, recordLlmCall, type CompleteResult } from "@lumi/llm";
-import { getCourseModel } from "./provider.ts";
+import { getCourseLlmConfig } from "./provider.ts";
 import { projectContentSchema, type ProjectContent } from "@lumi/shared";
 import { sql } from "drizzle-orm";
 import { refreshCourseStatus } from "./lesson.ts";
@@ -51,12 +51,13 @@ export const createProjectHandler = (
     await setProgress(db, job.id, 10, { stage: "load_context" });
     await setProjectStatus(db, project.id, "generating");
     const context = await getProjectContext(db, project);
-    const model = await getCourseModel(db, project.course_id);
+    const { config: llmConfig, model } = await getCourseLlmConfig(db, project.course_id, config.services.liteLlm);
+    const courseLlm = new LiteLlmClient(llmConfig);
 
     let feedback: string[] = [];
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       await setProgress(db, job.id, attempt === 1 ? 30 : 55, { stage: "generate", attempt });
-      const generated = await generateProject(llm, project, context, feedback, model);
+      const generated = await generateProject(courseLlm, project, context, feedback, model);
       await recordLlmCall(db, {
         jobId: job.id,
         model: generated.result.model,
@@ -69,7 +70,7 @@ export const createProjectHandler = (
       });
 
       const deterministic = validateProjectQuality(generated.content, context);
-      const semantic = deterministic.passed ? await reviewProject(reviewer, project, generated.content, model) : null;
+      const semantic = deterministic.passed ? await reviewProject(courseLlm, project, generated.content, model) : null;
       if (semantic) {
         await recordLlmCall(db, {
           jobId: job.id,
