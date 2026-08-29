@@ -73,18 +73,18 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
           </article>
           <aside className="lesson-tools">
             <details className="side-card lesson-tool" open>
-              <summary>Notes & Bookmarks</summary>
-              <LessonNotesPanel courseId={id} lessonId={lessonId} blocks={content.blocks} />
-            </details>
-            <details className="side-card lesson-tool section-gap" open>
               <summary>Progress</summary>
               <LessonProgressPanel courseId={id} lessonId={lessonId} contentBlockCount={content.blocks.length} />
             </details>
-            <details className="side-card lesson-tool section-gap" open>
+            <details className="side-card lesson-tool section-gap">
+              <summary>Notes & Bookmarks</summary>
+              <LessonNotesPanel courseId={id} lessonId={lessonId} blocks={content.blocks} />
+            </details>
+            <details className="side-card lesson-tool section-gap">
               <summary>Sources</summary>
               <p>{sourceCount(content)} cited source references in this lesson.</p>
             </details>
-            <details className="side-card lesson-tool section-gap" open>
+            <details className="side-card lesson-tool section-gap">
               <summary>Ask Lumi</summary>
               <LessonChatPanel courseId={id} lessonId={lessonId} />
             </details>

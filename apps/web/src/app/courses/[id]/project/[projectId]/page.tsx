@@ -76,36 +76,48 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       </div>
       <CourseTabs active="Lessons" courseId={id} />
       {project.storyline ? (
-        <section className="panel module-box">
+        <section className="project-story">
           <p>{project.storyline}</p>
         </section>
       ) : null}
-      <p className="helper-text section-gap">
-        {completedMilestones} of {totalMilestones} milestones complete
-      </p>
+      <div className="project-progress-strip">
+        <span>{completedMilestones} of {totalMilestones} milestones complete</span>
+        <div className="progressbar" aria-hidden="true">
+          <span style={{ width: `${totalMilestones ? Math.round((completedMilestones / totalMilestones) * 100) : 0}%` }} />
+        </div>
+      </div>
 
       {currentMilestone ? (
-        <section className="panel module-box section-gap">
-          <h2>Milestone {currentMilestone.orderIndex}: {currentMilestone.title}</h2>
-          <p>{currentMilestone.scenario}</p>
+        <section className="project-workspace section-gap">
+          <div className="project-main-task">
+            <span className="status purple">Milestone {currentMilestone.orderIndex}</span>
+            <h2>{currentMilestone.title}</h2>
+            <p>{currentMilestone.scenario}</p>
+          </div>
           {currentMilestone.learnerDecisionPrompt ? (
             <aside className="lesson-callout tip">
               <h3>Your call</h3>
               <p>{currentMilestone.learnerDecisionPrompt}</p>
             </aside>
           ) : null}
-          <h3>Build locally</h3>
-          <p>{currentMilestone.implementationGoal}</p>
-          {currentMilestone.constraints.length > 0 ? (
-            <ul className="lesson-list-block">
-              {currentMilestone.constraints.map((constraint) => <li key={constraint}>{constraint}</li>)}
-            </ul>
-          ) : null}
-          <h3>Expected outcome</h3>
-          <p>{currentMilestone.expectedOutcome}</p>
+          <div className="project-task-grid">
+            <section>
+              <h3>Build locally</h3>
+              <p>{currentMilestone.implementationGoal}</p>
+              {currentMilestone.constraints.length > 0 ? (
+                <ul className="lesson-list-block">
+                  {currentMilestone.constraints.map((constraint) => <li key={constraint}>{constraint}</li>)}
+                </ul>
+              ) : null}
+            </section>
+            <section>
+              <h3>Expected outcome</h3>
+              <p>{currentMilestone.expectedOutcome}</p>
+            </section>
+          </div>
 
           {currentMilestone.lessons.length > 0 ? (
-            <>
+            <div className="resource-strip">
               <h3>Helpful lessons</h3>
               <ul className="lesson-list-block">
                 {currentMilestone.lessons.map((lesson) => (
@@ -114,11 +126,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                   </li>
                 ))}
               </ul>
-            </>
+            </div>
           ) : null}
 
           {currentMilestone.revealedHints > 0 ? (
-            <>
+            <div className="hint-stack">
               <h3>Hints</h3>
               <ol className="lesson-list-block">
                 {currentMilestone.hints.map((hint, hintIndex) => (
@@ -127,7 +139,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                   </li>
                 ))}
               </ol>
-            </>
+            </div>
           ) : null}
 
           <div className="topline section-gap">
@@ -160,4 +172,3 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     </AppShell>
   );
 }
-

@@ -17,6 +17,10 @@ export function CreateCourseForm({ idempotencyKey }: { idempotencyKey: string })
   return (
     <form className="form-box" action={action}>
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+      <div className="form-intro">
+        <h2>Build a learning path</h2>
+        <p>Lumi will research the topic, draft a roadmap, and unlock lessons as they become ready.</p>
+      </div>
       <label htmlFor="topic">What do you want to learn?</label>
       <textarea id="topic" name="topic" className="textarea" placeholder="e.g., Quantum Computing, Basic Financial Modeling..." required />
       <label>Depth</label>

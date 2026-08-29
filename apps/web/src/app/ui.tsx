@@ -86,7 +86,7 @@ export function Sidebar({ active }: { active: string }) {
         ))}
       </nav>
       <div className="sidebar-bottom">
-        <a className="button ghost wide-button" href="/account/security">Account security</a>
+        <a className="account-link" href="/account/security">Account security</a>
         <SignOutButton />
         <img className="side-mascot" src="/mascot-waving.png" alt="" />
       </div>

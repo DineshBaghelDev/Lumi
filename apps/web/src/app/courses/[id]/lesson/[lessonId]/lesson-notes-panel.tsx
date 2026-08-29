@@ -240,11 +240,10 @@ export function LessonNotesPanel({
           rows={3}
           value={newNote}
         />
-        <div className="topline compact section-gap" style={{ gap: "8px" }}>
+        <div className="note-compose-actions section-gap">
           <select
-            className="select"
+            className="select compact-select"
             onChange={(e) => setSelectedBlock(e.target.value)}
-            style={{ minHeight: "34px", fontSize: "12px" }}
             value={selectedBlock}
           >
             <option value="">No block selected</option>
@@ -252,7 +251,7 @@ export function LessonNotesPanel({
               <option key={b.id} value={b.id}>{b.text ?? b.id}</option>
             ))}
           </select>
-          <button className="button" disabled={!newNote.trim() || savingKey === "new-note"} onClick={() => void addNote()} type="button" style={{ minHeight: "34px" }}>
+          <button className="button compact-button" disabled={!newNote.trim() || savingKey === "new-note"} onClick={() => void addNote()} type="button">
             Save
           </button>
         </div>
@@ -270,7 +269,7 @@ export function LessonNotesPanel({
                     rows={3}
                     value={editingContent}
                   />
-                  <div className="topline compact section-gap" style={{ gap: "8px" }}>
+                  <div className="note-compose-actions section-gap">
                     <button
                       className="button"
                       disabled={!editingContent.trim() || savingKey === `edit:${note.id}`}
@@ -295,7 +294,7 @@ export function LessonNotesPanel({
                 <>
                   <p className="note-content">{note.content}</p>
                   {note.blockId ? <p className="helper-text">Block: {blocks.find((block) => block.id === note.blockId)?.text ?? note.blockId}</p> : null}
-                  <div className="topline compact section-gap" style={{ gap: "8px" }}>
+                  <div className="note-compose-actions section-gap">
                     <button
                       className="button ghost"
                       onClick={() => {

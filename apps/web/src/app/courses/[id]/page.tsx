@@ -40,6 +40,8 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
   const active = course.status === "generating" || jobs.some((job) => job.status === "queued" || job.status === "running");
   const failedJobs = jobs.filter((job) => job.status === "failed");
   const doneLessons = roadmap.lessons.filter((lesson) => lesson.status === "ready").length;
+  const lessonCount = roadmap.lessons.length;
+  const lessonProgress = lessonCount ? `${Math.round((doneLessons / lessonCount) * 100)}%` : "0%";
   const resumePoint = resumeResponse.ok ? await resumeResponse.json() as ResumePoint : null;
   const learningState = deriveCourseProgress({
     courseStatus: course.status,
@@ -47,7 +49,13 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
     lessons: roadmap.lessons,
     projects: roadmap.projects,
   });
-  const progress = active ? `${Math.max(...jobs.map((job) => job.progress), 0)}%` : learningState.progressLabel;
+  const displayProgress = (active || failedJobs.length > 0) && lessonCount ? lessonProgress : learningState.progressLabel;
+  const statusSummary = active
+    ? generationSummary(jobs, lessonCount, doneLessons, detail.usage ?? null)
+    : failedJobs.length > 0
+      ? `${doneLessons} of ${lessonCount} lessons are ready. A generation step needs a retry.`
+    : learningState.summary;
+  const statusTitle = active ? "Course material" : failedJobs.length ? "Course needs attention" : "Learning progress";
 
   return (
     <AppShell active="Courses">
@@ -68,20 +76,21 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
         <div className="left">
           <CourseIcon>{course.topic.slice(0, 2).toUpperCase()}</CourseIcon>
           <div>
-            <h2>About this course</h2>
+            <h2>{active ? "Learn what is ready" : "Continue this course"}</h2>
             <p>{course.description ?? `A generated learning path for ${course.topic}.`}</p>
             <div className="meta-row">
               <span className="chip active">{active ? course.status.replaceAll("_", " ") : learningState.stateLabel.toLowerCase()}</span>
+              {lessonCount ? <span>{doneLessons} of {lessonCount} lessons ready</span> : null}
               {course.difficulty_level ? <span>{course.difficulty_level}</span> : null}
               {course.estimated_duration_minutes ? <span>{Math.round(course.estimated_duration_minutes / 60)}h</span> : null}
             </div>
           </div>
         </div>
         <div className="right">
-          <h3>{active ? "Generation" : "Learning progress"}</h3>
-          <strong className="progress-value">{progress}</strong>
-          <p>{active ? generationSummary(jobs, roadmap.lessons.length, doneLessons, detail.usage ?? null) : learningState.summary}</p>
-          <ProgressBar value={progress} />
+          <h3>{statusTitle}</h3>
+          <strong className="progress-value">{displayProgress}</strong>
+          <p>{statusSummary}</p>
+          <ProgressBar value={displayProgress} />
           <a className={`button wide-button ${roadmap.lessons.length ? "" : "disabled-link"}`} href={roadmap.lessons.length ? `/courses/${id}/lessons` : "#"}>
             View roadmap
           </a>
@@ -101,7 +110,7 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
         </section>
       ) : null}
       <CourseTabs active="Overview" courseId={id} />
-      <h2 className="section-title">Learning Path</h2>
+      <h2 className="section-title">Learning path</h2>
       <p>Follow the generated modules as each lesson becomes available.</p>
       <section className="course-list">
         {roadmap.modules.length === 0 ? (
@@ -113,6 +122,7 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
           const moduleLessons = roadmap.lessons.filter((lesson) => lesson.module_id === module.id);
           const moduleReady = moduleLessons.filter((lesson) => lesson.status === "ready").length;
           const moduleProgress = moduleLessons.length ? `${Math.round((moduleReady / moduleLessons.length) * 100)}%` : "0%";
+          const waitingLessons = moduleLessons.length - moduleReady;
           return (
             <div className="path-row" key={module.id}>
               <span className="path-number">{index + 1}</span>
@@ -120,7 +130,7 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
                 <CourseIcon>{module.order_index}</CourseIcon>
                 <div>
                   <h2>{module.title}</h2>
-                  <p>{moduleLessons.length} lessons</p>
+                  <p>{moduleReady} of {moduleLessons.length} lessons ready{waitingLessons ? `, ${waitingLessons} preparing` : ""}</p>
                   {module.description ? <p>{module.description}</p> : null}
                 </div>
                 <div>

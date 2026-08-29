@@ -37,6 +37,9 @@ export default async function CourseLessonsPage({ params }: { params: Promise<{ 
     ? await curriculumResponse.json() as { modules: Module[]; lessons: Lesson[]; projects: Project[] }
     : { modules: [], lessons: [], projects: [] };
 
+  const readyLessons = roadmap.lessons.filter((lesson) => lesson.status === "ready").length;
+  const readyAssessments = roadmap.lessons.filter((lesson) => lesson.assessment_id && lesson.assessment_status === "ready").length;
+
   return (
     <AppShell active="Courses">
       <AutoRefresh active={course.status === "generating"} />
@@ -46,6 +49,17 @@ export default async function CourseLessonsPage({ params }: { params: Promise<{ 
         <p>{course.description ?? course.topic}</p>
       </div>
       <CourseTabs active="Lessons" courseId={id} />
+      {roadmap.lessons.length > 0 ? (
+        <section className="learning-summary">
+          <div>
+            <h2>Start with the first ready lesson</h2>
+            <p>{readyLessons} of {roadmap.lessons.length} lessons ready. {readyAssessments} assessments available.</p>
+          </div>
+          <a className="button" href={`/courses/${id}/lesson/${roadmap.lessons.find((lesson) => lesson.status === "ready")?.id ?? roadmap.lessons[0]?.id}`}>
+            Continue learning
+          </a>
+        </section>
+      ) : null}
       {roadmap.modules.length === 0 ? (
         <section className="panel module-box">
           <h2>Curriculum pending</h2>
@@ -57,15 +71,24 @@ export default async function CourseLessonsPage({ params }: { params: Promise<{ 
           <div className="lesson-list">
             {roadmap.lessons.filter((lesson) => lesson.module_id === module.id).map((lesson) => {
               const ready = lesson.status === "ready";
+              const assessmentLabel = !lesson.assessment_id
+                ? "Assessment pending"
+                : lesson.assessment_status === "ready"
+                  ? "Assessment ready"
+                  : lesson.assessment_status === "failed"
+                    ? "Assessment failed"
+                    : "Assessment preparing";
               const row = (
                 <>
                   <span className="path-number">{lesson.order_index}</span>
                   <div>
                     <h3>{lesson.title}</h3>
                     <p>{lesson.objectives[0] ?? (lesson.is_required ? "Required lesson" : "Optional lesson")}</p>
-                    {ready && lesson.assessment_id && lesson.assessment_status !== "ready" ? <p className="helper-text">Assessment preparing</p> : null}
+                    <div className="meta-row compact-meta">
+                      <span>{lesson.is_required ? "Required" : "Optional"}</span>
+                      <span>{assessmentLabel}</span>
+                    </div>
                   </div>
-                  <span>{lesson.is_required ? "Required" : "Optional"}</span>
                   <Status label={ready ? "Ready" : lesson.status === "failed" ? "Failed" : "Not Started"} />
                 </>
               );
@@ -95,8 +118,10 @@ export default async function CourseLessonsPage({ params }: { params: Promise<{ 
                   <div>
                     <h3>{project.title}</h3>
                     <p>{project.goal}</p>
+                    <div className="meta-row compact-meta">
+                      <span>Project</span>
+                    </div>
                   </div>
-                  <span>Project</span>
                   <Status label={ready ? "Available" : project.status === "failed" ? "Failed" : "Not Started"} />
                 </>
               );

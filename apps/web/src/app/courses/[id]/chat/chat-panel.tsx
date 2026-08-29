@@ -96,6 +96,7 @@ export function ChatPanel({
       content: text,
     };
     setMessages((prev) => [...prev, userMsg]);
+    let responseThreadId = threadId;
 
     try {
       const response = await fetch(`/api/proxy/courses/${courseId}/chat`, {
@@ -148,7 +149,10 @@ export function ChatPanel({
 
           try {
             const parsed = JSON.parse(data) as { content?: string; error?: string; threadId?: string };
-            if (parsed.threadId) setThreadId(parsed.threadId);
+            if (parsed.threadId) {
+              responseThreadId = parsed.threadId;
+              setThreadId(parsed.threadId);
+            }
             if (parsed.error) {
               setError(parsed.error);
               setStreaming(false);
@@ -176,8 +180,9 @@ export function ChatPanel({
       setError("Network error. Please try again.");
     } finally {
       setStreaming(false);
+      if (responseThreadId) void loadThread(responseThreadId);
     }
-  }, [courseId, input, lessonId, streaming, threadId]);
+  }, [courseId, input, lessonId, loadThread, streaming, threadId]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -189,7 +194,7 @@ export function ChatPanel({
   return (
     <div className="chat-container">
       {threads.length > 0 && !threadId ? (
-        <section className="panel module-box section-gap">
+        <section className="thread-panel section-gap">
           <h2>Previous conversations</h2>
           <div className="course-list">
             {threads.map((thread) => (
@@ -199,7 +204,7 @@ export function ChatPanel({
                 onClick={() => void loadThread(thread.id)}
                 type="button"
               >
-                <span className="path-number">💬</span>
+                <span className="thread-mark" aria-hidden="true" />
                 <div>
                   <h3>{thread.lessonId ? "Lesson chat" : "Course chat"}</h3>
                   <p>{thread.lastMessage?.slice(0, 100) ?? "New conversation"}</p>
@@ -220,8 +225,9 @@ export function ChatPanel({
       <section className="chat-messages">
         {messages.length === 0 && !streaming ? (
           <div className="chat-empty">
-            <p>Ask a question about the course material.</p>
-            <p className="small">Answers are grounded in the course sources.</p>
+            <h2>Ask from the course sources</h2>
+            <p>Try asking for an explanation, tradeoff, failure mode, or next step.</p>
+            <p className="small">Lumi keeps answers tied to the stored course material.</p>
           </div>
         ) : null}
         {messages.map((msg) => (

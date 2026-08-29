@@ -59,16 +59,45 @@ export function AssessmentRunner({
   if (!question) return null;
 
   if (results) {
+    const weakPoints = [...new Set(results.flatMap((result) => result.weakPoints))];
+    const correctCount = results.filter((result) => result.correct === true).length;
+
     return (
-      <section className="panel module-box section-gap">
-        <h2>Results</h2>
-        <p className="helper-text">Score: {Math.round((score ?? 0) * 100)}%</p>
-        <ul className="lesson-list-block">
+      <section className="assessment-results section-gap">
+        <div className="result-hero">
+          <div>
+            <h2>Results</h2>
+            <p>{weakPoints.length > 0 ? "Review the concepts below, then return to the lesson." : "Nice work. You can keep moving through the course."}</p>
+          </div>
+          <strong>{Math.round((score ?? 0) * 100)}%</strong>
+        </div>
+        <div className="result-summary-grid">
+          <div>
+            <span className="caption">Answered correctly</span>
+            <strong>{correctCount} of {results.length}</strong>
+          </div>
+          <div>
+            <span className="caption">Review focus</span>
+            <strong>{weakPoints.length ? `${weakPoints.length} concepts` : "None"}</strong>
+          </div>
+        </div>
+        {weakPoints.length > 0 ? (
+          <div className="review-callout">
+            <h3>Review these before continuing</h3>
+            <ul>
+              {weakPoints.map((point) => <li key={point}>{point}</li>)}
+            </ul>
+          </div>
+        ) : null}
+        <ul className="result-list">
           {results.map((result) => {
             const match = questions.find((item) => item.questionId === result.questionId);
             return (
               <li key={result.questionId}>
-                <p>{match?.prompt}</p>
+                <div>
+                  <p>{match?.prompt}</p>
+                  <p className="helper-text">{result.feedback}</p>
+                </div>
                 {result.correct === null ? (
                   <span className="status purple">{result.earnedPoints}/{result.possiblePoints} points</span>
                 ) : result.correct ? (
@@ -76,12 +105,6 @@ export function AssessmentRunner({
                 ) : (
                   <span className="status danger">Review this</span>
                 )}
-                <p className="helper-text">{result.feedback}</p>
-                {result.weakPoints.length > 0 ? (
-                  <ul>
-                    {result.weakPoints.map((point) => <li key={point}>{point}</li>)}
-                  </ul>
-                ) : null}
               </li>
             );
           })}
@@ -140,22 +163,28 @@ export function AssessmentRunner({
   const currentAnswer = answers[question.questionId];
 
   return (
-    <div>
-      <p className="helper-text">Question {index + 1} of {questions.length} · Difficulty {question.difficulty}/5</p>
-      <section className="panel module-box">
+    <div className="assessment-runner">
+      <div className="assessment-progress-line">
+        <p className="helper-text">Question {index + 1} of {questions.length} · Difficulty {question.difficulty}/5</p>
+        <div className="progressbar" aria-hidden="true">
+          <span style={{ width: `${Math.round(((index + 1) / questions.length) * 100)}%` }} />
+        </div>
+      </div>
+      <section className="panel module-box assessment-card">
         <h3>{question.prompt}</h3>
         {question.codeContext ? <pre className="lesson-code"><code>{question.codeContext}</code></pre> : null}
 
         {isChoiceKind(question.kind) && question.options ? (
-          <div className="chips">
+          <div className="assessment-options">
             {question.options.map((option) => (
               <button
-                className={`chip${currentAnswer === option.id ? " active" : ""}`}
+                className={`assessment-option${currentAnswer === option.id ? " active" : ""}`}
                 disabled={(givesInstantFeedback(question.kind) && locksInstantChoice(mcqFeedback[question.questionId])) || pending}
                 key={option.id}
                 onClick={() => pickOption(option.id)}
                 type="button"
               >
+                <span className="answer-dot">{option.text.slice(0, 1).toUpperCase()}</span>
                 {option.text}
               </button>
             ))}
@@ -208,9 +237,10 @@ export function AssessmentRunner({
         ) : null}
 
         {givesInstantFeedback(question.kind) && mcqFeedback[question.questionId] !== undefined ? (
-          <p className={`status ${mcqFeedback[question.questionId] === null ? "gray" : mcqFeedback[question.questionId] ? "good" : "danger"}`}>
-            {instantFeedbackMessage(mcqFeedback[question.questionId])}
-          </p>
+          <div className={`answer-feedback ${mcqFeedback[question.questionId] === null ? "gray" : mcqFeedback[question.questionId] ? "good" : "danger"}`} role="status">
+            <strong>{instantFeedbackMessage(mcqFeedback[question.questionId])}</strong>
+            <p>{mcqFeedback[question.questionId] ? "That answer matches the lesson's key idea." : "Pause here and review the lesson before moving on."}</p>
+          </div>
         ) : null}
       </section>
 

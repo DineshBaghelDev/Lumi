@@ -39,7 +39,10 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             Continue with Google
           </button>
         </form>
-        <AuthForms />
+        <details className="secondary-auth">
+          <summary>Other sign-in options</summary>
+          <AuthForms />
+        </details>
       </section>
     </main>
   );
