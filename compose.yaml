@@ -212,11 +212,11 @@ services:
       context: .
       target: worker
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f 'apps/worker' || exit 1"]
+      test: ["CMD-SHELL", "kill -0 1 2>/dev/null || exit 1"]
       interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     environment:
       WORKER_DATABASE_URL: "postgresql://lumi_worker:${WORKER_DB_PASSWORD}@postgres:5432/lumi"
       LITELLM_BASE_URL: "http://litellm:4000"

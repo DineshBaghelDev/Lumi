@@ -36,20 +36,34 @@ export async function updatePasswordAction(_state: FormState, formData: FormData
 export async function createCourseAction(_state: FormState, formData: FormData): Promise<FormState> {
   const topic = String(formData.get("topic") ?? "").trim();
   const goal = String(formData.get("goal") ?? "").trim();
-  const difficultyLevel = String(formData.get("difficultyLevel") ?? "").trim();
+  const difficultyLevel = String(formData.get("difficultyLevel") ?? "").trim() || undefined;
   const idempotencyKey = String(formData.get("idempotencyKey") ?? randomUUID());
 
   if (!topic || !goal) return fail("Add a topic and learning goal to create a course.");
 
-  const response = await apiFetch("/courses", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "idempotency-key": idempotencyKey,
-    },
-    body: JSON.stringify({ topic, goal, difficultyLevel }),
-  });
-  if (!response.ok) return fail("Could not create that course. Check the fields and try again.");
+  let response: Response;
+  try {
+    response = await apiFetch("/courses", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "idempotency-key": idempotencyKey,
+      },
+      body: JSON.stringify({ topic, goal, difficultyLevel }),
+    });
+  } catch {
+    return fail("The API server is not reachable. Please ensure the API is running and try again.");
+  }
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const errBody = await response.json() as { error?: { code?: string; message?: string } };
+      detail = errBody?.error?.message ?? "";
+    } catch { /* ignore parse error */ }
+    if (response.status === 401) return fail("You are not signed in. Please refresh and sign in again.");
+    if (response.status === 429) return fail(detail || "Too many courses are generating. Please wait a moment and try again.");
+    return fail(detail || `Course creation failed (HTTP ${response.status}). Check the fields and try again.`);
+  }
   const body = await response.json() as { course?: { id?: string } };
   redirect(`/courses/${body.course?.id ?? ""}`);
 }

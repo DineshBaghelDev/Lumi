@@ -47,12 +47,14 @@ const serviceChecks = [
   ["TEI", `${config.services.tei.baseUrl}/health`],
 ] as const;
 
-const MAX_SERVICE_WAIT_MS = 5 * 60_000; // 5 minutes
+const MAX_SERVICE_WAIT_MS = 10 * 60_000; // 10 minutes before logging a persistent warning
 const SERVICE_CHECK_INTERVAL_MS = 5_000;
+const SERVICE_RETRY_INTERVAL_MS = 30_000; // after initial wait, retry every 30s
 const serviceWaitStart = Date.now();
+let loggedGiveUp = false;
 
 while (!stopping) {
-  const failed = [];
+  const failed: string[] = [];
   for (const [name, url] of serviceChecks) {
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(3_000) });
@@ -65,11 +67,15 @@ while (!stopping) {
 
   const elapsed = Date.now() - serviceWaitStart;
   if (elapsed >= MAX_SERVICE_WAIT_MS) {
-    console.error(`Worker giving up after ${MAX_SERVICE_WAIT_MS / 60_000} minutes waiting for: ${failed.join(", ")}. Start them with docker compose up -d.`);
-    process.exit(1);
+    if (!loggedGiveUp) {
+      console.error(`[worker] WARNING: Some services still unavailable after ${MAX_SERVICE_WAIT_MS / 60_000} minutes: ${failed.join(", ")}. Worker will keep retrying.`);
+      loggedGiveUp = true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, SERVICE_RETRY_INTERVAL_MS));
+    continue;
   }
 
-  console.error(`Worker waiting for local generation services: ${failed.join(", ")}. Start them with docker compose up -d. (elapsed: ${Math.round(elapsed / 1000)}s)`);
+  console.error(`[worker] Waiting for local generation services: ${failed.join(", ")}. Start them with docker compose up -d. (elapsed: ${Math.round(elapsed / 1000)}s)`);
   await new Promise((resolve) => setTimeout(resolve, SERVICE_CHECK_INTERVAL_MS));
 }
 
