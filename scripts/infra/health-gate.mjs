@@ -15,6 +15,11 @@
  */
 
 import { exit } from "node:process";
+import { connect } from "node:net";
+import { createRequire } from "node:module";
+
+const requireDb = createRequire(new URL("../../packages/db/package.json", import.meta.url));
+const requireStorage = createRequire(new URL("../../packages/storage/package.json", import.meta.url));
 
 const gates = [];
 let failures = 0;
@@ -35,17 +40,27 @@ const check = async (name, url, options = {}) => {
   }
 };
 
+const checkTcp = async (name, host, portNumber, timeoutMs = 2_000) => {
+  await new Promise((resolve) => {
+    const socket = connect({ host, port: portNumber });
+    const finish = (status, detail) => {
+      socket.destroy();
+      gates.push({ name, status, detail });
+      if (status === "FAIL") failures += 1;
+      resolve();
+    };
+    socket.setTimeout(timeoutMs, () => finish("FAIL", "timeout"));
+    socket.once("connect", () => finish("PASS", `${host}:${portNumber}`));
+    socket.once("error", (error) => finish("FAIL", error.message));
+  });
+};
+
 const port = (envVar, fallback) => Number(process.env[envVar] ?? fallback);
 
 const BASE = "http://127.0.0.1";
 
 // ── Infrastructure services ─────────────────────────────────────────
-await check("PostgreSQL", `${BASE}:${port("POSTGRES_PORT", 5432)}`, {
-  ok: () => false, // TCP port — existence means it responded; catch already handles refusal
-  timeoutMs: 2_000,
-});
-// For PG we actually need pg_isready or a TCP probe — skip HTTP check, rely on DB gate below
-gates.pop(); // remove the expected-fail TCP check
+await checkTcp("PostgreSQL", "127.0.0.1", port("POSTGRES_PORT", 6432));
 
 await check("MinIO S3 API", `${BASE}:${port("MINIO_PORT", 9000)}/minio/health/live`);
 await check("MinIO Console", `${BASE}:${port("MINIO_PORT", 9000) + 1}`, {
@@ -62,9 +77,7 @@ await check("Web", `${BASE}:${port("WEB_PORT", 3000)}/`);
 
 // ── PostgreSQL role and extension gate ──────────────────────────────
 const pgCheck = async () => {
-  const { createRequire } = await import("node:module");
-  const require = createRequire(import.meta.url);
-  const { Pool } = require("pg");
+  const { Pool } = requireDb("pg");
   const url = process.env.TEST_DATABASE_URL;
   if (!url) return gates.push({ name: "PostgreSQL connection", status: "SKIP", detail: "TEST_DATABASE_URL not set" });
   const pool = new Pool({ connectionString: url, max: 1 });
@@ -79,7 +92,7 @@ const pgCheck = async () => {
     if (!vectorOk) failures += 1;
 
     const expectedRoles = new Map([
-      ["lumi_migrator", false],
+      ["lumi_migrator", true],
       ["lumi_api", false],
       ["lumi_worker", true],
       ["lumi_auth", false],
@@ -103,8 +116,8 @@ await pgCheck();
 
 // ── Better Auth gate ───────────────────────────────────────────────
 const authCheck = async () => {
-  const apiPort = port("API_PORT", 3001);
-  const base = process.env.BETTER_AUTH_URL ?? `http://127.0.0.1:${apiPort}`;
+  const webPort = port("WEB_PORT", 3000);
+  const base = process.env.BETTER_AUTH_URL ?? `http://127.0.0.1:${webPort}`;
   try {
     const r = await fetch(`${base}/api/auth/get-session`, { signal: AbortSignal.timeout(3_000) });
     // 200 or 401 are both acceptable — means auth endpoint is reachable
@@ -128,9 +141,7 @@ const minioCheck = async () => {
     return;
   }
   try {
-    const { createRequire } = await import("node:module");
-    const require = createRequire(import.meta.url);
-    const { Client } = require("minio");
+    const { Client } = requireStorage("minio");
     const parsed = new URL(endpoint);
     const mc = new Client({
       endPoint: parsed.hostname,
@@ -163,9 +174,7 @@ await minioCheck();
 const vectorCheck = async () => {
   const url = process.env.TEST_DATABASE_URL;
   if (!url) return gates.push({ name: "pgvector retrieval", status: "SKIP", detail: "TEST_DATABASE_URL not set" });
-  const { createRequire } = await import("node:module");
-  const require = createRequire(import.meta.url);
-  const { Pool } = require("pg");
+  const { Pool } = requireDb("pg");
   const pool = new Pool({ connectionString: url, max: 1 });
   const client = await pool.connect();
   try {

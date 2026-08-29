@@ -11,7 +11,7 @@ services:
       LUMI_API_DB_PASSWORD: "${API_DB_PASSWORD:?Set API_DB_PASSWORD in .env}"
       LUMI_WORKER_DB_PASSWORD: "${WORKER_DB_PASSWORD:?Set WORKER_DB_PASSWORD in .env}"
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:6432:5432"
     volumes:
       - lumi-db-data:/var/lib/postgresql/data
       - ./services/postgres/init:/docker-entrypoint-initdb.d:ro

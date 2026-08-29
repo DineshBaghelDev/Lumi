@@ -14,8 +14,9 @@ export const apiFetch = async (path: string, init: RequestInit = {}) => {
       headers,
       cache: "no-store",
     });
-  } catch {
-    return Response.json({ error: "API unavailable" }, { status: 503 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "API unavailable";
+    return Response.json({ error: { code: "api_unavailable", message } }, { status: 503 });
   }
 };
 

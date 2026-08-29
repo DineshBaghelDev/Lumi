@@ -8,11 +8,12 @@
  *   3. Cosine-NN query returns deterministic ordering
  *
  * Usage:
- *   TEST_DATABASE_URL=postgresql://lumi_migrator:...@127.0.0.1:5432/lumi \
+ *   TEST_DATABASE_URL=postgresql://lumi_migrator:...@127.0.0.1:6432/lumi \
  *     node scripts/infra/pgvector-gate.mjs
  */
 
 import { exit } from "node:process";
+import { createRequire } from "node:module";
 
 try { process.loadEnvFile("../../.env"); } catch {}
 
@@ -22,9 +23,8 @@ if (!url) {
   exit(1);
 }
 
-const { createRequire } = await import("node:module");
-const require = createRequire(import.meta.url);
-const { Pool } = require("pg");
+const requireDb = createRequire(new URL("../../packages/db/package.json", import.meta.url));
+const { Pool } = requireDb("pg");
 
 const pool = new Pool({ connectionString: url, max: 1 });
 const client = await pool.connect();
@@ -48,8 +48,8 @@ try {
     "select array_agg(distinct vector_dims(embedding)) filter (where embedding is not null) as d from source_chunks",
   );
   const dimensions = dims.rows[0]?.d ?? [];
-  const all384 = dimensions.length > 0 && dimensions.every((d) => d === 384);
-  gate("Vector dimension", all384, JSON.stringify(dimensions));
+  const all384 = dimensions.every((d) => d === 384);
+  gate("Vector dimension", all384, dimensions.length > 0 ? JSON.stringify(dimensions) : "no embeddings yet");
 
   // 3. Sample cosine ranking (deterministic if same data)
   const sample = await client.query(

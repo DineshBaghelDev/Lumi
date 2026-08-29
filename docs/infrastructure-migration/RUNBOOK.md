@@ -27,9 +27,9 @@ Prisma, role, ownership, or RLS changes to it. Never use `docker compose down
 6. Reconcile counts, hashes, FKs, owners, vectors, and retrieval samples.
 7. Run T17 integration gates:
    ```bash
-   TEST_DATABASE_URL=postgresql://lumi_migrator:test-migrator-pw@127.0.0.1:5432/lumi \
+   TEST_DATABASE_URL=postgresql://lumi_migrator:test-migrator-pw@127.0.0.1:6432/lumi \
      node scripts/infra/health-gate.mjs
-   TEST_DATABASE_URL=postgresql://lumi_migrator:test-migrator-pw@127.0.0.1:5432/lumi \
+   TEST_DATABASE_URL=postgresql://lumi_migrator:test-migrator-pw@127.0.0.1:6432/lumi \
      node scripts/infra/pgvector-gate.mjs
    ```
 8. Run T18 real authenticated E2E (requires web+api+postgres+minio running):
@@ -40,7 +40,7 @@ Prisma, role, ownership, or RLS changes to it. Never use `docker compose down
    ```bash
    bash scripts/infra/backup.sh
    bash scripts/infra/restore.sh backups/local-<timestamp>
-   TEST_DATABASE_URL=postgresql://lumi_migrator:test-migrator-pw@127.0.0.1:5432/lumi \
+   TEST_DATABASE_URL=postgresql://lumi_migrator:test-migrator-pw@127.0.0.1:6432/lumi \
      node scripts/infra/reconcile-gate.mjs
    ```
 

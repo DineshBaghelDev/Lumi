@@ -6,7 +6,7 @@
  * and HNSW index existence against the live database.
  *
  * Usage:
- *   TEST_DATABASE_URL=postgresql://lumi_migrator:...@127.0.0.1:5432/lumi \
+ *   TEST_DATABASE_URL=postgresql://lumi_migrator:...@127.0.0.1:6432/lumi \
  *     node scripts/infra/reconcile-gate.mjs
  *
  * Optional:
@@ -14,15 +14,15 @@
  */
 
 import { exit } from "node:process";
+import { createRequire } from "node:module";
 
 try { process.loadEnvFile("../../.env"); } catch {}
 
 const url = process.env.TEST_DATABASE_URL;
 if (!url) { console.error("TEST_DATABASE_URL required"); exit(1); }
 
-const { createRequire } = await import("node:module");
-const require = createRequire(import.meta.url);
-const { Pool } = require("pg");
+const requireDb = createRequire(new URL("../../packages/db/package.json", import.meta.url));
+const { Pool } = requireDb("pg");
 
 const pool = new Pool({ connectionString: url, max: 1 });
 const client = await pool.connect();

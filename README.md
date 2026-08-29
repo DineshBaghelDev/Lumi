@@ -122,7 +122,7 @@ docker compose up -d postgres minio minio-setup litellm searxng crawl4ai tei
 | --- | --- |
 | Web | `http://127.0.0.1:3000` |
 | API health | `http://127.0.0.1:3001/health` |
-| PostgreSQL | `127.0.0.1:5432` (role-based access) |
+| PostgreSQL | `127.0.0.1:6432` (role-based access) |
 | MinIO S3 | `http://127.0.0.1:9000` |
 | MinIO Console | `http://127.0.0.1:9001` |
 | LiteLLM | `http://127.0.0.1:4000` |
@@ -214,7 +214,7 @@ pnpm --filter @lumi/web build
 ### Integration tests (require running database)
 
 ```sh
-TEST_DATABASE_URL=postgresql://lumi_migrator:password@127.0.0.1:5432/lumi \
+TEST_DATABASE_URL=postgresql://lumi_migrator:password@127.0.0.1:6432/lumi \
   pnpm --filter @lumi/db test
 ```
 
@@ -222,11 +222,11 @@ TEST_DATABASE_URL=postgresql://lumi_migrator:password@127.0.0.1:5432/lumi \
 
 ```sh
 # Full service health check
-TEST_DATABASE_URL=postgresql://lumi_migrator:password@127.0.0.1:5432/lumi \
+TEST_DATABASE_URL=postgresql://lumi_migrator:password@127.0.0.1:6432/lumi \
   node scripts/infra/health-gate.mjs
 
 # pgvector retrieval verification
-TEST_DATABASE_URL=postgresql://lumi_migrator:password@127.0.0.1:5432/lumi \
+TEST_DATABASE_URL=postgresql://lumi_migrator:password@127.0.0.1:6432/lumi \
   node scripts/infra/pgvector-gate.mjs
 ```
 
