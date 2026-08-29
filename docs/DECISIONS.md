@@ -42,6 +42,9 @@
 - Google OAuth only in V1; email auth deferred to V1.1.
 - LiteLLM owns model routing. In the MVP development environment, codex-as-api is the primary generation provider and OpenRouter is fallback.
 - Live routing (2026-08-26): `gpt-5.5` is served by Groq `openai/gpt-oss-120b` with OpenRouter as a named fallback deployment. OpenRouter balance cannot cover curriculum-sized `max_tokens` (402), so Groq is the effective generation provider until credits are added or codex-as-api returns.
+- Provider/model catalog is a single source of truth in `@lumi/config` (`availableProviders` array). Both the API (`GET /providers`) and the worker (`resolveModelProvider`) consume it; no duplicate hardcoded lists elsewhere.
+- Users can bring their own provider API keys. Keys are AES-256-GCM encrypted at rest using a dedicated `PROVIDER_ENCRYPTION_KEY` passphrase (falls back to `LITELLM_API_KEY` if unset). Provider and model strings are validated against the config catalog at both the API boundary (course creation, key save/delete) and the worker (model-to-provider resolution).
+- Each course snapshots its selected model at creation time in `course_generation_usage.limits.model`. Worker handlers resolve the per-course provider key and build a per-course `LiteLlmClient` config for every LLM call. Chat and grading fall back to env defaults when no per-course model is set.
 - LLM prompts must embed the exact JSON output shape (skeleton), not just key names. gpt-oss-120b guesses wrong shapes from prose-only prompts.
 - Deterministic QC rules must be stated verbatim in the prompt (e.g., prerequisite names, citation requirements); the model cannot infer gate mechanics.
 - Groq free tier enforces an 8000 tokens-per-minute cap per request including `max_tokens`; lesson calls are budgeted (~2200 prompt + 5000 completion worst case). Reasoning tokens count against completion budgets on gpt-oss models.

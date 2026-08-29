@@ -8,6 +8,7 @@ Next spec: none (V1 complete)
 
 ## Current handoff
 
+- Provider/model consolidation and validation (2026-08-29): three hardcoded provider lists (worker `modelToProvider`, settings form, config `availableProviders`) consolidated into a single source of truth in `@lumi/config`. Added `resolveModelProvider()` and `isValidModelId()` exports. Worker imports from config instead of maintaining its own list. Course creation API validates the selected model against available providers (those with valid env API keys) and returns 400 for unknown models. Provider-key PUT/DELETE endpoints now validate provider name against a strict enum and require minimum 8-character API keys. Added dedicated `PROVIDER_ENCRYPTION_KEY` env var (falls back to `LITELLM_API_KEY`) to decouple the encryption passphrase from LiteLLM credentials. Chat endpoint now resolves the course's stored model and provider key so conversations use the same LLM the course was generated with. All typechecks and 41 tests pass.
 - Release-readiness fix (2026-08-28): `apps/worker` now uses the configured `WORKER_CONCURRENCY` by running that many independent polling slots in one process, each with a stable worker-id suffix. DB-backed global limits and per-course lesson limits are unchanged; this only removes the single-await bottleneck in the process entrypoint.
 - Live end-to-end test (2026-08-26): course "PostgreSQL indexing" completed research → curriculum → 3/3 lessons `ready` with valid structured content. LiteLLM now routes `gpt-5.5` to Groq (`openai/gpt-oss-120b`) with OpenRouter as a named fallback deployment; OpenRouter balance cannot cover curriculum-sized requests (402).
 - LLM prompts must pin the exact JSON output shape. gpt-oss-120b guesses wrong shapes from prose-only prompts: curriculum returned a string `generationSummary`, lessons omitted `blocks`. Both prompts now embed exact skeletons, plus explicit citation rules because `sourceRefs` defaults to `[]` and omissions only fail later in QC.
@@ -37,6 +38,8 @@ Next spec: none (V1 complete)
 - Google OAuth only in V1
 - Drizzle
 - LiteLLM
+- Provider/model catalog as single source of truth in `@lumi/config`; no duplicate hardcoded lists
+- Users can bring their own provider API keys; encrypted at rest with dedicated `PROVIDER_ENCRYPTION_KEY`
 - SearXNG + Crawl4AI + TEI as local Docker services
 - Hugging Face TEI serving BAAI/bge-small-en-v1.5, 384-dim embeddings; LM Studio embedding references are stale
 - codex-as-api is the primary development LLM provider through LiteLLM; OpenRouter is fallback
