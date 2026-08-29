@@ -41,7 +41,7 @@ export const createCurriculumHandler = (
     await setProgress(db, job.id, 10, { stage: "load_research" });
     const course = await getCourse(db, job.course_id);
     const concepts = await getConcepts(db, job.course_id);
-    const { config: llmConfig, model } = await getCourseLlmConfig(db, job.course_id, config.services.liteLlm);
+    const { config: llmConfig, model } = await getCourseLlmConfig(db, job.course_id, config.services.liteLlm, config.services.providerEncryptionKey);
     const courseLlm = new LiteLlmClient(llmConfig);
     if (concepts.length === 0) throw new PermanentJobError("Curriculum requires completed research concepts");
 

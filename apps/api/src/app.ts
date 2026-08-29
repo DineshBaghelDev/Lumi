@@ -208,7 +208,7 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
   });
 
   // ─── Provider API Keys ─────────────────────────────────────────────
-  const encryptionPassphrase = config.services.liteLlm.apiKey;
+  const encryptionPassphrase = config.services.providerEncryptionKey;
 
   app.get("/settings/provider-keys", { preHandler: app.requireAuth }, async (request) => {
     const user = request.user;
@@ -235,8 +235,8 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     const user = request.user;
     if (!user) throw new HttpError(401, "unauthorized", "Missing user");
     const body = parse(z.object({
-      provider: z.string().trim().min(1).max(50),
-      apiKey: z.string().trim().min(1).max(500),
+      provider: z.enum(["groq", "codex", "moonshot", "gemini", "claude", "openrouter"]),
+      apiKey: z.string().trim().min(8).max(500),
     }), request.body);
 
     const encrypted = encryptKey(body.apiKey, encryptionPassphrase);
@@ -253,7 +253,7 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
   app.delete("/settings/provider-keys/:provider", { preHandler: app.requireAuth }, async (request) => {
     const user = request.user;
     if (!user) throw new HttpError(401, "unauthorized", "Missing user");
-    const { provider } = z.object({ provider: z.string() }).parse(request.params);
+    const { provider } = z.object({ provider: z.enum(["groq", "codex", "moonshot", "gemini", "claude", "openrouter"]) }).parse(request.params);
     await db.execute(sql`
       delete from provider_keys
       where user_id = ${user.id} and provider = ${provider}
@@ -270,6 +270,15 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     const user = request.user;
     if (!user) throw new HttpError(401, "unauthorized", "Missing user");
     await assertCanCreateCourse(db, user.id, idempotencyKey, config.generationBudgets);
+
+    // Validate model against available providers (those with valid env API keys)
+    if (body.model) {
+      const availableModelIds = parseProvidersEnv(process.env)
+        .flatMap((p) => p.models.map((m) => m.id));
+      if (!availableModelIds.includes(body.model)) {
+        throw new HttpError(400, "invalid_model", `Model "${body.model}" is not available. Choose a model from the provider list.`);
+      }
+    }
 
     const result = await createCourseWithResearchJob(db, {
       user,

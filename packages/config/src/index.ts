@@ -148,6 +148,7 @@ const sharedServicesEnvSchema = z.object({
 
 const serverSecretsEnvSchema = z.object({
   LITELLM_API_KEY: requiredSecret,
+  PROVIDER_ENCRYPTION_KEY: z.string().trim().min(32, "must be at least 32 characters").optional(),
 });
 
 const generationBudgetEnvSchema = z.object({
@@ -369,6 +370,7 @@ const mapCommonServerConfig = (env: CommonServerEnv) => ({
       ...mapSharedServices(env).liteLlm,
       apiKey: env.LITELLM_API_KEY,
     },
+    providerEncryptionKey: env.PROVIDER_ENCRYPTION_KEY ?? env.LITELLM_API_KEY,
   },
   generationBudgets: {
     maxLlmCalls: env.GENERATION_MAX_LLM_CALLS,
@@ -494,4 +496,26 @@ export const getAvailableProviders = (env: Env): ProviderConfig[] => {
     const keyName = providerKeyMap[provider.id];
     return keyName && env[keyName] && env[keyName] !== "your-" + keyName.toLowerCase().replace(/_/g, "-") && env[keyName] !== "api-key";
   });
+};
+
+/**
+ * Build a set of all known model IDs across every provider (not just available ones).
+ * Used to validate user-supplied model strings at the API boundary.
+ */
+const allModelIds = new Set(availableProviders.flatMap((p) => p.models.map((m) => m.id)));
+
+/**
+ * Return true when `modelId` is a known model in any provider config.
+ */
+export const isValidModelId = (modelId: string): boolean => allModelIds.has(modelId);
+
+/**
+ * Map a known model ID to its provider prefix (e.g. "groq-gpt-5.5" → "groq").
+ * Returns undefined for unknown model IDs.
+ */
+export const resolveModelProvider = (modelId: string): string | undefined => {
+  for (const provider of availableProviders) {
+    if (provider.models.some((m) => m.id === modelId)) return provider.id;
+  }
+  return undefined;
 };

@@ -61,7 +61,7 @@ export const createResearchHandler = (
     const course = await getCourse(db, job.course_id);
     await ensureCanContinue(db, job.course_id, "research start");
     await setProgress(db, job.id, 10, { stage: "concepts" });
-    const { config: llmConfig, model } = await getCourseLlmConfig(db, job.course_id, config.services.liteLlm);
+    const { config: llmConfig, model } = await getCourseLlmConfig(db, job.course_id, config.services.liteLlm, config.services.providerEncryptionKey);
     const courseLlm = new LiteLlmClient(llmConfig);
 
     const concepts = await discoverConceptPlan(db, job, course, courseLlm, config, model);

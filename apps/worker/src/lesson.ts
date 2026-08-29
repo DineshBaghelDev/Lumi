@@ -71,7 +71,7 @@ export const createLessonHandler = (
     await setProgress(db, job.id, 10, { stage: "load_context" });
     await setLessonStatus(db, lesson.id, "generating");
     const context = await getLessonContext(db, lesson);
-    const { config: llmConfig, model } = await getCourseLlmConfig(db, lesson.course_id, config.services.liteLlm);
+    const { config: llmConfig, model } = await getCourseLlmConfig(db, lesson.course_id, config.services.liteLlm, config.services.providerEncryptionKey);
     const courseLlm = new LiteLlmClient(llmConfig);
 
     let feedback: string[] = [];

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { LumiDb } from "@lumi/db";
 import { decryptKey } from "@lumi/db";
+import { resolveModelProvider } from "@lumi/config";
 import type { LiteLlmConfig } from "@lumi/llm";
 
 /**
@@ -16,15 +17,7 @@ export const getCourseModel = async (db: LumiDb, courseId: string): Promise<stri
   return result.rows[0]?.model ?? undefined;
 };
 
-/**
- * Map a LiteLLM model_name to a provider key.
- * e.g. "groq-gpt-5.5" → "groq", "codex-gpt-5.5" → "codex"
- */
-const modelToProvider = (model: string): string | undefined => {
-  const prefix = model.split("-")[0] ?? "";
-  const knownProviders = ["groq", "codex", "moonshot", "gemini", "claude", "openrouter"];
-  return knownProviders.includes(prefix) ? prefix : undefined;
-};
+
 
 /**
  * For a given courseId, look up the course owner's stored API key for the selected provider.
@@ -34,11 +27,12 @@ export const getCourseLlmConfig = async (
   db: LumiDb,
   courseId: string,
   globalConfig: LiteLlmConfig,
+  encryptionKey?: string,
 ): Promise<{ config: LiteLlmConfig; model: string | undefined }> => {
   const model = await getCourseModel(db, courseId);
   if (!model) return { config: globalConfig, model: undefined };
 
-  const provider = modelToProvider(model);
+  const provider = resolveModelProvider(model);
   if (!provider) return { config: globalConfig, model };
 
   // Find the course owner's API key for this provider
@@ -54,8 +48,9 @@ export const getCourseLlmConfig = async (
   if (!encrypted) return { config: globalConfig, model };
 
   // Decrypt the key and build a per-course config
+  const passphrase = encryptionKey ?? globalConfig.apiKey;
   try {
-    const apiKey = decryptKey(encrypted, globalConfig.apiKey);
+    const apiKey = decryptKey(encrypted, passphrase);
     return {
       config: { ...globalConfig, apiKey },
       model,

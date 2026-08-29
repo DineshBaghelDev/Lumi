@@ -72,7 +72,7 @@ export const createQuestionHandler = (
     await setProgress(db, job.id, 10, { stage: "load_context" });
     await setAssessmentStatus(db, assessment.id, "generating");
     const context = await getQuestionContext(db, assessment);
-    const { config: llmConfig, model } = await getCourseLlmConfig(db, assessment.course_id, config.services.liteLlm);
+    const { config: llmConfig, model } = await getCourseLlmConfig(db, assessment.course_id, config.services.liteLlm, config.services.providerEncryptionKey);
     const courseLlm = new LiteLlmClient(llmConfig);
 
     let feedback: string[] = [];
