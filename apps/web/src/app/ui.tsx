@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { requireCurrentUser } from "../lib/auth";
 import { SignOutButton } from "./sign-out-button";
+import { MobileNavToggle } from "./mobile-nav";
 
 export function Logo() {
   return (
@@ -86,6 +87,7 @@ export function Sidebar({ active }: { active: string }) {
         ))}
       </nav>
       <div className="sidebar-bottom">
+        <a className="account-link" href="/settings">Settings</a>
         <a className="account-link" href="/account/security">Account security</a>
         <SignOutButton />
         <img className="side-mascot" src="/mascot-waving.png" alt="" />
@@ -99,6 +101,7 @@ export async function AppShell({ active, children }: { active: string; children:
 
   return (
     <main className="app">
+      <MobileNavToggle />
       <Sidebar active={active} />
       <section className="main">{children}</section>
     </main>

@@ -1,13 +1,14 @@
 import type { WorkerConfig } from "@lumi/config";
 import { type GenerationJobRow, type LumiDb } from "@lumi/db";
 import { LiteLlmClient, recordLlmCall, type CompleteResult } from "@lumi/llm";
+import { getCourseModel } from "./provider.ts";
 import { projectContentSchema, type ProjectContent } from "@lumi/shared";
 import { sql } from "drizzle-orm";
 import { refreshCourseStatus } from "./lesson.ts";
 import { PermanentJobError, RetryableJobError } from "./worker.ts";
 
 type ProjectConfig = Pick<WorkerConfig, "services">;
-type ProjectLlm = { complete(input: { messages: { role: "system" | "user"; content: string }[]; temperature?: number; maxTokens?: number }): Promise<CompleteResult> };
+type ProjectLlm = { complete(input: { messages: { role: "system" | "user"; content: string }[]; temperature?: number; maxTokens?: number; model?: string }): Promise<CompleteResult> };
 
 type ProjectRow = {
   id: string;
@@ -50,11 +51,12 @@ export const createProjectHandler = (
     await setProgress(db, job.id, 10, { stage: "load_context" });
     await setProjectStatus(db, project.id, "generating");
     const context = await getProjectContext(db, project);
+    const model = await getCourseModel(db, project.course_id);
 
     let feedback: string[] = [];
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       await setProgress(db, job.id, attempt === 1 ? 30 : 55, { stage: "generate", attempt });
-      const generated = await generateProject(llm, project, context, feedback);
+      const generated = await generateProject(llm, project, context, feedback, model);
       await recordLlmCall(db, {
         jobId: job.id,
         model: generated.result.model,
@@ -67,7 +69,7 @@ export const createProjectHandler = (
       });
 
       const deterministic = validateProjectQuality(generated.content, context);
-      const semantic = deterministic.passed ? await reviewProject(reviewer, project, generated.content) : null;
+      const semantic = deterministic.passed ? await reviewProject(reviewer, project, generated.content, model) : null;
       if (semantic) {
         await recordLlmCall(db, {
           jobId: job.id,
@@ -160,10 +162,12 @@ const generateProject = async (
   project: ProjectRow,
   context: ProjectContext,
   feedback: string[],
+  model?: string,
 ) => {
   const result = await llm.complete({
     temperature: 0.2,
     maxTokens: 5_000,
+    ...(model ? { model } : {}),
     messages: [
       { role: "system", content: "Return only valid JSON for Lumi guided-project schema version 1. No HTML." },
       { role: "user", content: buildProjectPrompt(project, context, feedback) },
@@ -278,10 +282,11 @@ export const validateProjectQuality = (content: ProjectContent, context: Project
   return { passed: reasons.length === 0, reasons: reasons.length ? reasons : [] };
 };
 
-const reviewProject = async (reviewer: ProjectLlm, project: ProjectRow, content: ProjectContent) => {
+const reviewProject = async (reviewer: ProjectLlm, project: ProjectRow, content: ProjectContent, model?: string) => {
   const result = await reviewer.complete({
     temperature: 0,
     maxTokens: 900,
+    ...(model ? { model } : {}),
     messages: [
       { role: "system", content: "Return JSON only: {\"passed\": boolean, \"reasons\": string[]}. Check pedagogy, progressive difficulty, hint ordering, and that no milestone dumps the entire project or requires untaught material." },
       { role: "user", content: JSON.stringify({ project: { title: project.title, goal: project.goal }, content }) },

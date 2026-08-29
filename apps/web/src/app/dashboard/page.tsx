@@ -8,14 +8,19 @@ export default async function DashboardPage() {
   let courses: Course[] = [];
   let resumeCourse: Course | null = null;
   let resumePoint: ResumePoint = null;
+  let fetchError = false;
 
   try {
     const res = await apiFetch("/courses");
     if (res.ok) {
       const data = await res.json() as { courses: Course[] };
       courses = data.courses ?? [];
+    } else {
+      fetchError = true;
     }
-  } catch { /* ignore */ }
+  } catch {
+    fetchError = true;
+  }
 
   const resumeStates = await Promise.all(
     courses.map(async (course) => {
@@ -27,7 +32,9 @@ export default async function DashboardPage() {
           if (res.ok) {
             point = await res.json() as ResumePoint;
           }
-        } catch { /* ignore */ }
+        } catch {
+          // Resume point unavailable for this course
+        }
       }
 
       return {
@@ -86,8 +93,8 @@ export default async function DashboardPage() {
               return (
               <a className="panel course-card" href={`/courses/${course.id}`} key={course.id}>
                 <h3>{course.title}</h3>
-                <p className="small" style={{ color: "var(--muted)" }}>{course.topic}</p>
-                <span className="status purple" style={{ marginTop: "8px" }}>
+                <p className="small muted-text">{course.topic}</p>
+                <span className="status purple mt-2">
                   {entry?.state.stateLabel ?? course.status}
                 </span>
               </a>
@@ -95,6 +102,14 @@ export default async function DashboardPage() {
             })}
           </section>
         </>
+      ) : fetchError ? (
+        <section className="notice danger-notice section-gap">
+          <h2>Courses could not load</h2>
+          <p>The API server may be unavailable. Please refresh the page or try again later.</p>
+          <div className="notice-action">
+            <a className="button" href="/dashboard">Refresh</a>
+          </div>
+        </section>
       ) : (
         <section className="notice section-gap">
           <h2>No courses yet</h2>

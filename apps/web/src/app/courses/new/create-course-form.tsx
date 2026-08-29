@@ -3,6 +3,9 @@
 import { useActionState, useState } from "react";
 import { createCourseAction, type FormState } from "../../actions";
 
+type ProviderModel = { id: string; name: string; provider: string };
+type Provider = { id: string; name: string; models: ProviderModel[] };
+
 const initialState: FormState = { ok: true, message: "" };
 const depths = [
   { value: "beginner", icon: "1", title: "Beginner", body: "New to the topic" },
@@ -10,13 +13,17 @@ const depths = [
   { value: "advanced", icon: "3", title: "Advanced", body: "Want depth" },
 ];
 
-export function CreateCourseForm({ idempotencyKey }: { idempotencyKey: string }) {
+export function CreateCourseForm({ idempotencyKey, providers }: { idempotencyKey: string; providers: Provider[] }) {
   const [state, action, pending] = useActionState(createCourseAction, initialState);
   const [depth, setDepth] = useState("beginner");
+  const [selectedModel, setSelectedModel] = useState(providers[0]?.models[0]?.id ?? "");
+
+  const allModels = providers.flatMap((p) => p.models.map((m) => ({ ...m, providerName: p.name })));
 
   return (
     <form className="form-box" action={action}>
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+      <input type="hidden" name="model" value={selectedModel} />
       <div className="form-intro">
         <h2>Build a learning path</h2>
         <p>Lumi will research the topic, draft a roadmap, and unlock lessons as they become ready.</p>
@@ -42,6 +49,27 @@ export function CreateCourseForm({ idempotencyKey }: { idempotencyKey: string })
           </label>
         ))}
       </div>
+      {allModels.length > 1 ? (
+        <>
+          <label htmlFor="model-select">Model provider</label>
+          <select
+            id="model-select"
+            className="select"
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+          >
+            {providers.map((provider) => (
+              <optgroup key={provider.id} label={provider.name}>
+                {provider.models.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </>
+      ) : null}
       <label htmlFor="goal">What should this course help you do?</label>
       <textarea
         id="goal"

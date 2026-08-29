@@ -386,3 +386,10 @@ CREATE POLICY cm_via_thread ON chat_messages
         AND ct.user_id = current_setting('lumi.user_id')::uuid
     )
   );
+
+-- Provider API keys: own keys only.
+ALTER TABLE provider_keys ENABLE ROW LEVEL SECURITY;
+ALTER TABLE provider_keys FORCE ROW LEVEL SECURITY;
+CREATE POLICY pk_own ON provider_keys
+  FOR ALL
+  USING (user_id = current_setting('lumi.user_id')::uuid);

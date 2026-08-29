@@ -37,6 +37,7 @@ export async function createCourseAction(_state: FormState, formData: FormData):
   const topic = String(formData.get("topic") ?? "").trim();
   const goal = String(formData.get("goal") ?? "").trim();
   const difficultyLevel = String(formData.get("difficultyLevel") ?? "").trim() || undefined;
+  const model = String(formData.get("model") ?? "").trim() || undefined;
   const idempotencyKey = String(formData.get("idempotencyKey") ?? randomUUID());
 
   if (!topic || !goal) return fail("Add a topic and learning goal to create a course.");
@@ -49,7 +50,7 @@ export async function createCourseAction(_state: FormState, formData: FormData):
         "content-type": "application/json",
         "idempotency-key": idempotencyKey,
       },
-      body: JSON.stringify({ topic, goal, difficultyLevel }),
+      body: JSON.stringify({ topic, goal, difficultyLevel, model }),
     });
   } catch {
     return fail("The API server is not reachable. Please ensure the API is running and try again.");
@@ -59,7 +60,9 @@ export async function createCourseAction(_state: FormState, formData: FormData):
     try {
       const errBody = await response.json() as { error?: { code?: string; message?: string } };
       detail = errBody?.error?.message ?? "";
-    } catch { /* ignore parse error */ }
+    } catch {
+    // JSON parse failed — detail remains empty
+  }
     if (response.status === 401) return fail("You are not signed in. Please refresh and sign in again.");
     if (response.status === 429) return fail(detail || "Too many courses are generating. Please wait a moment and try again.");
     return fail(detail || `Course creation failed (HTTP ${response.status}). Check the fields and try again.`);

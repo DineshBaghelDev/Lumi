@@ -8,7 +8,7 @@ export const V1_CONFIG_DEFAULTS = {
   },
   services: {
     liteLlmBaseUrl: "http://127.0.0.1:4000",
-    liteLlmModel: "gpt-5.5",
+    liteLlmModel: "groq-gpt-5.5",
     searxngBaseUrl: "http://127.0.0.1:8080",
     crawl4aiBaseUrl: "http://127.0.0.1:11235",
     teiBaseUrl: "http://127.0.0.1:8081",
@@ -118,6 +118,15 @@ const databaseUrl = z
   );
 const mimeType = z.string().regex(/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/i, {
   message: "must be a MIME type such as text/html",
+});
+
+const providerEnvSchema = z.object({
+  CODEX_API_BASE_URL: z.string().url().optional(),
+  CODEX_API_KEY: z.string().optional(),
+  CODEX_API_MODEL: z.string().optional(),
+  MOONSHOT_API_KEY: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
 });
 
 const sharedServicesEnvSchema = z.object({
@@ -231,6 +240,7 @@ const researchSecurityEnvSchema = z.object({
 
 const commonServerEnvSchema = serverSecretsEnvSchema
   .extend(sharedServicesEnvSchema.shape)
+  .extend(providerEnvSchema.shape)
   .extend(generationBudgetEnvSchema.shape)
   .extend(researchSecurityEnvSchema.shape)
   .superRefine((env, context) => {
@@ -388,6 +398,10 @@ const mapCommonServerConfig = (env: CommonServerEnv) => ({
 export const parseSharedServicesEnv = (env: Env) =>
   mapSharedServices(parseSchema(sharedServicesEnvSchema, env, "shared services"));
 
+export const parseProvidersEnv = (env: Env): ProviderConfig[] => {
+  return getAvailableProviders(env);
+};
+
 export const parseApiEnv = (env: Env) => {
   const parsed = parseSchema(apiEnvSchema, env, "API");
   return { ...mapCommonServerConfig(parsed), database: { url: parsed.DATABASE_URL } };
@@ -426,3 +440,58 @@ export type SharedServicesConfig = ReturnType<typeof parseSharedServicesEnv>;
 export type ApiConfig = ReturnType<typeof parseApiEnv>;
 export type WorkerConfig = ReturnType<typeof parseWorkerEnv>;
 export type AuthConfig = ReturnType<typeof parseAuthEnv>;
+
+export type ProviderConfig = {
+  id: string;
+  name: string;
+  models: { id: string; name: string; provider: string }[];
+};
+
+const availableProviders: ProviderConfig[] = [
+  {
+    id: "groq",
+    name: "Groq",
+    models: [{ id: "groq-gpt-5.5", name: "GPT-OSS-120B", provider: "groq" }],
+  },
+  {
+    id: "codex",
+    name: "Codex (Local)",
+    models: [{ id: "codex-gpt-5.5", name: "GPT-5.5", provider: "codex" }],
+  },
+  {
+    id: "moonshot",
+    name: "Moonshot (Kimi)",
+    models: [{ id: "moonshot-latest", name: "Moonshot v1-128K", provider: "moonshot" }],
+  },
+  {
+    id: "gemini",
+    name: "Google Gemini",
+    models: [{ id: "gemini-pro", name: "Gemini 2.5 Pro", provider: "gemini" }],
+  },
+  {
+    id: "claude",
+    name: "Anthropic Claude",
+    models: [{ id: "claude-sonnet", name: "Claude Sonnet 4", provider: "claude" }],
+  },
+  {
+    id: "openrouter",
+    name: "OpenRouter",
+    models: [{ id: "openrouter-gpt-5.5", name: "GPT-5.5", provider: "openrouter" }],
+  },
+];
+
+const providerKeyMap: Record<string, string> = {
+  groq: "GROQ_API_KEY",
+  codex: "CODEX_API_KEY",
+  moonshot: "MOONSHOT_API_KEY",
+  gemini: "GEMINI_API_KEY",
+  claude: "ANTHROPIC_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+};
+
+export const getAvailableProviders = (env: Env): ProviderConfig[] => {
+  return availableProviders.filter((provider) => {
+    const keyName = providerKeyMap[provider.id];
+    return keyName && env[keyName] && env[keyName] !== "your-" + keyName.toLowerCase().replace(/_/g, "-") && env[keyName] !== "api-key";
+  });
+};

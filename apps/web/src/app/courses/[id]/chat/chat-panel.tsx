@@ -25,6 +25,8 @@ type Thread = {
   lastMessage: string | null;
 };
 
+import { MarkdownContent } from "./markdown-content";
+
 export function ChatPanel({
   courseId,
   threads,
@@ -232,7 +234,7 @@ export function ChatPanel({
         ) : null}
         {messages.map((msg) => (
           <div className={`chat-bubble ${msg.role}`} key={msg.id}>
-            <div className="chat-bubble-content">{msg.content}</div>
+            <div className="chat-bubble-content"><MarkdownContent content={msg.content} /></div>
             {msg.citations && msg.citations.length > 0 ? (
               <div className="chat-citations">
                 {msg.citations.map((cit) => (typeof cit === "string" ? null : (

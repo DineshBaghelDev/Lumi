@@ -59,9 +59,9 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
   return (
     <AppShell active="Courses">
       <div className="topline compact">
-        <div className="back-link" style={{ display: "flex", gap: "var(--space-4)" }}>
+        <div className="back-link flex-center">
           <a href={`/courses/${id}/lesson/${assessment.lessonId}`}>Back to lesson</a>
-          <span style={{ color: "var(--slate-300)" }}>|</span>
+          <span className="divider">|</span>
           <a href={`/courses/${id}`}>Roadmap</a>
         </div>
       </div>

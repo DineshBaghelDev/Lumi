@@ -587,11 +587,19 @@ export const chatThreads = pgTable(
   (table) => [
     index("chat_threads_user_course_idx").on(table.userId, table.courseId),
   ],
-);
+);export const providerKeys = pgTable("provider_keys", {
+  id: id(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull(),
+  encryptedKey: text("encrypted_key").notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => [
+  unique("provider_keys_user_provider_unique").on(table.userId, table.provider),
+  index("provider_keys_user_idx").on(table.userId),
+]);
 
-export const chatMessages = pgTable(
-  "chat_messages",
-  {
+export const chatMessages = pgTable("chat_messages", {
     id: id(),
     threadId: uuid("thread_id").notNull().references(() => chatThreads.id, { onDelete: "cascade" }),
     role: chatMessageRole("role").notNull(),

@@ -18,7 +18,10 @@ export function SourceLinks({ courseId, refs }: { courseId: string; refs: Source
     })
       .then((res) => res.ok ? res.json() : null)
       .then((body: { citations?: Citation[] } | null) => setCitations(body?.citations ?? []))
-      .catch(() => setCitations([]));
+      .catch(() => {
+        // Citation resolution is best-effort; fallback labels remain visible
+        setCitations([]);
+      });
   }, [chunkIds.join("|")]);
 
   if (refs.length === 0) return null;

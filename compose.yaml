@@ -66,6 +66,13 @@ services:
       UI_PASSWORD: "${UI_PASSWORD:-admin}"
       OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:?Set OPENROUTER_API_KEY in .env}"
       GROQ_API_KEY: "${GROQ_API_KEY:?Set GROQ_API_KEY in .env}"
+      CODEX_API_BASE_URL: "${CODEX_API_BASE_URL:-http://host.docker.internal:18080}"
+      CODEX_API_KEY: "${CODEX_API_KEY:-no-key-required}"
+      MOONSHOT_API_KEY: "${MOONSHOT_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:4000:4000"
     volumes:
@@ -177,7 +184,7 @@ services:
       DATABASE_URL: "postgresql://lumi_api:${API_DB_PASSWORD}@postgres:5432/lumi"
       LITELLM_BASE_URL: "http://litellm:4000"
       LITELLM_API_KEY: "${LITELLM_API_KEY:?Set LITELLM_API_KEY in .env}"
-      LITELLM_MODEL: "${LITELLM_MODEL:-gpt-5.5}"
+      LITELLM_MODEL: "${LITELLM_MODEL:-groq-gpt-5.5}"
       SEARXNG_BASE_URL: "http://searxng:8080"
       CRAWL4AI_BASE_URL: "http://crawl4ai:11235"
       TEI_BASE_URL: "http://tei:80"
@@ -221,7 +228,7 @@ services:
       WORKER_DATABASE_URL: "postgresql://lumi_worker:${WORKER_DB_PASSWORD}@postgres:5432/lumi"
       LITELLM_BASE_URL: "http://litellm:4000"
       LITELLM_API_KEY: "${LITELLM_API_KEY:?Set LITELLM_API_KEY in .env}"
-      LITELLM_MODEL: "${LITELLM_MODEL:-gpt-5.5}"
+      LITELLM_MODEL: "${LITELLM_MODEL:-groq-gpt-5.5}"
       SEARXNG_BASE_URL: "http://searxng:8080"
       CRAWL4AI_BASE_URL: "http://crawl4ai:11235"
       TEI_BASE_URL: "http://tei:80"

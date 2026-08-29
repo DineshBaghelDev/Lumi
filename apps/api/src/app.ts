@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { createLumiAuthFromEnv } from "@lumi/auth";
-import { parseApiEnv, type ApiConfig } from "@lumi/config";
+import { parseApiEnv, parseProvidersEnv, type ApiConfig } from "@lumi/config";
 import { createReaderClient, parseStorageConfig, statObject, getObject } from "@lumi/storage";
 import {
   canAccessCourse,
@@ -17,6 +17,7 @@ import {
   type LumiDb,
 } from "@lumi/db";
 import { LiteLlmClient, recordLlmCall, type CompleteResult } from "@lumi/llm";
+import { encryptKey, decryptKey, providerKeys } from "@lumi/db";
 import {
   conceptGuidanceFlagFromResults,
   freeResponseGradeSchema,
@@ -49,6 +50,7 @@ const createCourseBody = z.object({
   goal: z.string().trim().min(1).max(1000),
   targetAudience: z.string().trim().min(1).max(200).optional(),
   difficultyLevel: z.string().trim().min(1).max(80).optional(),
+  model: z.string().trim().min(1).max(200).optional(),
 });
 
 const paramsWithId = z.object({ id: z.uuid() });
@@ -200,6 +202,65 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     return { ok: true };
   });
 
+  app.get("/providers", { preHandler: app.requireAuth }, async () => {
+    const providers = parseProvidersEnv(process.env);
+    return { providers };
+  });
+
+  // ─── Provider API Keys ─────────────────────────────────────────────
+  const encryptionPassphrase = config.services.liteLlm.apiKey;
+
+  app.get("/settings/provider-keys", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const rows = await db.execute<{ id: string; provider: string; created_at: Date; updated_at: Date }>(sql`
+      select id, provider, created_at, updated_at
+      from provider_keys
+      where user_id = ${user.id}
+      order by provider
+    `);
+    // Return providers that have keys stored (never return the actual key)
+    return {
+      keys: rows.rows.map((row) => ({
+        id: row.id,
+        provider: row.provider,
+        hasKey: true,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      })),
+    };
+  });
+
+  app.put("/settings/provider-keys", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const body = parse(z.object({
+      provider: z.string().trim().min(1).max(50),
+      apiKey: z.string().trim().min(1).max(500),
+    }), request.body);
+
+    const encrypted = encryptKey(body.apiKey, encryptionPassphrase);
+    await db.execute(sql`
+      insert into provider_keys (user_id, provider, encrypted_key)
+      values (${user.id}, ${body.provider}, ${encrypted})
+      on conflict (user_id, provider) do update
+        set encrypted_key = excluded.encrypted_key,
+            updated_at = now()
+    `);
+    return { ok: true, provider: body.provider };
+  });
+
+  app.delete("/settings/provider-keys/:provider", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+    const { provider } = z.object({ provider: z.string() }).parse(request.params);
+    await db.execute(sql`
+      delete from provider_keys
+      where user_id = ${user.id} and provider = ${provider}
+    `);
+    return { ok: true };
+  });
+
   app.post("/courses", { preHandler: app.requireAuth }, async (request, reply) => {
     const body = parse(createCourseBody, request.body);
     const idempotencyKey = request.headers["idempotency-key"];
@@ -217,6 +278,7 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
       goal: body.goal,
       targetAudience: body.targetAudience ?? null,
       difficultyLevel: body.difficultyLevel ?? null,
+      model: body.model ?? config.services.liteLlm.model,
       limits: config.generationBudgets,
     });
 

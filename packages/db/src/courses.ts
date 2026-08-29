@@ -21,6 +21,7 @@ export type CreateCourseInput = {
   goal: string;
   targetAudience?: string | null;
   difficultyLevel?: string | null;
+  model?: string;
   limits: ApiConfig["generationBudgets"];
 };
 
@@ -120,7 +121,7 @@ export const createCourseWithResearchJob = async (db: Db, input: CreateCourseInp
     `);
     await tx.execute(sql`
       insert into course_generation_usage (course_id, limits)
-      values (${course.id}, ${JSON.stringify(input.limits)}::jsonb)
+      values (${course.id}, ${JSON.stringify({ ...input.limits, model: input.model })}::jsonb)
     `);
     await tx.execute(sql`
       insert into course_creation_requests (user_id, idempotency_key, course_id)

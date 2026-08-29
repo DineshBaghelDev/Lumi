@@ -31,7 +31,9 @@ export function LessonResume({
 
         document.getElementById(targetId)?.scrollIntoView({ behavior: "auto", block: "start" });
       })
-      .catch(() => {});
+      .catch(() => {
+        // Resume scroll is best-effort; failure is non-critical
+      });
 
     return () => {
       cancelled = true;

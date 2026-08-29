@@ -7,6 +7,7 @@ import { LessonProgressPanel } from "./lesson-progress-panel";
 import { LessonResume } from "./lesson-resume";
 import { assetImageSrc, inlineMarkdown } from "./lesson-rendering";
 import { SourceLinks } from "./source-links";
+import { CodeBlock } from "./code-block";
 
 type SourceRef = { sourceId: string; chunkId?: string; label?: string };
 type LessonBlock =
@@ -114,7 +115,7 @@ function renderBlock(block: LessonBlock, assets: ReadonlyMap<string, Asset>, cou
     return (
       <figure className="lesson-block" key={block.id}>
         {block.caption ? <figcaption>{block.caption}</figcaption> : null}
-        <pre className="lesson-code"><code>{block.code}</code></pre>
+        <CodeBlock code={block.code} language={block.language} />
         <SourceLinks courseId={courseId} refs={block.sourceRefs} />
       </figure>
     );

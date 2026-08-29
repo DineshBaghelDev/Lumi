@@ -1,13 +1,42 @@
 model_list:
-  - model_name: gpt-5.5
+  # Groq — current default
+  - model_name: groq-gpt-5.5
     litellm_params:
       model: groq/openai/gpt-oss-120b
       api_key: os.environ/GROQ_API_KEY
-  - model_name: gpt-5.5-fallback
+
+  # Codex-as-api — local development provider
+  # api_key defaults to "no-key-required" when not set (local service)
+  - model_name: codex-gpt-5.5
+    litellm_params:
+      model: openai/gpt-5.5
+      api_base: os.environ/CODEX_API_BASE_URL
+      api_key: os.environ/CODEX_API_KEY
+
+  # Moonshot (Kimi)
+  - model_name: moonshot-latest
+    litellm_params:
+      model: moonshot/moonshot-v1-128k
+      api_key: os.environ/MOONSHOT_API_KEY
+
+  # Gemini
+  - model_name: gemini-pro
+    litellm_params:
+      model: gemini/gemini-2.5-pro
+      api_key: os.environ/GEMINI_API_KEY
+
+  # Claude (Anthropic)
+  - model_name: claude-sonnet
+    litellm_params:
+      model: anthropic/claude-sonnet-4-20250514
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # OpenRouter — fallback
+  - model_name: openrouter-gpt-5.5
     litellm_params:
       model: openrouter/openai/gpt-5.5
       api_key: os.environ/OPENROUTER_API_KEY
 
 litellm_settings:
   fallbacks:
-    - gpt-5.5: ["gpt-5.5-fallback"]
+    - groq-gpt-5.5: ["openrouter-gpt-5.5"]

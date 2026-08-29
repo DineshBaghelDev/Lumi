@@ -11,6 +11,7 @@ export * from "./schema.ts";
 export * from "./jobs.ts";
 export * from "./courses.ts";
 export * from "./rag.ts";
+export { encryptKey, decryptKey } from "./encryption.ts";
 
 const fullSchema = { ...schema, ...authSchema };
 export type LumiDb = NodePgDatabase<typeof fullSchema>;

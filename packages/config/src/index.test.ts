@@ -31,7 +31,7 @@ test("API and worker load independently with V1 defaults", () => {
 
 test("shared service URLs load without server credentials", () => {
   assert.deepEqual(parseSharedServicesEnv({}), {
-    liteLlm: { baseUrl: "http://127.0.0.1:4000", model: "gpt-5.5" },
+    liteLlm: { baseUrl: "http://127.0.0.1:4000", model: "groq-gpt-5.5" },
     searxng: { baseUrl: "http://127.0.0.1:8080" },
     crawl4ai: { baseUrl: "http://127.0.0.1:11235" },
     tei: {

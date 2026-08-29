@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { MarkdownContent } from "../../chat/markdown-content";
 
 type Message = {
   id: string;
@@ -19,6 +20,7 @@ export function LessonChatPanel({
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const sendMessage = useCallback(async () => {
@@ -39,6 +41,7 @@ export function LessonChatPanel({
       });
 
       if (!response.ok) {
+        setError("Failed to send message. Please try again.");
         setStreaming(false);
         return;
       }
@@ -80,8 +83,9 @@ export function LessonChatPanel({
           } catch { /* skip */ }
         }
       }
-    } catch { /* network error */ }
-    finally { setStreaming(false); }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally { setStreaming(false); }
   }, [courseId, input, lessonId, streaming, threadId]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -99,23 +103,24 @@ export function LessonChatPanel({
         <div className="chat-messages compact">
           {messages.map((msg) => (
             <div className={`chat-bubble ${msg.role} compact`} key={msg.id}>
-              <div className="chat-bubble-content small">{msg.content}</div>
+              <div className="chat-bubble-content small"><MarkdownContent content={msg.content} /></div>
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
       )}
+      {error ? <p className="helper-text" role="alert">{error}</p> : null}
       <div className="chat-input-row compact">
         <input
-          className="search"
+          aria-label="Ask about this lesson"
+          className="search compact-search"
           disabled={streaming}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask about this lesson…"
-          style={{ minHeight: "36px", fontSize: "13px" }}
           value={input}
         />
-        <button className="button" disabled={streaming || !input.trim()} onClick={() => void sendMessage()} type="button" style={{ minHeight: "36px", fontSize: "13px" }}>
+        <button className="button compact-button" disabled={streaming || !input.trim()} onClick={() => void sendMessage()} type="button">
           Ask
         </button>
       </div>
