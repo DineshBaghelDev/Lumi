@@ -17,7 +17,7 @@ type Course = {
 type ModuleRow = { id: string; title: string; description: string | null; order_index: number };
 type LessonRow = { id: string; module_id: string; title: string; status: string };
 type ProjectRow = { id: string; title: string; status: string };
-type JobRow = { id: string; type: string; status: string; progress: number; stage: string; canRetry: boolean; message: string | null };
+type JobRow = { id: string; type: string; status: string; progress: number; stage: string; canRetry: boolean; message: string | null; error: string | null };
 type Usage = { cancelled?: boolean; budget_exhausted?: boolean } | null;
 
 export default async function CourseOverviewPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; success?: string }> }) {
@@ -99,13 +99,21 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
       {failedJobs.length ? (
         <section className="notice danger-notice">
           <h2>Generation needs attention</h2>
-          <p>{failedJobs[0]?.message ?? "A generation step failed."}</p>
-          {failedJobs.filter((job) => job.canRetry).map((job) => (
-            <form action={retryGenerationJobAction} key={job.id}>
-              <input type="hidden" name="courseId" value={id} />
-              <input type="hidden" name="jobId" value={job.id} />
-              <button className="button" type="submit">Retry {job.stage.toLowerCase()}</button>
-            </form>
+          {failedJobs.map((job) => (
+            <div key={job.id} style={{ marginBottom: "1rem" }}>
+              <p style={{ fontWeight: 600, marginBottom: "0.25rem" }}>{job.stage} failed</p>
+              <p style={{ marginBottom: "0.5rem" }}>{job.message ?? "An unexpected error occurred during this step."}</p>
+              {job.error && job.error !== job.message ? (
+                <p style={{ fontSize: "0.85rem", opacity: 0.8, fontFamily: "monospace", marginBottom: "0.5rem" }}>[Detail] {job.error}</p>
+              ) : null}
+              {job.canRetry ? (
+                <form action={retryGenerationJobAction}>
+                  <input type="hidden" name="courseId" value={id} />
+                  <input type="hidden" name="jobId" value={job.id} />
+                  <button className="button" type="submit">Retry {job.stage.toLowerCase()}</button>
+                </form>
+              ) : null}
+            </div>
           ))}
         </section>
       ) : null}
@@ -185,8 +193,11 @@ const generationStage = (jobs: JobRow[]) => {
 const generationSummary = (jobs: JobRow[], lessonCount: number, doneLessons: number, usage: Usage) => {
   if (usage?.cancelled) return "Generation was cancelled. Completed content is still available.";
   if (usage?.budget_exhausted) return "Generation stopped because the course budget was exhausted.";
-  const failed = jobs.find((job) => job.status === "failed");
-  if (failed) return failed.message ?? `${failed.stage} failed.`;
+  const failed = jobs.filter((job) => job.status === "failed");
+  if (failed.length) {
+    const names = failed.map((j) => j.stage).join(", ");
+    return `${names} failed (${failed.length} step${failed.length > 1 ? "s" : ""}). See details below.`;
+  }
   if (lessonCount) return `${doneLessons} / ${lessonCount} lessons ready`;
   return generationStage(jobs);
 };

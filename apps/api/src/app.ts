@@ -86,10 +86,11 @@ type GenerationJobDto = {
   stage: string;
   canRetry: boolean;
   message: string | null;
+  error: string | null;
 };
 
 const safeJobMessage = (job: { status: string; error: string | null }) => {
-  if (job.status === "failed") return "Generation failed. You can retry this step.";
+  if (job.status === "failed") return job.error ?? "Generation failed. You can retry this step.";
   if (job.status === "cancelled") return "Generation was cancelled.";
   return null;
 };
@@ -119,6 +120,7 @@ const toGenerationJobDto = (job: {
   stage: jobStage(job.type),
   canRetry: job.status === "failed",
   message: safeJobMessage(job),
+  error: job.error,
 });
 
 // Simple in-memory rate limiter

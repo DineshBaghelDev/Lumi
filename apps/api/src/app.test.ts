@@ -98,6 +98,7 @@ test("manual retry reuses a failed generation job", async () => {
       stage: "Researching sources",
       canRetry: false,
       message: null,
+      error: null,
     },
   });
   assert.equal(calls.length, 5);
