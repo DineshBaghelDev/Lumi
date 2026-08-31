@@ -17,4 +17,4 @@ const close = async () => {
 process.once("SIGTERM", () => void close());
 process.once("SIGINT", () => void close());
 
-await app.listen({ port, host: "127.0.0.1" });
+await app.listen({ port, host: "0.0.0.0" });
