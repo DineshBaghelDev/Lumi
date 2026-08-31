@@ -29,7 +29,7 @@ const lessonSkeletonSchema = z.object({
   isRequired: z.boolean(),
   conceptIds: z.array(uuidSchema).min(1),
   sourcePackIds: z.array(localIdSchema).min(1),
-  requiredPrerequisiteConceptIds: z.array(uuidSchema),
+  requiredPrerequisiteConceptIds: z.array(uuidSchema).default([]),
   assessment: assessmentSkeletonSchema,
 });
 
