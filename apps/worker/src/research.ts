@@ -306,15 +306,18 @@ const discoverConceptPlan = async (
 };
 
 const buildConceptDiscoveryPrompt = (course: CourseRow) => JSON.stringify({
-  task: "Return 4 to 8 topic-specific concepts for research and curriculum planning.",
+  task: "Return 10 to 15 specific, concrete subtopics for a comprehensive course. These should cover the topic thoroughly from basics to advanced.",
   course: {
     topic: course.topic,
     description: course.description,
   },
   rules: [
-    "Do not return generic labels like fundamentals, implementation, or failure modes unless those exact terms are the course topic.",
-    "Names must be concrete subtopics learners need for this course.",
+    "Be specific — not 'Fundamentals' but 'B-tree index structure' or 'Hash index implementation'.",
+    "Cover the full spectrum: core concepts, practical techniques, common patterns, edge cases, and advanced topics.",
+    "Each concept should be a distinct, teachable unit that could be its own lesson.",
     "Prerequisites must reference earlier concept names exactly or be empty.",
+    "Think about what a learner needs to MASTER this topic, not just understand it at a surface level.",
+    "Include concepts for: how things work (internals), when to use them (practical), why they matter (tradeoffs), and what goes wrong (pitfalls).",
   ],
   output: {
     concepts: [{
@@ -386,7 +389,7 @@ export const parseDiscoveredConcepts = (content: string, course: CourseRow): Con
       seen.add(key);
       return true;
     })
-    .slice(0, 8);
+    .slice(0, 15);
   if (unique.length >= 3) return normalizePrerequisites(unique);
   const topic = course.topic.trim();
   throw new PermanentJobError(`Research concept discovery produced too few topic-specific concepts for ${topic}`);
@@ -417,8 +420,12 @@ const normalizePrerequisites = (concepts: ConceptPlan[]) => {
 const buildQueries = (course: CourseRow, concepts: ConceptPlan[]) => [
   `${course.topic} official documentation`,
   `${course.topic} implementation guide`,
-  `${course.topic} failure modes production`,
-  ...concepts.slice(0, 5).map((concept) => `${concept.name} ${course.topic}`),
+  `${course.topic} tutorial comprehensive`,
+  `${course.topic} best practices production`,
+  `${course.topic} common mistakes pitfalls`,
+  `${course.topic} advanced techniques`,
+  ...concepts.slice(0, 10).map((concept) => `${concept.name} ${course.topic}`),
+  ...concepts.slice(0, 5).map((concept) => `${concept.name} tutorial guide`),
 ].filter((query, index, all) => all.findIndex((other) => other.toLowerCase() === query.toLowerCase()) === index);
 
 export const normalizeUrl = (value: string) => {

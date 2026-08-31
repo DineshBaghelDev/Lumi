@@ -34,33 +34,36 @@ export function MermaidBlock({ diagram }: { diagram: string }) {
 
       const graphId = `mermaid-graph-${thisRender}`;
 
-      // Create a hidden container for mermaid's render target
-      const tempDiv = document.createElement("div");
-      tempDiv.style.position = "absolute";
-      tempDiv.style.visibility = "hidden";
-      tempDiv.style.height = "0";
-      tempDiv.style.overflow = "hidden";
-      document.body.appendChild(tempDiv);
-
       try {
         const { svg } = await mermaid.render(graphId, diagram);
 
         if (thisRender !== renderId.current) return;
 
-        container.innerHTML = svg;
-
-        const svgEl = container.querySelector("svg");
+        // Parse the SVG and remove fixed dimensions for responsive scaling
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = svg;
+        const svgEl = tempDiv.querySelector("svg");
         if (svgEl) {
+          // Remove fixed width/height attributes that prevent responsive scaling
+          svgEl.removeAttribute("width");
           svgEl.removeAttribute("height");
-          svgEl.style.maxWidth = "100%";
+          svgEl.removeAttribute("style");
+          // Set responsive SVG styles
+          svgEl.style.width = "100%";
           svgEl.style.height = "auto";
+          svgEl.style.maxWidth = "100%";
+          svgEl.style.display = "block";
         }
-      } finally {
-        document.body.removeChild(tempDiv);
+
+        container.innerHTML = tempDiv.innerHTML;
+      } catch (err) {
+        if (thisRender !== renderId.current) return;
+        console.warn("Mermaid render failed:", err);
+        setError(true);
       }
     } catch (err) {
       if (thisRender !== renderId.current) return;
-      console.warn("Mermaid render failed:", err);
+      console.warn("Mermaid load failed:", err);
       setError(true);
     } finally {
       if (thisRender === renderId.current) {

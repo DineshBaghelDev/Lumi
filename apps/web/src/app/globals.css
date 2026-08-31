@@ -1232,6 +1232,56 @@ p {
   text-decoration: none;
 }
 
+.sources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.source-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+
+.source-item-link {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 150ms ease-out;
+}
+
+.source-item-link:hover {
+  background: var(--surface-hover);
+}
+
+.source-item-title {
+  color: var(--ink);
+  font-size: var(--small-size);
+  font-weight: 600;
+  line-height: var(--small-line);
+}
+
+.source-item-heading {
+  color: var(--indigo);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.source-item-excerpt {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 16px;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .lesson-callout,
 .lesson-diagram,
 .lesson-image {
@@ -1278,13 +1328,24 @@ figure figcaption {
 
 .mermaid-output {
   overflow-x: auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-2) 0;
 }
 
 .mermaid-output svg,
 .lesson-image img {
   display: block;
   max-width: 100%;
+  width: auto;
   height: auto;
+}
+
+.mermaid-output svg {
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .shiki-output {

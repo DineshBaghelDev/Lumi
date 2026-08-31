@@ -8,6 +8,7 @@ import { LessonResume } from "./lesson-resume";
 import { assetImageSrc, inlineMarkdown } from "./lesson-rendering";
 import { SourceLinks } from "./source-links";
 import { CodeBlock } from "./code-block";
+import { SourcesPanel } from "./sources-panel";
 
 type SourceRef = { sourceId: string; chunkId?: string; label?: string };
 type LessonBlock =
@@ -81,9 +82,9 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
               <summary>Notes & Bookmarks</summary>
               <LessonNotesPanel courseId={id} lessonId={lessonId} blocks={content.blocks} />
             </details>
-            <details className="side-card lesson-tool section-gap">
+            <details className="side-card lesson-tool section-gap" open>
               <summary>Sources</summary>
-              <p>{sourceCount(content)} cited source references in this lesson.</p>
+              <SourcesPanel courseId={id} sourceRefs={content.blocks.flatMap((block) => ("sourceRefs" in block ? block.sourceRefs : []))} />
             </details>
             <details className="side-card lesson-tool section-gap">
               <summary>Ask Lumi</summary>

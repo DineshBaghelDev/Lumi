@@ -5,7 +5,7 @@ model_list:
       model: groq/openai/gpt-oss-120b
       api_key: os.environ/GROQ_API_KEY
 
-  # Codex-as-api — local development provider
+  # Codex-as-api — local development provider (currently broken with gpt-5.5)
   # api_key defaults to "no-key-required" when not set (local service)
   - model_name: codex-gpt-5.5
     litellm_params:
@@ -39,8 +39,8 @@ model_list:
 
 litellm_settings:
   fallbacks:
-    - codex-gpt-5.5: ["groq-gpt-5.5"]
-    - groq-gpt-5.5: ["openrouter-gpt-5.5"]
     - moonshot-latest: ["groq-gpt-5.5"]
+    - groq-gpt-5.5: ["openrouter-gpt-5.5"]
+    - codex-gpt-5.5: ["groq-gpt-5.5"]
     - gemini-pro: ["groq-gpt-5.5"]
     - claude-sonnet: ["groq-gpt-5.5"]

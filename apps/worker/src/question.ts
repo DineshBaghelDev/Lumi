@@ -249,6 +249,9 @@ const buildQuestionPrompt = (assessment: AssessmentRow, context: QuestionContext
     task: [
       `Generate ${context.requiredCount + 3} candidate questions for exactly ONE post-lesson assessment.`,
       "Only require material taught in this lesson or its listed prerequisite concepts.",
+      "Test whether the learner UNDERSTANDS the concepts, not whether they memorized source details. Questions should test application, reasoning, and comprehension of the actual topic.",
+      "DO NOT ask questions about source metadata, source titles, or source websites. Ask about the TOPIC itself — how things work, why they matter, when to use them, what happens when they fail.",
+      "DO NOT ask questions like 'Which source discusses X?' or 'According to Source N, what is Y?'. Instead ask: 'How does X work?' or 'Why is Y important?' or 'When would you use Z?'",
       "Mix types across all supported kinds (mcq, fill_blank, matching, prediction, short_answer, scenario, identify_issue, pseudocode); keep recall questions rare and favor mechanism, reasoning, scenario, debugging, prediction, and pseudocode thinking.",
       "Spread difficulty between 1 and 5 without trivia bias.",
       "Every candidate must cite at least one provided sourceRefs entry. Use exact sourceId and chunkId values from sourceChunks.",
@@ -567,7 +570,7 @@ const reviewCandidates = async (reviewer: QuestionLlm, candidates: readonly Ques
     maxTokens: 900,
     ...(model ? { model } : {}),
     messages: [
-      { role: "system", content: "Return JSON only: {\"rejections\": [{\"candidateId\": string, \"reason\": string}]}. Reject candidates whose answer is incorrect, unsupported by the sources, ambiguous or multi-answer, requires untaught material, or whose free-response rubric does not match the prompt." },
+      { role: "system", content: "Return JSON only: {\"rejections\": [{\"candidateId\": string, \"reason\": string}]}. Reject candidates whose answer is incorrect, unsupported by the sources, ambiguous or multi-answer, requires untaught material, or whose free-response rubric does not match the prompt. Also reject any questions that ask about source metadata, source titles, or 'which source discusses X' — questions must test understanding of the TOPIC, not knowledge of the source material." },
       { role: "user", content: JSON.stringify({ allowedConcepts: context.concepts, sourceChunks: context.chunks.map((chunk) => ({ id: chunk.id, content: chunk.content })), candidates }) },
     ],
   });
