@@ -79,6 +79,10 @@ export const createLessonHandler = (
       await setProgress(db, job.id, attempt === 1 ? 30 : 55, { stage: "generate", attempt });
       const generated = await generateLesson(courseLlm, lesson, context, feedback, model);
       await recordLlmCall(db, toLlmCall(job.id, generated.result, "lesson-v1", { lessonId: lesson.id, attempt }));
+      if (!generated.content) {
+        feedback = generated.reasons;
+        continue;
+      }
 
       const deterministic = validateLessonQuality(generated.content, lesson, context);
       const semantic = deterministic.passed ? await reviewLesson(courseLlm, lesson, generated.content, model) : null;
@@ -192,9 +196,13 @@ const generateLesson = async (
   });
 
   try {
-    return { result, content: lessonContentSchema.parse(JSON.parse(result.content)) };
+    return { result, content: lessonContentSchema.parse(JSON.parse(result.content)), reasons: [] };
   } catch (error) {
-    throw new PermanentJobError(error instanceof Error ? `Invalid lesson output: ${error.message}` : "Invalid lesson output");
+    return {
+      result,
+      content: null,
+      reasons: [error instanceof Error ? `Invalid lesson output: ${error.message}` : "Invalid lesson output"],
+    };
   }
 };
 
@@ -205,7 +213,7 @@ const buildLessonPrompt = (lesson: LessonRow, context: LessonContext, feedback: 
     "Each major concept needs its own section with explanation, examples, and key insights.",
     "Include practical examples, code snippets where relevant, and real-world analogies.",
     "Use lists to break down complex topics into digestible steps or comparisons.",
-    "Add callouts for common mistakes, pro tips, and important caveats.",
+    "Add callouts for common mistakes, pro tips, and important caveats. Callout tone must be exactly one of: note, warning, tip.",
     "Use mermaid diagrams to visualize relationships, flows, or architectures where helpful.",
     "Do NOT write generic filler text. Every sentence must teach something specific.",
     "Write like a senior engineer explaining to a junior — detailed, practical, and clear.",
@@ -247,7 +255,7 @@ const buildLessonPrompt = (lesson: LessonRow, context: LessonContext, feedback: 
         { type: "paragraph", id: "block-p1", text: "<explanation>", sourceRefs: [{ sourceId: "<source uuid>", chunkId: "<chunk uuid>" }] },
         { type: "list", id: "block-l1", style: "unordered", items: ["<item>"], sourceRefs: [{ sourceId: "<source uuid>" }] },
         { type: "code", id: "block-c1", language: "sql", code: "<code>", caption: "<optional caption>", sourceRefs: [{ sourceId: "<source uuid>" }] },
-        { type: "callout", id: "block-n1", tone: "note", title: "<optional title>", text: "<text>", sourceRefs: [{ sourceId: "<source uuid>" }] },
+        { type: "callout", id: "block-n1", tone: "note|warning|tip", title: "<optional title>", text: "<text>", sourceRefs: [{ sourceId: "<source uuid>" }] },
         { type: "mermaid", id: "block-m1", diagram: "graph TD; A-->B;", caption: "<optional caption>", sourceRefs: [{ sourceId: "<source uuid>" }] },
         { type: "image", id: "block-i1", assetId: "<asset uuid>", caption: "<optional caption>" },
       ],
@@ -264,13 +272,13 @@ export const validateLessonQuality = (
   const reasons: string[] = [];
 
   for (const objective of lesson.objectives) {
-    const words = objective.toLowerCase().match(/[a-z0-9-]{4,}/g) ?? [];
-    const hits = words.filter((word) => body.includes(word)).length;
-    if (hits < Math.min(2, words.length)) reasons.push(`missing objective coverage: ${objective}`);
+    if (!hasTermCoverage(body, keyTerms(objective, objectiveVerbs))) {
+      reasons.push(`missing objective coverage: ${objective}`);
+    }
   }
 
   for (const prerequisite of context.prerequisites) {
-    if (!body.includes(prerequisite.toLowerCase()) && !body.includes("previously covered")) {
+    if (!hasTermCoverage(body, keyTerms(prerequisite)) && !body.includes("previously covered")) {
       reasons.push(`missing prerequisite treatment: ${prerequisite}`);
     }
   }
@@ -333,6 +341,42 @@ const lessonText = (content: LessonContent) => content.blocks.map((block) => {
   if (block.type === "mermaid") return `${block.caption ?? ""} ${block.diagram}`;
   return block.caption ?? "";
 }).join(" ");
+
+const objectiveVerbs = new Set(["apply", "build", "compare", "define", "describe", "explain", "identify", "implement", "learn", "understand", "use"]);
+const stopWords = new Set([
+  "about",
+  "after",
+  "and",
+  "basic",
+  "basics",
+  "before",
+  "for",
+  "foundation",
+  "foundations",
+  "from",
+  "into",
+  "learning",
+  "supervised",
+  "that",
+  "their",
+  "this",
+  "through",
+  "with",
+]);
+
+const keyTerms = (text: string, extraStopWords = new Set<string>()) =>
+  (text.toLowerCase().match(/[a-z0-9-]{4,}/g) ?? [])
+    .filter((word) => !stopWords.has(word) && !extraStopWords.has(word))
+    .map(normalizeTerm);
+
+const normalizeTerm = (term: string) => term.endsWith("s") && term.length > 4 ? term.slice(0, -1) : term;
+
+const hasTermCoverage = (body: string, terms: readonly string[]) => {
+  if (terms.length === 0) return true;
+  const bodyTerms = new Set((body.match(/[a-z0-9-]{4,}/g) ?? []).map(normalizeTerm));
+  const hits = terms.filter((term) => bodyTerms.has(term)).length;
+  return hits >= Math.max(1, Math.ceil(terms.length * 0.6));
+};
 
 const persistReadyLesson = async (
   db: LumiDb,

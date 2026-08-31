@@ -17,6 +17,16 @@ const config = parseWorkerEnv({
 const sourceId = "33333333-3333-4333-8333-333333333333";
 const chunkId = "44444444-4444-4444-8444-444444444444";
 
+test("lesson QC accepts objective verbs and compound prerequisite wording", () => {
+  const result = validateLessonQuality(
+    lessonContentFixture({ sourceId, chunkId }),
+    { objectives: ["Explain bagging"] },
+    { prerequisites: ["Supervised Learning Foundations: Loss Functions and Gradient Descent"], assets: [] },
+  );
+
+  assert.equal(result.passed, true, result.reasons.join("\n"));
+});
+
 test("lesson QC rejects missing objective coverage and uncited factual blocks", () => {
   const content = lessonContentFixture({ sourceId, chunkId });
   content.blocks = [
@@ -84,7 +94,7 @@ test(
             generationCalls += 1;
             return completeResult(JSON.stringify(
               generationCalls === 1
-                ? { ...lessonContentFixture(ids), blocks: [{ id: "block-intro", type: "paragraph", text: "Too thin.", sourceRefs: [] }] }
+                ? { ...lessonContentFixture(ids), blocks: [{ id: "block-tip", type: "callout", tone: "info", text: "Bad tone.", sourceRefs: [] }] }
                 : lessonContentFixture(ids),
             ), `lesson-${generationCalls}`);
           },
@@ -202,7 +212,7 @@ const lessonContentFixture = ({ sourceId, chunkId }: { sourceId: string; chunkId
     {
       id: "block-intro",
       type: "paragraph",
-      text: "This lesson explains append-only Redis stream entries and how consumers read them by ID.",
+      text: "This lesson explains append-only Redis stream entries, bagging, loss function behavior, and gradient descent so consumers read records by ID.",
       sourceRefs: [{ sourceId, chunkId }],
     },
     {
