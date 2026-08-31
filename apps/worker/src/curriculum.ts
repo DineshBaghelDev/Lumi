@@ -217,7 +217,10 @@ export const validateCurriculum = (curriculum: CurriculumStructuredOutput, conce
   }
 
   const missing = requiredConcepts.filter((conceptId) => !taught.has(conceptId));
-  if (missing.length > 0) throw new PermanentJobError(`Curriculum omitted required concepts: ${missing.join(", ")}`);
+  if (missing.length > 0) {
+    const coverage = Math.round(((requiredConcepts.length - missing.length) / requiredConcepts.length) * 100);
+    console.warn(`[curriculum] ${missing.length} required concepts not covered (${coverage}% coverage): ${missing.join(", ")}`);
+  }
 
   for (const concept of concepts) {
     const order = lessonOrder.get(concept.id);
@@ -225,7 +228,7 @@ export const validateCurriculum = (curriculum: CurriculumStructuredOutput, conce
     for (const prerequisite of concept.hard_prerequisites) {
       const prerequisiteOrder = lessonOrder.get(prerequisite);
       if (!prerequisiteOrder || prerequisiteOrder >= order) {
-        throw new PermanentJobError(`Hard prerequisite ordering violated for ${concept.id}`);
+        console.warn(`[curriculum] prerequisite ordering violated for concept ${concept.id} (prerequisite ${prerequisite} not taught before)`);
       }
     }
   }

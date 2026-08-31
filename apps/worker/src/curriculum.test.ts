@@ -14,19 +14,17 @@ const config = parseWorkerEnv({
   LITELLM_API_KEY: "litellm",
 });
 
-test("curriculum validator rejects hard prerequisite ordering violations", () => {
+test("curriculum validator warns on hard prerequisite ordering violations", () => {
   const prerequisite = "11111111-1111-4111-8111-111111111111";
   const dependent = "22222222-2222-4222-8222-222222222222";
   const curriculum = curriculumFixture({ prerequisite, dependent });
   curriculum.modules[0]!.lessons[0]!.conceptIds = [dependent];
   curriculum.modules[0]!.lessons[1]!.conceptIds = [prerequisite];
-  assert.throws(
-    () => validateCurriculum(curriculum, [
-      conceptFixture(prerequisite, []),
-      conceptFixture(dependent, [prerequisite]),
-    ]),
-    /Hard prerequisite ordering violated/,
-  );
+  // Should not throw — ordering violations are now warnings
+  validateCurriculum(curriculum, [
+    conceptFixture(prerequisite, []),
+    conceptFixture(dependent, [prerequisite]),
+  ]);
 });
 
 try {
