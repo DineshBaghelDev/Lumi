@@ -191,6 +191,7 @@ services:
       LITELLM_BASE_URL: "http://litellm:4000"
       LITELLM_API_KEY: "${LITELLM_API_KEY:?Set LITELLM_API_KEY in .env}"
       LITELLM_MODEL: "${LITELLM_MODEL:-groq-gpt-5.5}"
+      PROVIDER_ENCRYPTION_KEY: "${PROVIDER_ENCRYPTION_KEY:-}"
       SEARXNG_BASE_URL: "http://searxng:8080"
       CRAWL4AI_BASE_URL: "http://crawl4ai:11235"
       TEI_BASE_URL: "http://tei:80"
