@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Hanken } from "next/font/google";
+import { JetBrains } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 
@@ -7,6 +9,18 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-inter",
+});
+
+const hanken = Hanken({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-hanken",
+});
+
+const jetbrains = JetBrains({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-jetbrains",
 });
 
 export const metadata: Metadata = {
