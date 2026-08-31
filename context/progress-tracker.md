@@ -152,6 +152,16 @@ Next spec: none (V1 complete)
 
 (none — V1 implementation complete)
 
+## Operational fixes
+
+- **Course generation pipeline fix** (2026-08-31, commit `773e863`)
+  - Root causes identified and fixed:
+    1. LiteLLM config only had fallback for `groq-gpt-5.5`. Added cascading fallbacks: `codex-gpt-5.5` → `groq-gpt-5.5` → `openrouter-gpt-5.5`, plus `moonshot-latest`, `gemini-pro`, `claude-sonnet` → `groq-gpt-5.5`.
+    2. Question review LLM calls sent the raw model name (`gpt-5.5`) instead of the LiteLLM model group name, causing 400 errors. Fixed by passing the per-course model through to `reviewCandidates()`.
+    3. `.env` had `LITELLM_MODEL=gpt-5.5` (raw model name) instead of `LITELLM_MODEL=groq-gpt-5.5` (LiteLLM group name). Fixed locally; `.env.example` was already correct.
+  - Verified: end-to-end generation (research → curriculum → 7 lessons → 7 assessments/project) completes successfully.
+  - All 3 existing courses healthy: SQL (ready), Data Structures (ready_with_gaps from pre-fix QC failures), Data Structures 2 (ready).
+
 ## Notes / deviations
 
 The original 84-spec plan was patched before implementation with three bounded specs: job state/idempotency, generation budgets/cancellation, and research security. Total: 87 specs.
