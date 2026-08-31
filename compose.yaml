@@ -102,7 +102,8 @@ services:
       retries: 12
 
   minio:
-    image: docker.io/minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    image: docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    restart: unless-stopped
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: "${MINIO_ROOT_USER:-lumi_minio_admin}"
@@ -120,7 +121,8 @@ services:
       start_period: 10s
 
   mc:
-    image: docker.io/minio/mc:latest
+    image: docker.io/minio/mc:RELEASE.2025-09-07T16-13-09Z
+    restart: "no"
     depends_on:
       minio:
         condition: service_healthy
@@ -129,7 +131,7 @@ services:
       - |
         mc alias set lumi http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
         mc mb --ignore-existing lumi/lumi-assets
-        mc anonymous set none lumi/lumi-assets
+        mc anonymous set private lumi/lumi-assets
         echo 'MinIO bucket setup complete'
     environment:
       MINIO_ROOT_USER: "${MINIO_ROOT_USER:-lumi_minio_admin}"
@@ -161,7 +163,7 @@ services:
       GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:?Set GOOGLE_CLIENT_ID in .env}"
       GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:?Set GOOGLE_CLIENT_SECRET in .env}"
       AUTH_DATABASE_URL: "postgresql://lumi_auth:${AUTH_DB_PASSWORD}@postgres:5432/lumi"
-      AUTH_REQUIRE_EMAIL_VERIFICATION: "${AUTH_REQUIRE_EMAIL_VERIFICATION:-false}"
+      AUTH_REQUIRE_EMAIL_VERIFICATION: "${AUTH_REQUIRE_EMAIL_VERIFICATION:-true}"
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
@@ -185,7 +187,7 @@ services:
       AUTH_DATABASE_URL: "postgresql://lumi_auth:${AUTH_DB_PASSWORD}@postgres:5432/lumi"
       GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:?Set GOOGLE_CLIENT_ID in .env}"
       GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:?Set GOOGLE_CLIENT_SECRET in .env}"
-      AUTH_REQUIRE_EMAIL_VERIFICATION: "${AUTH_REQUIRE_EMAIL_VERIFICATION:-false}"
+      AUTH_REQUIRE_EMAIL_VERIFICATION: "${AUTH_REQUIRE_EMAIL_VERIFICATION:-true}"
       LITELLM_BASE_URL: "http://litellm:4000"
       LITELLM_API_KEY: "${LITELLM_API_KEY:?Set LITELLM_API_KEY in .env}"
       LITELLM_MODEL: "${LITELLM_MODEL:-groq-gpt-5.5}"

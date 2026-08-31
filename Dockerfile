@@ -30,18 +30,19 @@ RUN pnpm --filter @lumi/config build && \
 # ── Build API ─────────────────────────────────────────────────────────
 FROM build-shared AS build-api
 COPY apps/api ./apps/api
-RUN pnpm --filter @lumi/api build
+RUN pnpm install --frozen-lockfile --prod=false && pnpm --filter @lumi/api build
 
 # ── Build worker ─────────────────────────────────────────────────────
 FROM build-shared AS build-worker
 COPY apps/worker ./apps/worker
-RUN pnpm --filter @lumi/worker build
+RUN pnpm install --frozen-lockfile --prod=false && pnpm --filter @lumi/worker build
 
 # ── Build web ─────────────────────────────────────────────────────────
 FROM build-shared AS build-web
 COPY apps/web ./apps/web
+ENV AUTH_REQUIRE_EMAIL_VERIFICATION=true
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm --filter @lumi/web build
+RUN NODE_ENV=development pnpm install --frozen-lockfile --prod=false && NODE_ENV=production pnpm --filter @lumi/web build
 
 # ── Runtime base ──────────────────────────────────────────────────────
 FROM node:22-alpine AS runtime
