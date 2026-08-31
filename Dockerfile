@@ -6,20 +6,12 @@ WORKDIR /app
 # ── Dependencies ──────────────────────────────────────────────────────
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/*/package.json ./packages/
-COPY apps/api/package.json apps/api/
-COPY apps/web/package.json apps/web/
-COPY apps/worker/package.json apps/worker/
+COPY packages/ ./packages/
+COPY apps/ ./apps/
 RUN pnpm install --frozen-lockfile --prod=false
 
 # ── Build shared packages ─────────────────────────────────────────────
 FROM deps AS build-shared
-COPY packages/config ./packages/config
-COPY packages/db ./packages/db
-COPY packages/llm ./packages/llm
-COPY packages/shared ./packages/shared
-COPY packages/storage ./packages/storage
-COPY packages/auth ./packages/auth
 RUN pnpm --filter @lumi/config build && \
     pnpm --filter @lumi/shared build && \
     pnpm --filter @lumi/auth build && \
@@ -29,20 +21,23 @@ RUN pnpm --filter @lumi/config build && \
 
 # ── Build API ─────────────────────────────────────────────────────────
 FROM build-shared AS build-api
-COPY apps/api ./apps/api
-RUN pnpm install --frozen-lockfile --prod=false && pnpm --filter @lumi/api build
+RUN pnpm --filter @lumi/api build
 
 # ── Build worker ─────────────────────────────────────────────────────
 FROM build-shared AS build-worker
-COPY apps/worker ./apps/worker
-RUN pnpm install --frozen-lockfile --prod=false && pnpm --filter @lumi/worker build
+RUN pnpm --filter @lumi/worker build
 
 # ── Build web ─────────────────────────────────────────────────────────
 FROM build-shared AS build-web
-COPY apps/web ./apps/web
 ENV AUTH_REQUIRE_EMAIL_VERIFICATION=true
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN NODE_ENV=development pnpm install --frozen-lockfile --prod=false && NODE_ENV=production pnpm --filter @lumi/web build
+ENV AUTH_DATABASE_URL=postgresql://placeholder:placeholder@placeholder:5432/lumi
+ENV BETTER_AUTH_URL=http://localhost:3000
+ENV BETTER_AUTH_SECRET=build-time-placeholder-at-least-32-chars-long
+ENV BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000
+ENV GOOGLE_CLIENT_ID=placeholder
+ENV GOOGLE_CLIENT_SECRET=placeholder
+RUN NODE_ENV=production pnpm --filter @lumi/web build
 
 # ── Runtime base ──────────────────────────────────────────────────────
 FROM node:22-alpine AS runtime
@@ -91,11 +86,12 @@ CMD ["node", "apps/worker/dist/index.js"]
 
 # ── Web target ────────────────────────────────────────────────────────
 FROM runtime AS web
-COPY --from=build-web /app/apps/web/.next ./apps/web/.next
-COPY --from=build-web /app/apps/web/next.config.ts ./apps/web/
-COPY apps/web/public ./apps/web/public
+WORKDIR /app/apps/web
+COPY --from=build-web /app/apps/web/.next ./.next
+COPY --from=build-web /app/apps/web/next.config.ts ./
+COPY apps/web/public ./public
 USER lumi
 EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
   CMD wget -qO /dev/null http://127.0.0.1:3000/ || exit 1
-CMD ["node", "apps/web/node_modules/.bin/next", "start"]
+CMD ["node", "node_modules/next/dist/bin/next", "start"]
