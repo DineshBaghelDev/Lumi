@@ -63,19 +63,19 @@ Lumi is a source-grounded technical learning platform claiming V1 completeness w
 **Impact:** Incorrect behavior for Redis topics; suggests debug code may be left intentionally but violates the "do not hardcode" principle. More critically, it reveals a pattern where LLM failures could be masked by hardcoded fixtures.  
 **Fix:** Remove the hardcoded Redis concept fallback and always call the LLM for concept discovery.
 
-### BUG-002: MinIO `mc` Service Sets Anonymous Download on Bucket
+### BUG-002: MinIO `mc` Service Sets Anonymous Download on Bucket ✅ FIXED
 **File:** `compose.yaml` line for `mc` service  
 **Severity:** 🔴 CRITICAL  
-**Description:** The MinIO setup container runs `mc anonymous set download lumi/lumi-assets`, which makes the entire assets bucket publicly readable without authentication. This contradicts the README claim that "MinIO uses separate writer and reader credential pairs" and the architecture spec that "arbitrary remote resources are never trusted directly." Any uploaded asset (research images, generated content) is accessible to anyone who knows the URL.  
-**Impact:** Security vulnerability — all stored assets are publicly accessible.  
-**Fix:** Remove `mc anonymous set download lumi/lumi-assets` or change to `mc anonymous set none lumi/lumi-assets`.
+**Description:** The MinIO setup container ran `mc anonymous set download lumi/lumi-assets`, which made the entire assets bucket publicly readable without authentication. This contradicted the README claim that "MinIO uses separate writer and reader credential pairs" and the architecture spec that "arbitrary remote resources are never trusted directly." Any uploaded asset (research images, generated content) was accessible to anyone who knew the URL.  
+**Impact:** Security vulnerability — all stored assets were publicly accessible.  
+**Fix (2026-08-31):** Changed to `mc anonymous set private lumi/lumi-assets`. Assets are now private and require authenticated access through the writer/reader credential pairs.
 
-### BUG-003: MinIO Image Tag Has Broken SHA256
+### BUG-003: MinIO Image Tag Has Broken SHA256 ✅ FIXED
 **File:** `compose.yaml` — MinIO service  
 **Severity:** 🔴 CRITICAL  
-**Description:** The MinIO image reference is `docker.io/minio/minio:RELEASE.2025-07-18T22-57-05Z@sha256:a]placeholder_for_now` — the SHA256 digest contains `a]placeholder_for_now`, which is an invalid placeholder. Docker will fail to pull this image, making `docker compose up` fail entirely.  
-**Impact:** Complete stack failure — MinIO won't start, which blocks the worker and API.  
-**Fix:** Replace with a valid MinIO image digest.
+**Description:** The MinIO image reference contained an invalid SHA256 placeholder. Docker failed to pull this image, making `docker compose up` fail entirely.  
+**Impact:** Complete stack failure — MinIO wouldn't start, which blocked the worker and API.  
+**Fix (2026-08-31):** Pinned MinIO to `docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z` (specific release tag, not `latest@sha256`). Added `restart: unless-stopped` for crash resilience. Pinned mc init container to `latest@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727` (different release cycle than server).
 
 ### BUG-004: API Server Binds to `0.0.0.0` in Development
 **File:** `apps/api/src/index.ts` line 12  
@@ -391,9 +391,9 @@ Lumi is a source-grounded technical learning platform claiming V1 completeness w
 ## 11. SUMMARY OF FINDINGS
 
 ### Critical Issues (Must Fix Before Release)
-1. **BUG-001:** Hardcoded Redis concept fallback in research handler
-2. **BUG-002:** MinIO bucket set to anonymous download (security)
-3. **BUG-003:** Broken MinIO image digest (deployment blocker)
+1. **BUG-001:** Hardcoded Redis concept fallback in research handler — ✅ Fixed
+2. **BUG-002:** MinIO bucket set to anonymous download (security) — ✅ Fixed (changed to private)
+3. **BUG-003:** Broken MinIO image digest (deployment blocker) — ✅ Fixed (pinned to release tag)
 
 ### High-Severity Issues (Should Fix Before Release)
 4. **SEC-004:** No rate limiting on chat endpoint

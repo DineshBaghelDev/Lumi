@@ -10,8 +10,8 @@
 
 | # | Issue | File | Impact | Status |
 |---|-------|------|--------|--------|
-| 1 | MinIO image has broken SHA256 placeholder | `compose.yaml` | **Stack won't start** | ✅ Fixed |
-| 2 | MinIO bucket set to anonymous download | `compose.yaml` (mc service) | **All assets publicly accessible** | ✅ Fixed |
+| 1 | MinIO image had broken SHA256 placeholder | `compose.yaml` | **Stack won't start** | ✅ Fixed — pinned to `RELEASE.2025-09-07T16-13-09Z` with `restart: unless-stopped` |
+| 2 | MinIO bucket set to anonymous download | `compose.yaml` (mc service) | **All assets publicly accessible** | ✅ Fixed — changed to `mc anonymous set private` |
 | 3 | Hardcoded Redis concept fallback | `apps/worker/src/research.ts` | **Debug code in production** | ✅ Fixed |
 
 ## High-Severity Issues (Fix Before Release)
@@ -51,7 +51,8 @@
 
 | Category | Issues Fixed |
 |----------|-------------|
-| Critical | BUG-001 (Redis fallback), BUG-002 (MinIO anon), BUG-003 (image digest), BUG-004 (API bind) |
+| Critical | BUG-001 (Redis fallback), BUG-002 (MinIO anon → private), BUG-003 (image digest → pinned release), BUG-004 (API bind) |
+| Infrastructure | Dockerfile restructured (source-first deps stage), CRLF normalized, MinIO restart policy, mc init container hardened |
 | Security | SEC-001 (path traversal), SEC-002 (CORS), SEC-003 (secrets), SEC-004 (rate limit), SEC-006 (persistence logging) |
 | Reliability | REL-001 (worker max wait), REL-003 (streaming state), REL-004 (skipped lessons) |
 | Infrastructure | INFRA-001 (LiteLLM creds), INFRA-004 (worker healthcheck) |

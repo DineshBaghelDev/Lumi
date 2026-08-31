@@ -30,6 +30,17 @@
 - Generation can be explicitly cancelled; budget exhaustion also stops future work while preserving completed content.
 - Generation usage counters are atomic and shared by concurrent worker jobs.
 
+## Infrastructure
+
+- MinIO server is pinned to a specific release tag (`RELEASE.2025-09-07T16-13-09Z`), not `latest`, to prevent unexpected upgrades from breaking the stack.
+- MinIO mc init container uses `latest@sha256` (different release cycle from the server) and runs once with `restart: "no"`.
+- MinIO bucket policy is `private` — assets are not publicly accessible.
+- MinIO has `restart: unless-stopped` for crash resilience.
+- `compose.yaml` uses LF line endings (`.gitattributes` enforces `*.yaml`/`*.yml` as `eol=lf`).
+- Dockerfile `deps` stage copies ALL source code before `pnpm install` to avoid later `COPY` instructions destroying pnpm workspace symlinks. Build stages do not re-COPY source or re-run `pnpm install`.
+- Next.js web target runs from `WORKDIR /app/apps/web` and uses `next/dist/bin/next` directly (not the `.bin` shell shim).
+- Build-time placeholder env vars satisfy Next.js auth config validation during `next build`; real values are injected at runtime by `compose.yaml`.
+
 ## Architecture
 
 - TypeScript/Node application code only.

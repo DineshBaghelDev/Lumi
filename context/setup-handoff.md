@@ -1,8 +1,8 @@
 # Setup Handoff
 
-## Phase 2 status
+## Current status
 
-Environment and prerequisite setup is complete. Product implementation has not started; begin Phase 3 with `specs/001-monorepo-skeleton.md` only after explicit authorization.
+V1 implementation is complete. All 87 specs delivered. Docker Compose stack with PostgreSQL/pgvector, Better Auth, MinIO, and all containerized services is operational. See `context/progress-tracker.md` for verification history.
 
 ## Verified local tools
 
@@ -69,3 +69,6 @@ Environment and prerequisite setup is complete. Product implementation has not s
 - Keep Docker Desktop available before Docker service specs.
 - Keep codex-as-api running for live LLM-backed development.
 - Use OpenRouter only as fallback through LiteLLM.
+- MinIO and mc container images are pinned to specific releases — do not change to `latest` without updating both `compose.yaml` and verifying compatibility.
+- Dockerfile `deps` stage must copy ALL source code before `pnpm install` — moving COPY after install breaks pnpm workspace symlinks.
+- Next.js web build requires auth env vars (`AUTH_DATABASE_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`) as build-time placeholders.

@@ -2,7 +2,7 @@
 
 A source-grounded technical learning platform. A learner provides a topic and learning goal; Lumi researches trusted sources, builds a structured curriculum, and generates lessons, assessments, and guided projects in the background — then tracks progress, notes, bookmarks, and course-aware chat tied to each course.
 
-**Status:** V1 complete. All 87 implementation specs delivered. Docker Compose stack with PostgreSQL/pgvector, Better Auth, MinIO, and containerized services is operational. See `context/progress-tracker.md` for verification history.
+**Status:** V1 complete. All 87 implementation specs delivered. Docker Compose stack with PostgreSQL/pgvector, Better Auth, MinIO, and containerized services is operational. MinIO is pinned to a specific release with crash resilience; Dockerfile uses a source-first build strategy to preserve pnpm workspace integrity. See `context/progress-tracker.md` for verification history.
 
 ---
 
@@ -57,12 +57,12 @@ Background job processor. Polls `generation_jobs` with `FOR UPDATE SKIP LOCKED`,
 | API | Fastify 5, TypeScript |
 | Database | PostgreSQL 16 with pgvector 0.7.4 (HNSW cosine indexing, 384-dim embeddings) |
 | Auth | Better Auth 1.6.23 (Google OAuth, email/password, sessions, bearer tokens) |
-| Object Storage | MinIO (private lesson/research assets) |
+| Object Storage | MinIO `RELEASE.2025-09-07T16-13-09Z` (private lesson/research assets) |
 | ORM | Drizzle ORM |
 | LLM Routing | LiteLLM (model routing with Groq/OpenRouter providers) |
 | Research | SearXNG (search), Crawl4AI (web crawling), Hugging Face TEI (embeddings) |
 | Build | pnpm workspaces, Turborepo |
-| Containers | Docker Compose with multi-stage builds |
+| Containers | Docker Compose with multi-stage builds, source-first `deps` stage |
 
 ---
 
@@ -88,7 +88,7 @@ Edit `.env` and fill in:
 - Database passwords (4 distinct values for migrator, auth, api, worker roles)
 - `BETTER_AUTH_SECRET` (random string, 32+ characters)
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (from Google Cloud Console)
-- MinIO root password and worker/reader secrets
+- `MINIO_ROOT_PASSWORD`, `MINIO_SECRET_KEY`, and `MINIO_READER_SECRET_KEY`
 - `LITELLM_API_KEY` and provider keys (Groq, OpenRouter)
 
 ---
@@ -113,7 +113,7 @@ This starts the web app on `http://localhost:3000`, API on `http://localhost:300
 ### Infrastructure only (for production builds)
 
 ```sh
-docker compose up -d postgres minio minio-setup litellm searxng crawl4ai tei
+docker compose up -d postgres minio mc litellm searxng crawl4ai tei
 ```
 
 ### Service endpoints
