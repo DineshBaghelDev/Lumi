@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { createLumiAuthFromEnv } from "@lumi/auth";
-import { parseApiEnv, parseProvidersEnv, resolveModelProvider, type ApiConfig } from "@lumi/config";
+import { allProviders, isValidModelId, parseApiEnv, parseProvidersEnv, providerKeyMap, resolveModelProvider, type ApiConfig } from "@lumi/config";
 import { createReaderClient, parseStorageConfig, statObject, getObject } from "@lumi/storage";
 import {
   canAccessCourse,
@@ -202,9 +202,30 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     return { ok: true };
   });
 
-  app.get("/providers", { preHandler: app.requireAuth }, async () => {
-    const providers = parseProvidersEnv(process.env);
-    return { providers };
+  app.get("/providers", { preHandler: app.requireAuth }, async (request) => {
+    const user = request.user;
+    if (!user) throw new HttpError(401, "unauthorized", "Missing user");
+
+    // Get env-available providers
+    const envProviders = parseProvidersEnv(process.env);
+    const envProviderIds = new Set(envProviders.map((p) => p.id));
+
+    // Get user-stored provider keys
+    const userKeyRows = await db.execute<{ provider: string }>(sql`
+      select distinct provider from provider_keys where user_id = ${user.id}
+    `);
+    const userProviderIds = new Set(userKeyRows.rows.map((r) => r.provider));
+
+    // Merge: include providers that have env keys OR user-stored keys
+    const merged = allProviders.filter((p) => {
+      if (envProviderIds.has(p.id)) return true;
+      if (userProviderIds.has(p.id)) return true;
+      // Also check if the env var is set for this provider
+      const keyName = providerKeyMap[p.id];
+      return keyName && !!process.env[keyName];
+    });
+
+    return { providers: merged };
   });
 
   // ─── Provider API Keys ─────────────────────────────────────────────
@@ -271,12 +292,26 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     if (!user) throw new HttpError(401, "unauthorized", "Missing user");
     await assertCanCreateCourse(db, user.id, idempotencyKey, config.generationBudgets);
 
-    // Validate model against available providers (those with valid env API keys)
+    // Validate model against known providers (env or user-stored keys)
     if (body.model) {
-      const availableModelIds = parseProvidersEnv(process.env)
-        .flatMap((p) => p.models.map((m) => m.id));
-      if (!availableModelIds.includes(body.model)) {
+      if (!isValidModelId(body.model)) {
         throw new HttpError(400, "invalid_model", `Model "${body.model}" is not available. Choose a model from the provider list.`);
+      }
+      // Check that the provider has a key available (env or user-stored)
+      const providerId = resolveModelProvider(body.model);
+      if (providerId) {
+        const envKeyName = providerKeyMap[providerId];
+        const hasEnvKey = !!(envKeyName && process.env[envKeyName]);
+        if (!hasEnvKey) {
+          const userKeyRow = (await db.execute<{ provider: string }>(sql`
+            select provider from provider_keys
+            where user_id = ${user.id} and provider = ${providerId}
+            limit 1
+          `)).rows[0];
+          if (!userKeyRow) {
+            throw new HttpError(400, "invalid_model", `No API key configured for "${providerId}". Add a key in Settings first.`);
+          }
+        }
       }
     }
 

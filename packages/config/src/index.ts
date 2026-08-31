@@ -449,7 +449,7 @@ export type ProviderConfig = {
   models: { id: string; name: string; provider: string }[];
 };
 
-const availableProviders: ProviderConfig[] = [
+export const allProviders: ProviderConfig[] = [
   {
     id: "groq",
     name: "Groq",
@@ -482,7 +482,7 @@ const availableProviders: ProviderConfig[] = [
   },
 ];
 
-const providerKeyMap: Record<string, string> = {
+export const providerKeyMap: Record<string, string> = {
   groq: "GROQ_API_KEY",
   codex: "CODEX_API_KEY",
   moonshot: "MOONSHOT_API_KEY",
@@ -492,7 +492,7 @@ const providerKeyMap: Record<string, string> = {
 };
 
 export const getAvailableProviders = (env: Env): ProviderConfig[] => {
-  return availableProviders.filter((provider) => {
+  return allProviders.filter((provider) => {
     const keyName = providerKeyMap[provider.id];
     return keyName && env[keyName] && env[keyName] !== "your-" + keyName.toLowerCase().replace(/_/g, "-") && env[keyName] !== "api-key";
   });
@@ -502,7 +502,7 @@ export const getAvailableProviders = (env: Env): ProviderConfig[] => {
  * Build a set of all known model IDs across every provider (not just available ones).
  * Used to validate user-supplied model strings at the API boundary.
  */
-const allModelIds = new Set(availableProviders.flatMap((p) => p.models.map((m) => m.id)));
+const allModelIds = new Set(allProviders.flatMap((p) => p.models.map((m) => m.id)));
 
 /**
  * Return true when `modelId` is a known model in any provider config.
@@ -514,7 +514,7 @@ export const isValidModelId = (modelId: string): boolean => allModelIds.has(mode
  * Returns undefined for unknown model IDs.
  */
 export const resolveModelProvider = (modelId: string): string | undefined => {
-  for (const provider of availableProviders) {
+  for (const provider of allProviders) {
     if (provider.models.some((m) => m.id === modelId)) return provider.id;
   }
   return undefined;

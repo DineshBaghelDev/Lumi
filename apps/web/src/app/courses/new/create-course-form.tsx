@@ -49,7 +49,7 @@ export function CreateCourseForm({ idempotencyKey, providers }: { idempotencyKey
           </label>
         ))}
       </div>
-      {allModels.length > 1 ? (
+      {allModels.length >= 1 ? (
         <>
           <label htmlFor="model-select">Model provider</label>
           <select
@@ -69,7 +69,11 @@ export function CreateCourseForm({ idempotencyKey, providers }: { idempotencyKey
             ))}
           </select>
         </>
-      ) : null}
+      ) : (
+        <p className="center-note" style={{ fontSize: "0.85rem" }}>
+          No providers configured. Add an API key in <a href="/settings">Settings</a> to choose a model.
+        </p>
+      )}
       <label htmlFor="goal">What should this course help you do?</label>
       <textarea
         id="goal"

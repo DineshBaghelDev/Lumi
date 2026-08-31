@@ -15,7 +15,15 @@ export const apiFetch = async (path: string, init: RequestInit = {}) => {
       cache: "no-store",
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "API unavailable";
+    const rawMsg = err instanceof Error ? err.message : "unknown";
+    // Improve common Node.js fetch error messages for user clarity
+    const message = rawMsg === "fetch failed"
+      ? "Could not connect to the API server. Ensure the API is running and INTERNAL_API_BASE_URL is correct."
+      : rawMsg === "connect ECONNREFUSED"
+        ? "API server refused the connection. Check that the API process is running."
+      : rawMsg.startsWith("getaddrinfo")
+        ? "Could not resolve API server hostname. Check INTERNAL_API_BASE_URL."
+      : `API unavailable: ${rawMsg}`;
     return Response.json({ error: { code: "api_unavailable", message } }, { status: 503 });
   }
 };
