@@ -39,4 +39,8 @@ model_list:
 
 litellm_settings:
   fallbacks:
+    - codex-gpt-5.5: ["groq-gpt-5.5"]
     - groq-gpt-5.5: ["openrouter-gpt-5.5"]
+    - moonshot-latest: ["groq-gpt-5.5"]
+    - gemini-pro: ["groq-gpt-5.5"]
+    - claude-sonnet: ["groq-gpt-5.5"]

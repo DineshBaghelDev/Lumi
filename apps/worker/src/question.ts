@@ -98,7 +98,7 @@ export const createQuestionHandler = (
       });
 
       const deterministic = validateQuestionSet(generated.candidates, context);
-      const review = deterministic.passed ? await reviewCandidates(reviewer, generated.candidates, context) : null;
+      const review = deterministic.passed ? await reviewCandidates(reviewer, generated.candidates, context, model) : null;
       if (review) {
         await recordLlmCall(db, {
           jobId: job.id,
@@ -561,10 +561,11 @@ export const validateQuestionSet = (
   return { passed: reasons.length === 0, reasons };
 };
 
-const reviewCandidates = async (reviewer: QuestionLlm, candidates: readonly QuestionCandidate[], context: QuestionContext) => {
+const reviewCandidates = async (reviewer: QuestionLlm, candidates: readonly QuestionCandidate[], context: QuestionContext, model?: string) => {
   const result = await reviewer.complete({
     temperature: 0,
     maxTokens: 900,
+    ...(model ? { model } : {}),
     messages: [
       { role: "system", content: "Return JSON only: {\"rejections\": [{\"candidateId\": string, \"reason\": string}]}. Reject candidates whose answer is incorrect, unsupported by the sources, ambiguous or multi-answer, requires untaught material, or whose free-response rubric does not match the prompt." },
       { role: "user", content: JSON.stringify({ allowedConcepts: context.concepts, sourceChunks: context.chunks.map((chunk) => ({ id: chunk.id, content: chunk.content })), candidates }) },
