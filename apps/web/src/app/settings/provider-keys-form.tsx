@@ -18,6 +18,7 @@ const providers = [
   { id: "gemini", name: "Google Gemini", placeholder: "AIza..." },
   { id: "claude", name: "Anthropic Claude", placeholder: "sk-ant-..." },
   { id: "openrouter", name: "OpenRouter", placeholder: "sk-or-..." },
+  { id: "nim", name: "NVIDIA NIM", placeholder: "nvapi-..." },
 ];
 
 export function ProviderKeysForm({ existingKeys }: { existingKeys: ProviderKey[] }) {

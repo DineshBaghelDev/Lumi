@@ -246,6 +246,7 @@ const providerEnvKeys = [
   "GEMINI_API_KEY",
   "ANTHROPIC_API_KEY",
   "OPENROUTER_API_KEY",
+  "NIM_API_KEY",
 ] as const;
 
 /** Save all provider env vars, delete them, and return a restore function. */
@@ -287,7 +288,7 @@ test("/providers: returns env-available providers", async () => {
     assert.ok(Array.isArray(body.providers));
     const groq = body.providers.find((p: { id: string }) => p.id === "groq");
     assert.ok(groq, "groq should be in the provider list");
-    assert.equal(groq.models[0].id, "groq-gpt-5.5");
+    assert.equal(groq.models[0].id, "groq-gpt-oss-120b");
     const openrouter = body.providers.find((p: { id: string }) => p.id === "openrouter");
     assert.equal(openrouter, undefined, "openrouter should not appear without a key");
     await app.close();
@@ -321,7 +322,7 @@ test("/providers: includes user-stored keys not in env", async () => {
     const body = response.json();
     const openrouter = body.providers.find((p: { id: string }) => p.id === "openrouter");
     assert.ok(openrouter, "openrouter should appear from user-stored key");
-    assert.equal(openrouter.models[0].id, "openrouter-gpt-5.5");
+    assert.equal(openrouter.models[0].id, "or-claude-sonnet-5");
     const groq = body.providers.find((p: { id: string }) => p.id === "groq");
     assert.equal(groq, undefined, "groq should not appear without a key");
     await app.close();

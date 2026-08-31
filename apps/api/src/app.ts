@@ -256,7 +256,7 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
     const user = request.user;
     if (!user) throw new HttpError(401, "unauthorized", "Missing user");
     const body = parse(z.object({
-      provider: z.enum(["groq", "codex", "moonshot", "gemini", "claude", "openrouter"]),
+      provider: z.enum(["groq", "codex", "moonshot", "gemini", "claude", "openrouter", "nim"]),
       apiKey: z.string().trim().min(8).max(500),
     }), request.body);
 
@@ -274,7 +274,7 @@ export const createApp = (deps: AppDeps = {}): FastifyInstance => {
   app.delete("/settings/provider-keys/:provider", { preHandler: app.requireAuth }, async (request) => {
     const user = request.user;
     if (!user) throw new HttpError(401, "unauthorized", "Missing user");
-    const { provider } = z.object({ provider: z.enum(["groq", "codex", "moonshot", "gemini", "claude", "openrouter"]) }).parse(request.params);
+    const { provider } = z.object({ provider: z.enum(["groq", "codex", "moonshot", "gemini", "claude", "openrouter", "nim"]) }).parse(request.params);
     await db.execute(sql`
       delete from provider_keys
       where user_id = ${user.id} and provider = ${provider}

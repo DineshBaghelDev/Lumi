@@ -8,7 +8,7 @@ export const V1_CONFIG_DEFAULTS = {
   },
   services: {
     liteLlmBaseUrl: "http://127.0.0.1:4000",
-    liteLlmModel: "groq-gpt-5.5",
+    liteLlmModel: "groq-gpt-oss-120b",
     searxngBaseUrl: "http://127.0.0.1:8080",
     crawl4aiBaseUrl: "http://127.0.0.1:11235",
     teiBaseUrl: "http://127.0.0.1:8081",
@@ -127,6 +127,7 @@ const providerEnvSchema = z.object({
   MOONSHOT_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
+  NIM_API_KEY: z.string().optional(),
 });
 
 const sharedServicesEnvSchema = z.object({
@@ -453,7 +454,15 @@ export const allProviders: ProviderConfig[] = [
   {
     id: "groq",
     name: "Groq",
-    models: [{ id: "groq-gpt-5.5", name: "GPT-OSS-120B", provider: "groq" }],
+    models: [
+      { id: "groq-gpt-oss-120b", name: "✓ GPT-OSS 120B", provider: "groq" },
+      { id: "groq-qwen3.8-27b", name: "✓ Qwen 3.8 27B", provider: "groq" },
+      { id: "groq-qwen3.6-27b", name: "✓ Qwen 3.6 27B", provider: "groq" },
+      { id: "groq-gpt-oss-20b", name: "✓ GPT-OSS 20B", provider: "groq" },
+      { id: "groq-allam-2-7b", name: "✓ Allam 2 7B", provider: "groq" },
+      { id: "groq-compound", name: "✓ Compound", provider: "groq" },
+      { id: "groq-compound-mini", name: "✓ Compound Mini", provider: "groq" },
+    ],
   },
   {
     id: "codex",
@@ -463,22 +472,66 @@ export const allProviders: ProviderConfig[] = [
   {
     id: "moonshot",
     name: "Moonshot (Kimi)",
-    models: [{ id: "moonshot-latest", name: "Moonshot v1-128K", provider: "moonshot" }],
+    models: [
+      { id: "moonshot-v1-8k", name: "Moonshot V1 8K", provider: "moonshot" },
+      { id: "moonshot-v1-32k", name: "Moonshot V1 32K", provider: "moonshot" },
+      { id: "moonshot-v1-128k", name: "Moonshot V1 128K", provider: "moonshot" },
+    ],
   },
   {
     id: "gemini",
     name: "Google Gemini",
-    models: [{ id: "gemini-pro", name: "Gemini 2.5 Pro", provider: "gemini" }],
+    models: [
+      { id: "gemini-3.6-flash", name: "✓ Gemini 3.6 Flash", provider: "gemini" },
+      { id: "gemini-3.5-flash", name: "✓ Gemini 3.5 Flash", provider: "gemini" },
+      { id: "gemini-3.5-flash-lite", name: "✓ Gemini 3.5 Flash Lite", provider: "gemini" },
+      { id: "gemini-3-flash-preview", name: "✓ Gemini 3 Flash Preview", provider: "gemini" },
+      { id: "gemini-3.1-flash-lite-preview", name: "✓ Gemini 3.1 Flash Lite Preview", provider: "gemini" },
+      { id: "gemma-4-31b-it", name: "✓ Gemma 4 31B", provider: "gemini" },
+      { id: "gemma-4-26b-a4b-it", name: "✓ Gemma 4 26B MoE", provider: "gemini" },
+    ],
   },
   {
     id: "claude",
     name: "Anthropic Claude",
-    models: [{ id: "claude-sonnet", name: "Claude Sonnet 4", provider: "claude" }],
+    models: [
+      { id: "claude-sonnet-4", name: "Claude Sonnet 4", provider: "claude" },
+      { id: "claude-opus-4", name: "Claude Opus 4", provider: "claude" },
+    ],
   },
   {
     id: "openrouter",
     name: "OpenRouter",
-    models: [{ id: "openrouter-gpt-5.5", name: "GPT-5.5", provider: "openrouter" }],
+    models: [
+      { id: "or-claude-sonnet-5", name: "✓ Claude Sonnet 5", provider: "openrouter" },
+      { id: "or-claude-opus-5", name: "✓ Claude Opus 5", provider: "openrouter" },
+      { id: "or-gpt-5.6-sol", name: "✓ GPT-5.6 Sol", provider: "openrouter" },
+      { id: "or-gpt-5.6-luna", name: "✓ GPT-5.6 Luna", provider: "openrouter" },
+      { id: "or-gemini-3.7-flash", name: "✓ Gemini 3.7 Flash", provider: "openrouter" },
+      { id: "or-gemini-3.6-flash", name: "✓ Gemini 3.6 Flash", provider: "openrouter" },
+      { id: "or-gemini-3.5-flash-lite", name: "✓ Gemini 3.5 Flash Lite", provider: "openrouter" },
+      { id: "or-deepseek-v4-pro", name: "✓ DeepSeek V4 Pro", provider: "openrouter" },
+      { id: "or-deepseek-v4-flash", name: "✓ DeepSeek V4 Flash", provider: "openrouter" },
+      { id: "or-qwen3.8-flash", name: "✓ Qwen 3.8 Flash", provider: "openrouter" },
+      { id: "or-qwen3.8-27b", name: "✓ Qwen 3.8 27B", provider: "openrouter" },
+      { id: "or-qwen3.7-flash", name: "✓ Qwen 3.7 Flash", provider: "openrouter" },
+      { id: "or-llama-4-maverick", name: "✓ Llama 4 Maverick", provider: "openrouter" },
+      { id: "or-llama-4-scout", name: "✓ Llama 4 Scout", provider: "openrouter" },
+      { id: "or-grok-4.6", name: "✓ Grok 4.6", provider: "openrouter" },
+      { id: "or-grok-4.5", name: "✓ Grok 4.5", provider: "openrouter" },
+      { id: "or-mistral-large", name: "✓ Mistral Large", provider: "openrouter" },
+    ],
+  },
+  {
+    id: "nim",
+    name: "NVIDIA NIM",
+    models: [
+      { id: "nim-nemotron-nano-30b", name: "✓ Nemotron 3 Nano 30B", provider: "nim" },
+      { id: "nim-nemotron-super-120b", name: "✓ Nemotron 3 Super 120B", provider: "nim" },
+      { id: "nim-llama-3.2-vision-11b", name: "✓ Llama 3.2 Vision 11B", provider: "nim" },
+      { id: "nim-gpt-oss-120b", name: "✓ GPT-OSS 120B", provider: "nim" },
+      { id: "nim-nemotron-nano-omni-30b", name: "✓ Nemotron 3 Nano Omni 30B", provider: "nim" },
+    ],
   },
 ];
 
@@ -489,6 +542,7 @@ export const providerKeyMap: Record<string, string> = {
   gemini: "GEMINI_API_KEY",
   claude: "ANTHROPIC_API_KEY",
   openrouter: "OPENROUTER_API_KEY",
+  nim: "NIM_API_KEY",
 };
 
 export const getAvailableProviders = (env: Env): ProviderConfig[] => {
@@ -510,7 +564,7 @@ const allModelIds = new Set(allProviders.flatMap((p) => p.models.map((m) => m.id
 export const isValidModelId = (modelId: string): boolean => allModelIds.has(modelId);
 
 /**
- * Map a known model ID to its provider prefix (e.g. "groq-gpt-5.5" → "groq").
+ * Map a known model ID to its provider prefix (e.g. "groq-gpt-oss-120b" → "groq").
  * Returns undefined for unknown model IDs.
  */
 export const resolveModelProvider = (modelId: string): string | undefined => {

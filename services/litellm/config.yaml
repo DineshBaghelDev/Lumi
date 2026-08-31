@@ -1,46 +1,220 @@
 model_list:
-  # Groq — current default
-  - model_name: groq-gpt-5.5
+  # ─── Groq (all verified working 2026-08-31) ───────────────────────────
+  - model_name: groq-gpt-oss-120b
     litellm_params:
       model: groq/openai/gpt-oss-120b
       api_key: os.environ/GROQ_API_KEY
 
-  # Codex-as-api — local development provider (currently broken with gpt-5.5)
-  # api_key defaults to "no-key-required" when not set (local service)
+  - model_name: groq-qwen3.8-27b
+    litellm_params:
+      model: groq/qwen/qwen3.8-27b
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: groq-qwen3.6-27b
+    litellm_params:
+      model: groq/qwen/qwen3.6-27b
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: groq-gpt-oss-20b
+    litellm_params:
+      model: groq/openai/gpt-oss-20b
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: groq-allam-2-7b
+    litellm_params:
+      model: groq/allam-2-7b
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: groq-compound
+    litellm_params:
+      model: groq/groq/compound
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: groq-compound-mini
+    litellm_params:
+      model: groq/groq/compound-mini
+      api_key: os.environ/GROQ_API_KEY
+
+  # ─── Codex-as-api (local dev, currently broken with gpt-5.5) ──────────
   - model_name: codex-gpt-5.5
     litellm_params:
       model: openai/gpt-5.5
       api_base: os.environ/CODEX_API_BASE_URL
       api_key: os.environ/CODEX_API_KEY
 
-  # Moonshot (Kimi)
-  - model_name: moonshot-latest
+  # ─── Moonshot (Kimi) — key may be expired, models kept for reference ──
+  - model_name: moonshot-v1-8k
+    litellm_params:
+      model: moonshot/moonshot-v1-8k
+      api_key: os.environ/MOONSHOT_API_KEY
+
+  - model_name: moonshot-v1-32k
+    litellm_params:
+      model: moonshot/moonshot-v1-32k
+      api_key: os.environ/MOONSHOT_API_KEY
+
+  - model_name: moonshot-v1-128k
     litellm_params:
       model: moonshot/moonshot-v1-128k
       api_key: os.environ/MOONSHOT_API_KEY
 
-  # Gemini
-  - model_name: gemini-pro
+  # ─── Google Gemini (all verified working 2026-08-31) ──────────────────
+  - model_name: gemini-3.6-flash
     litellm_params:
-      model: gemini/gemini-2.5-pro
+      model: gemini/gemini-3.6-flash
       api_key: os.environ/GEMINI_API_KEY
 
-  # Claude (Anthropic)
-  - model_name: claude-sonnet
+  - model_name: gemini-3.5-flash
+    litellm_params:
+      model: gemini/gemini-3.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+
+  - model_name: gemini-3.5-flash-lite
+    litellm_params:
+      model: gemini/gemini-3.5-flash-lite
+      api_key: os.environ/GEMINI_API_KEY
+
+  - model_name: gemini-3-flash-preview
+    litellm_params:
+      model: gemini/gemini-3-flash-preview
+      api_key: os.environ/GEMINI_API_KEY
+
+  - model_name: gemini-3.1-flash-lite-preview
+    litellm_params:
+      model: gemini/gemini-3.1-flash-lite-preview
+      api_key: os.environ/GEMINI_API_KEY
+
+  - model_name: gemma-4-31b-it
+    litellm_params:
+      model: gemini/gemma-4-31b-it
+      api_key: os.environ/GEMINI_API_KEY
+
+  - model_name: gemma-4-26b-a4b-it
+    litellm_params:
+      model: gemini/gemma-4-26b-a4b-it
+      api_key: os.environ/GEMINI_API_KEY
+
+  # ─── Anthropic Claude (no API key in .env, kept for reference) ────────
+  - model_name: claude-sonnet-4
     litellm_params:
       model: anthropic/claude-sonnet-4-20250514
       api_key: os.environ/ANTHROPIC_API_KEY
 
-  # OpenRouter — fallback
-  - model_name: openrouter-gpt-5.5
+  - model_name: claude-opus-4
     litellm_params:
-      model: openrouter/openai/gpt-5.5
+      model: anthropic/claude-opus-4-20250514
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # ─── OpenRouter (all verified working 2026-08-31) ─────────────────────
+  - model_name: or-claude-sonnet-5
+    litellm_params:
+      model: openrouter/anthropic/claude-sonnet-5
       api_key: os.environ/OPENROUTER_API_KEY
 
-litellm_settings:
-  fallbacks:
-    - moonshot-latest: ["groq-gpt-5.5"]
-    - groq-gpt-5.5: ["openrouter-gpt-5.5"]
-    - codex-gpt-5.5: ["groq-gpt-5.5"]
-    - gemini-pro: ["groq-gpt-5.5"]
-    - claude-sonnet: ["groq-gpt-5.5"]
+  - model_name: or-claude-opus-5
+    litellm_params:
+      model: openrouter/anthropic/claude-opus-5
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-gpt-5.6-sol
+    litellm_params:
+      model: openrouter/openai/gpt-5.6-sol
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-gpt-5.6-luna
+    litellm_params:
+      model: openrouter/openai/gpt-5.6-luna
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-gemini-3.7-flash
+    litellm_params:
+      model: openrouter/google/gemini-3.7-flash
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-gemini-3.6-flash
+    litellm_params:
+      model: openrouter/google/gemini-3.6-flash
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-gemini-3.5-flash-lite
+    litellm_params:
+      model: openrouter/google/gemini-3.5-flash-lite
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-deepseek-v4-pro
+    litellm_params:
+      model: openrouter/deepseek/deepseek-v4-pro-0813
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-deepseek-v4-flash
+    litellm_params:
+      model: openrouter/deepseek/deepseek-v4-flash-0731
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-qwen3.8-flash
+    litellm_params:
+      model: openrouter/qwen/qwen3.8-flash
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-qwen3.8-27b
+    litellm_params:
+      model: openrouter/qwen/qwen3.8-27b
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-qwen3.7-flash
+    litellm_params:
+      model: openrouter/qwen/qwen3.7-flash
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-llama-4-maverick
+    litellm_params:
+      model: openrouter/meta-llama/llama-4-maverick
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-llama-4-scout
+    litellm_params:
+      model: openrouter/meta-llama/llama-4-scout
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-grok-4.6
+    litellm_params:
+      model: openrouter/x-ai/grok-4.6
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-grok-4.5
+    litellm_params:
+      model: openrouter/x-ai/grok-4.5
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: or-mistral-large
+    litellm_params:
+      model: openrouter/mistralai/mistral-large
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  # ─── NVIDIA NIM (verified working 2026-08-31) ─────────────────────────
+  - model_name: nim-nemotron-nano-30b
+    litellm_params:
+      model: nvidia_nim/nvidia/nemotron-3-nano-30b-a3b
+      api_key: os.environ/NIM_API_KEY
+
+  - model_name: nim-nemotron-super-120b
+    litellm_params:
+      model: nvidia_nim/nvidia/nemotron-3-super-120b-a12b
+      api_key: os.environ/NIM_API_KEY
+
+  - model_name: nim-llama-3.2-vision-11b
+    litellm_params:
+      model: nvidia_nim/meta/llama-3.2-11b-vision-instruct
+      api_key: os.environ/NIM_API_KEY
+
+  - model_name: nim-gpt-oss-120b
+    litellm_params:
+      model: nvidia_nim/openai/gpt-oss-120b
+      api_key: os.environ/NIM_API_KEY
+
+  - model_name: nim-nemotron-nano-omni-30b
+    litellm_params:
+      model: nvidia_nim/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+      api_key: os.environ/NIM_API_KEY
+
+litellm_settings: {}

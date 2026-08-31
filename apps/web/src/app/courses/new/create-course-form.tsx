@@ -16,9 +16,18 @@ const depths = [
 export function CreateCourseForm({ idempotencyKey, providers }: { idempotencyKey: string; providers: Provider[] }) {
   const [state, action, pending] = useActionState(createCourseAction, initialState);
   const [depth, setDepth] = useState("beginner");
+  const [selectedProvider, setSelectedProvider] = useState(providers[0]?.id ?? "");
   const [selectedModel, setSelectedModel] = useState(providers[0]?.models[0]?.id ?? "");
 
-  const allModels = providers.flatMap((p) => p.models.map((m) => ({ ...m, providerName: p.name })));
+  const activeProvider = providers.find((p) => p.id === selectedProvider);
+  const modelsForProvider = activeProvider?.models ?? [];
+
+  // When provider changes, auto-select the first model of that provider
+  const handleProviderChange = (providerId: string) => {
+    setSelectedProvider(providerId);
+    const provider = providers.find((p) => p.id === providerId);
+    setSelectedModel(provider?.models[0]?.id ?? "");
+  };
 
   return (
     <form className="form-box" action={action}>
@@ -49,25 +58,40 @@ export function CreateCourseForm({ idempotencyKey, providers }: { idempotencyKey
           </label>
         ))}
       </div>
-      {allModels.length >= 1 ? (
+      {providers.length >= 1 ? (
         <>
-          <label htmlFor="model-select">Model provider</label>
-          <select
-            id="model-select"
-            className="select"
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-          >
-            {providers.map((provider) => (
-              <optgroup key={provider.id} label={provider.name}>
-                {provider.models.map((model) => (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            <div>
+              <label htmlFor="provider-select">Provider</label>
+              <select
+                id="provider-select"
+                className="select"
+                value={selectedProvider}
+                onChange={(e) => handleProviderChange(e.target.value)}
+              >
+                {providers.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="model-select">Model</label>
+              <select
+                id="model-select"
+                className="select"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+              >
+                {modelsForProvider.map((model) => (
                   <option key={model.id} value={model.id}>
                     {model.name}
                   </option>
                 ))}
-              </optgroup>
-            ))}
-          </select>
+              </select>
+            </div>
+          </div>
         </>
       ) : (
         <p className="center-note" style={{ fontSize: "0.85rem" }}>
